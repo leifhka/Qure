@@ -12,16 +12,16 @@ import java.util.Iterator;
 import java.util.Comparator;
 import java.util.Arrays;
 
-public class RelationshipNode {
+public class RelationshipGraph {
 
     private final Map<Integer, Node> nodes;
     private final Set<Integer> roots;
     private int overlapsNodeId; // Always negative, and decreasing
-    private final Bintree block;
+    private final Block block;
     private final Set<Integer> uris;
     private final int k;
 
-    public RelationshipNode(Bintree block, Set<Integer> uris, int k) {
+    public RelationshipGraph(Block block, Set<Integer> uris, int k) {
         this.block = block;
         this.uris = new HashSet<Integer>(uris);
         this.k = k;
@@ -62,6 +62,9 @@ public class RelationshipNode {
 
     public int size() { return getUris().size(); }
 
+    /**
+     * Adds a containment-relationship between child and parent if necessary (not already in graph).
+     */ 
     public void addCoveredBy(Integer child, Integer parent) {
 
         Node cn = nodes.get(child);
@@ -84,18 +87,19 @@ public class RelationshipNode {
         for (Integer parentsParent : pn.succs) {
             Node ppn = nodes.get(parentsParent);
             ppn.preds.add(child);
-            //ppn.preds.addAll(cn.preds); //TODO: Try this!
             ppn.preds.addAll(pn.preds);
         }
 
         for (Integer childsChild : cn.preds) {
             Node ccn = nodes.get(childsChild);
             ccn.succs.add(parent);
-            //ccn.succs.addAll(pn.succs);
             ccn.succs.addAll(cn.succs);
         }
     }
 
+    /**
+     * Sets child to be contained in all elements of parents.
+     */
     public void addCoveredBy(Integer child, Set<Integer> parents) {
 
         for (Integer parent : parents)
@@ -274,13 +278,19 @@ public class RelationshipNode {
         return false;
     }
 
-    public RelationshipNode merge(RelationshipNode o) {
+    /**
+     * Returns a graph representing the merge of this and argument.
+     * An overlap relationship holds in the merged graph if it holds
+     * in either this or o, whereas a containment relationship contains(A,B)
+     * holds in the merged graph if it holds in the all the graphs which A is a part of.
+     */
+    public RelationshipGraph merge(RelationshipGraph o) {
 
         // Start by making a new node, containing the uris from both o and this
         Set<Integer> urisUnion = new HashSet<Integer>(uris);
         urisUnion.addAll(o.getUris());
 
-        RelationshipNode newNode = new RelationshipNode(block.getParentBlock(), urisUnion, k);
+        RelationshipGraph newNode = new RelationshipGraph(block.getParent(), urisUnion, k);
         Map<Integer, Node> oNodes = new HashMap<Integer, Node>(o.getNodes());
 
         Set<Set<Integer>> overlapsToAdd = new HashSet<Set<Integer>>();
@@ -338,12 +348,16 @@ public class RelationshipNode {
         return newNode;
     }
 
-    public static RelationshipNode makeRelationshipNode(SpaceToBintreeRec.Node spaceNode, int overlapsArity) {
+    /**
+     * Constructs a relaionship graph based on the relationships between the spaces in spaceNode with
+     * overlaps-arity up to overlapsArity.
+     */
+    public static RelationshipGraph makeRelationshipGraph(SpaceToBintree.Node spaceNode, int overlapsArity) {
 
         SpaceProvider spaces = spaceNode.getSpaceProvider();
         Set<Integer> uris = spaceNode.getOverlappingURIs();
 
-        RelationshipNode newNode = new RelationshipNode(spaceNode.getBlock(), uris, overlapsArity);
+        RelationshipGraph newNode = new RelationshipGraph(spaceNode.getBlock(), uris, overlapsArity);
 
         Integer[] urisArr = uris.toArray(new Integer[uris.size()]);
 
@@ -383,54 +397,6 @@ public class RelationshipNode {
 
         newNode.computeKIntersections(intersections, uris, overlapsArity, spaces);
         newNode.minimize(); //KIntersections(overlapsArity);
-
-        return newNode;
-    }
-
-    public static RelationshipNode makeRelationshipNode(SpaceNode spaceNode, int overlapsArity) {
-
-        SpaceProvider spaces = spaceNode.getSpaceProvider();
-        Set<Integer> uris = spaceNode.getOverlappingURIs();
-
-        RelationshipNode newNode = new RelationshipNode(spaceNode.getBlock(), uris, overlapsArity);
-
-        Integer[] urisArr = uris.toArray(new Integer[uris.size()]);
-
-        Set<Intersection> intersections = new HashSet<Intersection>();
-
-        for (int i = 0; i < urisArr.length; i++) { 
-
-            Integer ui = urisArr[i];
-            Space si = spaces.get(ui);
-
-            for (int j = i+1; j < urisArr.length; j++) {
-
-                Integer uj = urisArr[j];
-                Space sj = spaces.get(uj);
-
-                Relation rel = si.relate(sj);
-
-                if (rel.isIntersects()) {
-
-                    if (rel.isCovers())
-                        newNode.addCoveredBy(uj, ui);
-
-                    if (rel.isCoveredBy())
-                        newNode.addCoveredBy(ui, uj);
-                    
-                    if (!rel.isCovers() && !rel.isCoveredBy()) {
-                        Set<Integer> elems = new HashSet<Integer>(2);
-                        elems.add(ui);
-                        elems.add(uj);
-                        Space s = si.intersection(sj);
-                        Intersection nin = new Intersection(s, elems);
-                        intersections.add(nin);
-                    }
-                }
-            }
-        }
-
-        newNode.computeKIntersections(intersections, uris, overlapsArity, spaces);
 
         return newNode;
     }
@@ -485,8 +451,6 @@ public class RelationshipNode {
 
                 if (newCurPreds.isEmpty()) return false;
 
-                //Set<Integer> newCurrent = new HashSet<Integer>(current);
-                //newCurrent.add(vals[i]);
                 if (!allKaryOverlaps(newCurPreds, vals, i, rsize-1))
                     return false;
             }
@@ -494,76 +458,29 @@ public class RelationshipNode {
         return true;
     }
 
-    // private boolean allKaryOverlapsOld(Set<Integer> current, List<Integer> rest, int rsize) {
-    //     if (rsize == 0) {
-    //         return overlapsByOverlapsNode(current);
-    //     } else {
-    //         for (Integer i : rest) {
-    //             Set<Integer> newCurrent = new HashSet<Integer>(current);
-    //             newCurrent.add(i);
-    //             List<Integer> newRest = new ArrayList<Integer>(rest);
-    //             newRest.remove(i);
-    //             boolean ov = allKaryOverlapsOld(newCurrent, newRest, rsize-1);
-    //             if (!ov)
-    //                 return false;
-    //         }
-    //     }
-    //     return true;
-    // }
-
     private boolean allKaryOverlapsWith(Set<Integer> uris1, Set<Integer> uris2, int k) {
 
-        // Set<Integer> common = new HashSet<Integer>(uris1);
-        // common.retainAll(uris2);
-        // Set<Integer> diff1 = new HashSet<Integer>(uris1);
-        // diff1.removeAll(common);
-        // Set<Integer> diff2 = new HashSet<Integer>(uris2);
-        // diff2.removeAll(common);
+        Set<Integer> common = new HashSet<Integer>(uris1);
+        common.retainAll(uris2);
+        Set<Integer> diff1 = new HashSet<Integer>(uris1);
+        diff1.removeAll(common);
+        Set<Integer> diff2 = new HashSet<Integer>(uris2);
+        diff2.removeAll(common);
 
-        // for (Integer u2 : diff2) 
-        //     if (!allKaryOverlapsWith(diff1, u2, k)) return false;
+        for (Integer u2 : diff2) 
+            if (!allKaryOverlapsWith(diff1, u2, k)) return false;
 
-        for (Integer u2 : uris2)
-            if (!allKaryOverlapsWith(uris1, u2, k)) return false;
+        // for (Integer u2 : uris2)
+        //     if (!allKaryOverlapsWith(uris1, u2, k)) return false;
 
         return true;
     }
 
-    // private boolean allKaryOverlapsWith(Set<Integer> uris, Integer uri, int k) {
-
-    //     Set<Integer> kOverlaps = new HashSet<Integer>();
-    //     Node n = nodes.get(uri);
-
-    //     for (Integer pred : n.preds) {
-    //         if (isOverlapsNode(pred)) {
-    //             Set<Integer> predSuccs = new HashSet<Integer>(nodes.get(pred).succs);
-    //             predSuccs.retainAll(uris);
-    //             if (predSuccs.size() >= k-1)
-    //                 kOverlaps.addAll(predSuccs);
-    //         }
-    //     }
-
-    //     return kOverlaps.contains(uris);
-    // }
-        
-
     private boolean allKaryOverlaps(Set<Integer> uris, int k) {
-        //return allKaryOverlaps(new HashSet<Integer>(), new ArrayList<Integer>(rest), rsize);
         return allKaryOverlaps(nodes.keySet(), uris.toArray(new Integer[uris.size()]), -1, k);
-
-        // for (Integer u : uris) {
-        //     Set<Integer> others = new HashSet<Integer>(uris);
-        //     others.remove(u);
-        //     if (!allKaryOverlapsWith(others, u, k)) return false;
-        // }
-
-        // return true;
     }
 
     private boolean allKaryOverlapsWith(Set<Integer> rest, Integer u, int rsize) {
-        //Set<Integer> current = new HashSet<Integer>();
-        //current.add(u);
-        //return allKaryOverlaps(current, new ArrayList<Integer>(rest), rsize-1);
         return allKaryOverlaps(nodes.get(u).preds, rest.toArray(new Integer[rest.size()]), -1, rsize-1);
     }
 
@@ -769,24 +686,18 @@ public class RelationshipNode {
 
         minimize();
 
-        // Set<Integer> critical = getCritical();
-
-        Bintree[] witnessesArr = bf.makeNDistinct(nodes.keySet().size()+1); //critical.size()+1);
+        Block[] witnessesArr = bf.makeNDistinct(nodes.keySet().size()+1);
 
         Map<Integer, Bintree> localRep = new HashMap<Integer, Bintree>();
-        Map<Integer, Bintree> wit = new HashMap<Integer, Bintree>();
+        Map<Integer, Block> wit = new HashMap<Integer, Block>();
 
         int i = 0;
         for (Integer node : nodes.keySet()) {
-            Bintree bt;
-            // if (critical.contains(node))
-            //     bt = block.appendToOne(witnesses[i++]);
-            // else
-            //     bt = bf.makeEmpty();
-            bt = block.appendToOne(witnessesArr[i++]);
-            if (!isOverlapsNode(node))// && !witnesses.containsKey(node))
+            Block bt;
+            bt = block.append(witnessesArr[i++]);
+            if (!isOverlapsNode(node))
                 wit.put(node, bt);
-            localRep.put(node, bt);
+            localRep.put(node, bf.newBintree(bt));
         }
 
         while (!nodes.isEmpty()) {
@@ -810,65 +721,26 @@ public class RelationshipNode {
             }
         }
 
-        //Map<Integer, Bintree> urisRep = new HashMap<Integer, Bintree>();
-        Map<Integer, Collection<Block>> urisRep = new HashMap<Integer, Collection<Block>>();
+        Map<Integer, Bintree> urisRep = new HashMap<Integer, Bintree>();
         for (Integer uri : localRep.keySet()) {
             if (!isOverlapsNode(uri)) {
-                Block[] bs = ((PTBintree) localRep.get(uri).normalize()).toISBintree().getRepresentation();
-                Block w = ((PTBintree) wit.get(uri)).toISBintree().getRepresentation()[0];
-                Collection<Block> cbs = new ArrayList<Block>();
+                Set<Block> bs = localRep.get(uri).normalize().getBlocks();
+                Block w = wit.get(uri);
+                Set<Block> cbs = new HashSet<Block>();
                 for (Block b : bs) {
-                    if (w.blockPartOf(b)) b.setWitness(true);
-                    cbs.add(b);
+                    if (w.blockPartOf(b)) 
+                        cbs.add(b.setUniquePart(true));
+                    else
+                        cbs.add(b);
                 }
-                urisRep.put(uri, cbs);
+                urisRep.put(uri, new Bintree(cbs, bf));
             }
         }
 
         Representation rep = new Representation(urisRep);
-        //rep.normalizeBintrees();
 
         return rep;
     }
-
-    /**
-     * Returns the set of nodes which needs a freshly generated bintree witness, that is,
-     * the uri's of the nodes where the union of its predecessors' witnesses is not unique.
-     */
-    // NOT CORRECT!
-    // public Set<Integer> getCritical() {
-
-    //     Set<Integer> result = new HashSet<Integer>();
-
-    //     for (Integer uri : nodes.keySet()) {
-
-    //         Node n = nodes.get(uri);
-    //         if (n.preds.size() <= 1 ||
-    //             (n.preds.size() == 2 && n.preds.contains(uri))) {
-    //             // Either has only one child or part of 2-loop. Both implies critical.
-    //             result.add(uri);
-    //             continue;
-    //         }
-
-    //         Iterator<Integer> preds = n.preds.iterator();
-
-    //         Integer pred = preds.next();
-    //         Node pn = nodes.get(pred);
-    //         Set<Integer> predsSuccs = new HashSet<Integer>(pn.succs);
-    //         predsSuccs.remove(uri); // Remove the current node, such that empty implies critical
-
-    //         while (preds.hasNext()) {
-    //             pred = preds.next();
-    //             pn = nodes.get(pred);
-    //             predsSuccs.retainAll(pn.succs);
-    //         }
-
-    //         if (!predsSuccs.isEmpty())
-    //             result.add(uri);
-    //     }
-
-    //     return result;
-    // }
 
     class Node {
 

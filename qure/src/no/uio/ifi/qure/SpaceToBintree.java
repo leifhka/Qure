@@ -7,20 +7,20 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
-import java.util.Collection;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.function.Predicate;
 
-public class SpaceToBintreeRec {
+public class SpaceToBintree {
 
     private Config config;
     private Progress prog;
-    //private Map<Integer, Bintree> witnesses;
+    private BintreeFactory bf;
 
-    public SpaceToBintreeRec(Config config) {
+    public SpaceToBintree(Config config) {
 
         this.config = config;
+        this.bf = config.bf;
     }
 
     public Representation constructRepresentations(SpaceProvider spaces) {
@@ -29,16 +29,13 @@ public class SpaceToBintreeRec {
                             0.001, "##0.000");
         if (config.verbose) prog.init();
 
-        //witnesses = new HashMap<Integer, Bintree>();
-
-        Node root = new Node(config.bf.makeTop(), spaces, 0);
+        Node root = new Node(bf.makeTopBlock(), spaces, 0);
         Node newRoot = traverseTree(root);
         
         if (config.verbose) prog.done();
 
         Representation rootRep = newRoot.getRepresentation();
         rootRep.setUniverse(spaces.getUniverse());
-        //rootRep.setWitnesses(witnesses);
         return rootRep;
     }
 
@@ -54,7 +51,7 @@ public class SpaceToBintreeRec {
 
         if (config.atMaxDepth.test(node)) {
             newNode = new Node(node.getBlock(),
-                               RelationshipNode.makeRelationshipNode(node, config.overlapsArity));
+                               RelationshipGraph.makeRelationshipGraph(node, config.overlapsArity));
             if (config.verbose)
                 prog.update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
         } else {
@@ -74,7 +71,7 @@ public class SpaceToBintreeRec {
         if (newNode.depth() == config.representationDepth) {
             
             newNode = new Node(newNode.getBlock(), 
-                               newNode.getGraph().constructRepresentation(config.bf)); //, witnesses));
+                               newNode.getGraph().constructRepresentation(config.bf));
         }
 
         newNode = newNode.addCovering(node.getCovering());
@@ -84,14 +81,14 @@ public class SpaceToBintreeRec {
 
     protected class Node {
 
-        private RelationshipNode graph;
+        private RelationshipGraph graph;
         private Representation representation;
         private Set<Integer> covering;
         private SpaceProvider spaces;
         private final int split; // if this block was splitted along the x-axis.
-        private final Bintree block; // the bintree block of this spaceNode.
+        private final Block block; // the bintree block of this spaceNode.
 
-        public Node(Bintree block, SpaceProvider spaces, int split) {
+        public Node(Block block, SpaceProvider spaces, int split) {
             this.block = block;
             this.spaces = spaces;
             this.split = split;
@@ -100,7 +97,7 @@ public class SpaceToBintreeRec {
             representation = null;
         }
 
-        public Node(Bintree block, RelationshipNode graph) {
+        public Node(Block block, RelationshipGraph graph) {
             this.block = block;
             this.graph = graph;
 
@@ -109,7 +106,7 @@ public class SpaceToBintreeRec {
             split = 0;
         }
 
-        public Node(Bintree block, Representation representation) {
+        public Node(Block block, Representation representation) {
             this.block = block;
             this.representation = representation;
 
@@ -118,12 +115,11 @@ public class SpaceToBintreeRec {
             split = 0;
         }
 
-        public Node(Bintree block) {
+        public Node(Block block) {
             this.block = block;
 
-            graph = new RelationshipNode(block, new HashSet<Integer>(), config.overlapsArity);
-            //representation = new Representation(new HashMap<Integer, Bintree>(), new HashMap<Integer, Bintree>());
-            representation = new Representation(new HashMap<Integer, Collection<Block>>());
+            graph = new RelationshipGraph(block, new HashSet<Integer>(), config.overlapsArity);
+            representation = new Representation(new HashMap<Integer, Bintree>());
             spaces = null;
             split = 0;
         }
@@ -138,7 +134,7 @@ public class SpaceToBintreeRec {
 
         public int split() { return split; }
 
-        public Bintree getBlock() { return block; }
+        public Block getBlock() { return block; }
 
         public int depth() { return block.depth(); }
 
@@ -150,7 +146,7 @@ public class SpaceToBintreeRec {
 
         public boolean isRepresentation() { return representation != null; }
 
-        public RelationshipNode getGraph() { return graph; }
+        public RelationshipGraph getGraph() { return graph; }
 
         public Representation getRepresentation() { return representation; }
 
@@ -158,7 +154,7 @@ public class SpaceToBintreeRec {
 
             if (isGraph()) {
 
-                RelationshipNode graph = getGraph();
+                RelationshipGraph graph = getGraph();
                 graph.addUris(covering);
 
                 for (Integer pUri : covering) {
@@ -170,9 +166,9 @@ public class SpaceToBintreeRec {
             } else if (isRepresentation()) {
 
                 for (Integer uri : covering)
-                    representation.getRawRepresentation().put(uri, block.toBlockSet());
+                    representation.getRepresentation().put(uri, bf.newBintree(block));
             } else {
-                System.out.println("ERROR: Trying to add covering to a node that is neither rep. or graph.");
+                System.err.println("ERROR: Trying to add covering to a node that is neither rep. or graph.");
                 System.exit(1);
             }
 
@@ -182,39 +178,30 @@ public class SpaceToBintreeRec {
         public Node merge(Node other) {
 
             if (isGraph() && other.isGraph()) {
-                return new Node(block.getParentBlock(), graph.merge(other.getGraph()));
+                return new Node(block.getParent(), graph.merge(other.getGraph()));
             } else if (isRepresentation() && other.isRepresentation()) {
 
-                //Map<Integer, Bintree> result = representation.getRawRepresentation();
-                //Map<Integer, Bintree> orep = other.getRepresentation().getRawRepresentation();
-
-                Map<Integer, Collection<Block>> result = representation.getRawRepresentation();
-                Map<Integer, Collection<Block>> orep = other.getRepresentation().getRawRepresentation();
+                Map<Integer, Bintree> result = representation.getRepresentation();
+                Map<Integer, Bintree> orep = other.getRepresentation().getRepresentation();
 
                 for (Integer oid : orep.keySet()) {
                     if (!result.containsKey(oid))
                         result.put(oid, orep.get(oid));
                     else 
-                        result.get(oid).addAll(orep.get(oid));
+                        result.put(oid, result.get(oid).union(orep.get(oid)));
                 }
 
-                //Map<Integer, Bintree> witnesses = representation.getWitnesses();
-                //witnesses.putAll(other.getRepresentation().getWitnesses());
-
-                orep = null; //Free memory
-                other.representation = null; //Free memory
-
-                return new Node(block.getParentBlock(), representation);
+                return new Node(block.getParent(), representation);
             } else {
                 System.err.println("ERROR: Trying to merge graph with representation!");
-                System.exit(0);
+                System.exit(1);
                 return null;
             }
         }
 
         public Node[] splitNode(int dim) {
 
-            Bintree[] bs = block.splitBlock();
+            Block[] bs = block.split();
             int childDepth = block.depth() + 1;
 
             SpaceProvider[] sps = getSpaceProvider().splitProvider(split, childDepth);

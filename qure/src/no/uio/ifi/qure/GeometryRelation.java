@@ -21,9 +21,5 @@ public class GeometryRelation implements Relation {
     public boolean isIntersects() {
         return im.isIntersects();
     }
-
-    public GeometryRelation transpose() {
-        return new GeometryRelation((new IntersectionMatrix(im)).transpose());
-    }
 }
 

@@ -7,6 +7,4 @@ public interface Relation {
     public boolean isCoveredBy();
 
     public boolean isIntersects();
-
-    public Relation transpose();
 }

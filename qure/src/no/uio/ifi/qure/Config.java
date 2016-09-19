@@ -11,10 +11,9 @@ public class Config {
     public String geoQuerySelectFromStr;
     public String geoQueryStr;
 
-    public BintreeFactory bf = new PTBintreeFactory();
+    public BintreeFactory bf = new BintreeFactory();
     public int maxIterDepth = 40;
     public int blockMemberCount = 30;
-    //public int blockEdgeCount = 100;
     public int representationDepth = 15;
     public int overlapsArity = 3;
     public int dim = 2;
@@ -45,8 +44,8 @@ public class Config {
         insertTable = "ins." + table + "_500";
     }
 
-    public Predicate<SpaceToBintreeRec.Node> atMaxDepth = new Predicate<SpaceToBintreeRec.Node>() {
-        public boolean test(SpaceToBintreeRec.Node node) {
+    public Predicate<SpaceToBintree.Node> atMaxDepth = new Predicate<SpaceToBintree.Node>() {
+        public boolean test(SpaceToBintree.Node node) {
             int d = node.getBlock().depth();
             //if (d < representationDepth)
             //    return false;
@@ -69,32 +68,6 @@ public class Config {
 
             return d >= maxIterDepth ||
                    (d >= representationDepth && node.getOverlappingURIs().size() <= blockMemberCount);
-        }
-
-        // private int sumEdges(SpaceToBintreeRec.Node node) {
-        //     int sum = 0;
-        //     for (Integer uri : node.getOverlappingURIs()) {
-        //         sum += node.getSpaceProvider().get(uri).getComplexityMeasure();
-        //     }
-        //     return sum;
-        // }
-    };
-
-    public Predicate<SpaceNode> atMaxIterDepth = new Predicate<SpaceNode>() {
-        public boolean test(SpaceNode spaceNode) {
-            int d = spaceNode.getBlock().depth();
-            return d >= maxIterDepth ||
-                   (d >= representationDepth && (spaceNode.getOverlappingURIs().size() <= blockMemberCount ||
-                                                 sumEdgesLessThanCount(spaceNode)));
-        }
-
-        private boolean sumEdgesLessThanCount(SpaceNode spaceNode) {
-            int sum = 0;
-            for (Integer uri : spaceNode.getOverlappingURIs()) {
-                sum += spaceNode.getSpaceProvider().get(uri).getComplexityMeasure();
-                if (sum > 100) return false;
-            }
-            return sum <= 100;
         }
     };
 

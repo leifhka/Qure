@@ -49,7 +49,7 @@ public class GeometryProvider implements SpaceProvider {
         coversUniverse = new HashSet<Integer>();
     }
 
-    public GeometryProvider(Config config, GeometrySpace universe, Map<Integer, GeometrySpace> geometries,
+    private GeometryProvider(Config config, GeometrySpace universe, Map<Integer, GeometrySpace> geometries,
                             Set<Integer> coversUniverse, GeometryFactory geometryFactory) {
         this.config = config;
         this.universe = universe;
@@ -58,7 +58,7 @@ public class GeometryProvider implements SpaceProvider {
         this.geometryFactory = geometryFactory;
     }
 
-    public GeometryProvider(Config config, GeometrySpace universe, Map<Integer, GeometrySpace> geometries, 
+    private GeometryProvider(Config config, GeometrySpace universe, Map<Integer, GeometrySpace> geometries, 
                             Set<Integer> coversUniverse, GeometryFactory geometryFactory,
                             Set<Integer> urisToInsert) {
         this.config = config;

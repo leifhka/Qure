@@ -31,61 +31,34 @@ public class Qure {
 
     public static void main(String[] args) {
 
-        //runBenchmark(new Config(), "ins.dallas_2000", "qure.dallas_d15_k3_nc", "geo.dallas");
+        // Block b1 = new Block(7, 45<<1);
+        // Block b2 = new Block(6, 45);
 
-       //runBulk(new Config("dallas", "cwis2", 15, 3));  
-       runManyBulk();
+        // System.out.println(b1.toString());
+        // System.out.println(b2.toString());
+        // System.out.println(b2.blockPartOf(b1));
+        // System.out.println(b1.blockPartOf(b2));
+
+        // Block[] bs = (new BintreeFactory()).makeNDistinct(10);
+        // Set<Block> bss = new HashSet<Block>();
+
+        // for (Block b : bs) {
+        //     System.out.println(b);
+        //     bss.add(b);
+        // }
+
+        // Bintree bt = new Bintree(bss, new BintreeFactory());
+        // System.out.println(bt);
+        // System.out.println(bt.normalize());
+        
+        runBulk(new Config("dallas", "newBlock8", 15, 3));
+        //runManyBulk();
     }
 
     public static void runManyBulk() {
         
         Config[] configs = new Config[2];
         int i = 0;
-
-        //Config dallas = new Config("dallas", "cwl2", 20, 3);
-        //configs[i++] = dallas;
-
-        //Config dallas2 = new Config("dallas", "cwl2", 25, 3);
-        //configs[i++] = dallas2;
-
-        //Config osmno = new Config("osm_no", "cwl2", 15, 3);
-        //configs[i++] = osmno;
-
-        // Config osmno2 = new Config("osm_no", "cwl2", 25, 3);
-        // configs[i++] = osmno2;
-
-        // Config dallas3 = new Config("dallas", "cwl2", 15, 2);
-        // configs[i++] = dallas3;
-
-        // Config dallas4 = new Config("dallas", "cwl2", 15, 4);
-        // configs[i++] = dallas4;
-
-        // Config osmno3 = new Config("osm_no", "cwl2", 20, 2);
-        // configs[i++] = osmno3;
-
-        // Config osmno4 = new Config("osm_no", "cwl2", 20, 4);
-        // configs[i++] = osmno4;
-
-
-        // Config osmno5 = new Config("osm_no", "cwl2_20", 20, 3);
-        // osmno5.maxIterDepth = 20;
-        // osmno5.writeBintreesToDB = false;
-        // configs[i++] = osmno5;
-
-        // Config osmno6 = new Config("osm_no", "cwl2_30", 20, 3);
-        // osmno6.maxIterDepth = 30;
-        // osmno6.writeBintreesToDB = false;
-        // configs[i++] = osmno6;
-
-        Config dallas5 = new Config("dallas", "cwl2_20", 15, 3);
-        dallas5.maxIterDepth = 20;
-        dallas5.writeBintreesToDB = false;
-        configs[i++] = dallas5;
-
-        Config dallas6 = new Config("dallas", "cwl2_30", 15, 3);
-        dallas6.maxIterDepth = 30;
-        dallas6.writeBintreesToDB = false;
-        configs[i++] = dallas6;
 
         runMany(configs);
     }
@@ -214,19 +187,8 @@ public class Qure {
             Iterator<Integer> uriIter = urisToInsert.iterator();
             int offset = config.insertTotal;
 
-            if (config.verbose) {
-                System.out.println("Config:");
-                System.out.println("--------------------------------------");
-                System.out.println("* Geo. table: " + config.geoTableName);
-                System.out.println("* Bintree type: " + config.bf.toString());
-                System.out.println("* Max iter. depth: " + config.maxIterDepth);
-                System.out.println("* Block member count: " + config.blockMemberCount);
-                System.out.println("* Representation depth: " + config.representationDepth);
-                System.out.println("* Overlaps arity: " + config.overlapsArity);
-                System.out.println("* Write to: " + config.btTableName);
-                System.out.println("--------------------------------------");
-            }
-
+            if (config.verbose) printConfig(config);
+            
             Set<Integer> oneOffset = new HashSet<Integer>(config.insertOffset);
             int count = 0;
 
@@ -245,25 +207,26 @@ public class Qure {
             finishTime();
         }
     }
+
+    private static void printConfig(Config config) {
+        System.out.println("Config:");
+        System.out.println("--------------------------------------");
+        System.out.println("* Geo. table: " + config.geoTableName);
+        System.out.println("* Max iter. depth: " + config.maxIterDepth);
+        System.out.println("* Block member count: " + config.blockMemberCount);
+        System.out.println("* Representation depth: " + config.representationDepth);
+        System.out.println("* Overlaps arity: " + config.overlapsArity);
+        System.out.println("* Write to: " + config.btTableName);
+        System.out.println("--------------------------------------");
+    }
     
     private static void runBulk(Config config) {
 
-        if (config.verbose) {
-            System.out.println("Config:");
-            System.out.println("--------------------------------------");
-            System.out.println("* Geo. table: " + config.geoTableName);
-            System.out.println("* Bintree type: " + config.bf.toString());
-            System.out.println("* Max iter. depth: " + config.maxIterDepth);
-            System.out.println("* Block member count: " + config.blockMemberCount);
-            System.out.println("* Representation depth: " + config.representationDepth);
-            System.out.println("* Overlaps arity: " + config.overlapsArity);
-            System.out.println("* Write to: " + config.btTableName);
-            System.out.println("--------------------------------------");
-        }
+        if (config.verbose) printConfig(config);
 
         SpaceProvider geometries = new GeometryProvider(config);
         geometries.populate();
-        SpaceToBintreeRec gtb = new SpaceToBintreeRec(config);
+        SpaceToBintree gtb = new SpaceToBintree(config);
 
         long before = System.currentTimeMillis();
 
@@ -296,7 +259,7 @@ public class Qure {
 
         SpaceProvider geometries = new GeometryProvider(config, urisToInsert);
         geometries.populate();
-        SpaceToBintreeRec gtb = new SpaceToBintreeRec(config);
+        SpaceToBintree gtb = new SpaceToBintree(config);
 
         long before = System.currentTimeMillis();
 
@@ -448,8 +411,7 @@ public class Qure {
 
     private static void writeBintreesToDB(Representation rep, Config config) throws Exception {
 
-        //Map<Integer, Bintree> res = rep.getRepresentation();
-        Map<Integer, Collection<Block>> res = rep.getRepresentation();
+        Map<Integer, Bintree> res = rep.getRepresentation();
         Space universe = rep.getUniverse();
 
         try {
@@ -479,41 +441,16 @@ public class Qure {
             for (Integer uri : res.keySet()) {
 
                 query = "INSERT INTO " + config.btTableName + " VALUES ";
-                //String[] blocks = res.get(uri).asDBStrings(rep.getWitnesses().get(uri));
-                //Bintree[] blocks = res.get(uri).toBlocks();
-                //Bintree wit = rep.getWitnesses().get(uri);
-                Collection<Block> blocksArr = res.get(uri);
+                Set<Block> blocksArr = res.get(uri).getBlocks();
                 Block[] blocks = blocksArr.toArray(new Block[blocksArr.size()]);
 
                 boolean witDone = false;
-                for (int i = 0; i < blocks.length-1; i++) {
-                    if (!witDone && blocks[i].isWitness()) {
-                        query += "('" + uri + "', " + blocks[i].asCompactMortonBlockWitness() + "), ";
-                        witDone = true;
-                    } else {
-                        query += "('" + uri + "', " + blocks[i].asCompactMortonBlock() + "), ";
-                    }
-                }
-                if (!witDone && blocks[blocks.length-1].isWitness())
-                    query += "('" + uri + "', " + blocks[blocks.length-1].asCompactMortonBlockWitness() + ");";
-                else
-                    query += "('" + uri + "', " + blocks[blocks.length-1].asCompactMortonBlock() + ");";
 
-                // boolean witDone = false;
-                // for (int i = 0; i < blocks.length-1; i++) {
-                //     if (!witDone && blocks[i].isWitness()) {
-                //         query += "('" + uri + "', " + blocks[i].asCompactMortonBlock() + ", " + blocks[i].isWitness() + "), ";
-                //         witDone = true;
-                //     } else {
-                //         query += "('" + uri + "', " + blocks[i].asCompactMortonBlock() + ", false), ";
-                //     }
-                // }
-                // query += "('" + uri + "', " + blocks[blocks.length-1].asCompactMortonBlock() + ", " + (!witDone && blocks[blocks.length-1].isWitness()) + ");";
+                for (int i = 0; i < blocks.length-1; i++)
+                    query += "('" + uri + "', " + blocks[i].getRepresentation() + "), ";
 
-                // for (int i = 0; i < blocks.length-1; i++) {
-                //     query += "('" + uri + "', " + blocks[i] + ", " + wit.partOf(blocks[i]) + "), ";
-                // }
-                // query += "('" + uri + "', " + blocks[blocks.length-1] + ");"; //", " + wit.partOf(blocks[blocks.length-1]) + ");";
+                query += "('" + uri + "', " + blocks[blocks.length-1].getRepresentation() + ");";
+
                 statement.addBatch(query);
                 if (config.verbose) prog.update();
             }
@@ -537,6 +474,7 @@ public class Qure {
             if (config.verbose) System.out.print("Constructing index structures...");
             statement.executeUpdate("CREATE INDEX " + config.rawBTTableName + "_gid_index ON " + config.btTableName + "(gid);");
             statement.executeUpdate("CREATE INDEX " + config.rawBTTableName + "_block_index ON " + config.btTableName + "(block);");
+            statement.executeUpdate("CREATE INDEX " + config.rawBTTableName + "_wit_index ON " + config.btTableName + "(block) WHERE block % 2 != 0;");
             if (config.verbose) System.out.println(" Done.");
 
         } catch (ClassNotFoundException e) {
@@ -582,8 +520,8 @@ public class Qure {
             for (Integer uri : res.keySet()) {
                 String delQuery = "DELETE FROM " + config.btTableName + " WHERE ";
                 delQuery += config.uriColumn + " = '" + uri + "' AND (false";
-                for (Bintree block : res.get(uri).toBlocks()) {
-                    String blockStr = block.asDBStrings()[0];
+                for (Block block : res.get(uri).getBlocks()) {
+                    String blockStr = block.toString();
                     if (block.depth() <= config.representationDepth)
                         delQuery += " OR block = " + blockStr;
                     else
@@ -611,11 +549,12 @@ public class Qure {
 
             for (Integer uri : res.keySet()) {
                 insQuery = "INSERT INTO " + config.btTableName + " VALUES ";
-                String[] strs = res.get(uri).asDBStrings();
-                for (int i = 0; i < strs.length-1; i++) {
-                    insQuery += "('" + uri + "', " + strs[i] + "), ";
+                Set<Block> blocksSet = res.get(uri).getBlocks();
+                Block[] blocks = blocksSet.toArray(new Block[blocksSet.size()]);
+                for (int i = 0; i < blocks.length; i++) {
+                    insQuery += "('" + uri + "', " + blocks[i].getRepresentation() + "), ";
                 }
-                insQuery += "('" + uri + "', " + strs[strs.length-1] + ");";
+                insQuery += "('" + uri + "', " + blocks[blocks.length-1].getRepresentation() + ");";
                 statement.addBatch(insQuery);
                 if (config.verbose) prog.update();
             }
@@ -669,8 +608,6 @@ public class Qure {
             } 
         }
     }
-
-
 
     // Need to close the resultSet
     private static void close() {

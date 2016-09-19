@@ -1,128 +1,235 @@
 package no.uio.ifi.qure;
 
+import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Set;
-import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
 
-public interface Bintree {
 
-    public String toString();
+public class Bintree {
 
-    /**
-     * @return the bintree representing the left part of this tree.
-     */    
-    // public Bintree left();
+    private final BintreeFactory bf;
+    private final Set<Block> bt;
+    private final boolean normalized;
+    private int hashCode;
+    private boolean hashCodeSet;
 
-    // /**
-    //  * @return the bintree representing the right part of this tree.
-    //  */
-    // public Bintree right();
+    public Bintree(Set<Block> bt, BintreeFactory bf) {
+	this.bt = removeRedundantUniqueParts(bt);
+	this.bf = bf;
+        normalized = false;
+    }
 
-    // /**
-    //  * @return true if the left subtree is non-empty, false otherwise.
-    //  */
-    // public boolean isLeft();
-
-    // /**
-    //  * @return true if the right subtree is non-empty, false otherwise.
-    //  */
-    // public boolean isRight();
+    private Bintree(Set<Block> bt, BintreeFactory bf, boolean normalized) {
+	this.bf = bf;
+	this.bt = bt;
+	this.normalized = normalized;
+    }
 
     /**
-     * @return true if the tree is equal to the factory's makeTop()-tree, false otherwise.
+     * Returns a set of blocks equal to argument, but where at most one block is a unique part.
      */
-    public boolean isTop();
+    static private Set<Block> removeRedundantUniqueParts(Set<Block> bt) {
+        
+        Set<Block> nbt = new HashSet<Block>();
+        boolean picked = false;
+
+        for (Block b : bt) {
+            if (!picked && b.isUniquePart()) {
+                nbt.add(b.setUniquePart(true));
+                picked = true;
+            } else {
+                nbt.add(b.setUniquePart(false));
+            }
+        }
+
+        return nbt;
+    }
+
+    public String toString() {
+	return bt.toString();
+    }
+
+    @Override
+    public int hashCode() {
+
+        if (!hashCodeSet) {
+            hashCode = 0;
+            for (Block b : bt) {
+                hashCode += b.hashCode();
+            }
+            hashCodeSet = true;
+        }
+        return hashCode;
+    }
+    
+    public boolean isTop() {
+	return equals(bf.makeTop());
+    }
+
+    public boolean isEmpty() {
+	return equals(bf.makeEmpty());
+    }
+
+    public int depth() {
+
+	int depth = 0;
+
+	for (Block b : bt) {
+	    if (b.getSize() > depth)
+		depth = b.getSize();
+	}
+
+	return depth;
+    }
+
+    public Set<Block> getBlocks() {
+        return bt;
+    }
+
+    public int size() {
+    
+        int size = 0;
+
+        for (Block b : bt) {
+            size = size + b.getSize();
+        }
+    
+        return size;
+    }
 
     /**
-     * @return true if the tree is equal to the factory's makeEmpty()-tree, false otherwise.
+     * Constructs the bintree representing the same space as this, but on normal form,
+     * that is, the bintree with the fewest number of blocks.
      */
-    public boolean isEmpty();
+    public Bintree normalize() {
+
+	if (normalized)
+	    return this;
+
+	Set<Block> bn = new HashSet<Block>();
+        
+        //Add only non-empty and non-contained blocks to bn
+	for (Block b : bt) {
+            if (!b.isEmpty()) {
+                boolean partOf = false;
+                for (Block b2 : bt) {
+                    if (!b.equals(b2) && b.blockPartOf(b2)) {
+                        partOf = true;
+                        break;
+                    }
+                }
+
+	        if (!partOf) bn.add(b);
+            }
+        }
+        
+        Set<Block> bnc = new HashSet<Block>(bn); //Make a copy of bn for iteration
+
+        //Then, merge neighbouring blocks
+        boolean merged = true;
+        
+        while (merged) {
+            merged = false;
+	    for (Block b1 : bnc) {
+	        for (Block b2 : bnc) {
+	    	    if (!b1.equals(b2) && b1.isNeighbours(b2)) {
+	    	        bn.remove(b1);
+	    	        bn.remove(b2);
+	    	        bn.add(b1.getParent().setUniquePart(b1.isUniquePart() || b2.isUniquePart()));
+                        merged = true;
+                        break;
+	    	    }
+	        }
+	    }
+            bnc = new HashSet<Block>(bn);
+        }
+        
+	return new Bintree(bn, bf, true);
+    }
 
     /**
-     * @return true if this bintree is a block, i.e. has exactly one branch, false otherwise.
+     * Returns true if the this has exatcly the same blocks
+     * as argument. To test spatial equality, normalize the
+     * bintrees first.
      */
-     public boolean isBlock();
+    public boolean equals(Object o) {
+
+        if (!(o instanceof Bintree))
+            return false;
+
+        Bintree b = (Bintree) o; 
+
+        return bt.equals(b.getBlocks());
+    }
+
+    public Bintree intersection(Bintree b) {
+
+        Set<Block> res = new HashSet<Block>();
+
+        for (Block b1 : getBlocks()) {
+            for (Block b2 : b.getBlocks()) {
+                Block r =  b1.intersectBlocks(b2);
+                if (!r.isEmpty())
+                    res.add(r);
+            }
+        }
+
+        return new Bintree(res, bf);
+    }
+
+    public Bintree union(Bintree b) {
+
+	Set<Block> rep = new HashSet<Block>(getBlocks());
+        rep.addAll(b.getBlocks());
+
+	return new Bintree(rep, bf);
+    }
+
+    public boolean overlaps(Bintree b) {
+
+        if (b == null || b.isEmpty() || isEmpty())
+            return false;
+        else if (b.isTop() || isTop())
+            return true;
+        else {
+            for (Block b1 : getBlocks()) {
+                for (Block b2 : b.getBlocks()) {
+                    if (b1.blockOverlaps(b2))
+                        return true;
+                }
+            }
+            return false;
+        }
+    }
 
     /**
-     * @return the maximum length from the root of the tree down to a leaf-node.
+     * Returns true of this is contained in argument.
+     * Note that this predicate is only correct for normalized bintrees.
      */
-    public int depth();
+    public boolean partOf(Bintree b) {
 
-    public int size();
-
-    /**
-     * @return a bintree representing the same area in case n is larger than the depth of the shallowest
-     *   branch, but where all branches have depth n. But will return an aproximation if n is less than
-     *   the shallowst branch's depth.
-     */
-    //public Bintree allToDepth(int n);
-
-    /**
-     * @return a bintree where e is appended to every leaf-node of this tree.
-     */
-    //public Bintree appendToAll(Bintree e);
-
-    /**
-     * @return a bintree where e is appended to one leaf-node of this tree.
-     */
-    public Bintree appendToOne(Bintree e);
-
-    /**
-     * @return one block/branch of this bintree
-     */
-    //public Bintree pickOneBranch(int level);
-
-    /**
-     * @return an array of all blocks/paths in this bintree at depth level
-     */
-    //public Bintree[] toBlocks(int level);
-
-    /**
-     * @return an array of all blocks/path in this bintree
-     */
-     public Bintree[] toBlocks();
-
-    /**
-     * @return null if top or not a block, otherwise the bintree representing the parent bloc of this
-     */
-    public Bintree getParentBlock();
-
-    /**
-     * @return null if top or not a block, otherwise the bintree representing the neighbor block of this
-     */
-    public Bintree getNeighborBlock();
-
-    /**
-     * @return null if not a block, otherwise the pair children blocks of this bintree 
-     */
-    public Bintree[] splitBlock();
-
-    /**
-     * @return the equivanlent normalized bintree.
-     */
-    public Bintree normalize();
-
-    public boolean equals(Object b);
-
-    public int hashCode();
-
-    //public Bintree intersection(Bintree b);
-
-    public Bintree union(Bintree b);
-
-    //public Bintree minus(Bintree b);
-
-    //public Bintree complement();
-
-    public boolean overlaps(Bintree b);
-
-    public boolean partOf(Bintree b);
-
-    public String[] asDBStrings();
-
-    public String[] asDBStrings(Bintree witness);
-
-    public Collection<Block> toBlockSet();
-
-    public Collection<Block> toBlockSet(Bintree wit);
+        if (isEmpty())
+            return true;
+        else if (b == null || b.isEmpty())
+            return false;
+        else if (b.isTop())
+            return true;
+        else {
+            boolean found;
+            for (Block b1 : getBlocks()) {
+                found = false;
+                for (Block b2 : b.getBlocks()) {
+                    if (b1.blockPartOf(b2)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    return false;
+            }
+            return true;
+        }
+    }
 }
-

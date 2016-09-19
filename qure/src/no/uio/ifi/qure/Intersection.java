@@ -33,7 +33,14 @@ public class Intersection {
         return (o instanceof Intersection) && elems.equals(((Intersection) o).getElements());
     }
 
+    /**
+     * Returns a new Intersection object representing the intersection
+     * of all elements in this plus the new object e. Returns null
+     * if intersection does not exists (is empty).
+     */
     public Intersection add(Integer e, SpaceProvider spaces) {
+
+        if (elems.contains(e)) return null;
 
         Space s = spaces.get(e);
         Space nsp = null;
@@ -46,7 +53,7 @@ public class Intersection {
             System.exit(1);
         }
 
-        if (elems.contains(e) || nsp.isEmpty())
+        if (nsp.isEmpty())
             return null;
 
         Set<Integer> nelems = new HashSet<Integer>(elems);

@@ -1,42 +1,58 @@
 package no.uio.ifi.qure;
 
-import java.util.List;
-import java.util.Comparator;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
 
-public interface BintreeFactory {
+public class BintreeFactory {
 
-    public String toString();
+    /**
+     * Constructs a new bintree from the argument block.
+     */
+    public Bintree newBintree(Block block) {
+        Set<Block> nbt = new HashSet<Block>();
+        nbt.add(block);
+        return new Bintree(nbt, this);
+    }
 
-    public Bintree makeEmpty();
+    /**
+     * Returns the empty bintree.
+     */
+    public Bintree makeEmpty() {
+	return new Bintree(new HashSet<Block>(), this);
+    }
 
-    public Bintree makeTop();
+    /**
+     * Returns the block containing all other blocks.
+     */
+    public Block makeTopBlock() {
+        return Block.TOPBLOCK;
+    }
 
-    public Bintree[] makeNDistinct(int n);
+    /**
+     * Returns the bintree containint all other bintrees.
+     */
+    public Bintree makeTop() {
+        Set<Block> t = new HashSet<Block>();
+        t.add(new Block(0,0));
+	return new Bintree(t, this);
+    }
 
-    // public Bintree makeAboveAprox(Space g, Space universe, int level);
+    /**
+     * @param n the number of distinct objects to return
+     * @return an array of n pairwise disjoint bintrees
+     */
+    public Block[] makeNDistinct(int n) {
+         
+        double log2n = Math.log(n)/Math.log(2);
+        int size = Math.toIntExact(Math.round(Math.ceil(log2n)));
 
-    // public Bintree makeBelowAprox(Space g, Space universe, int level);
+        Block[] res = new Block[n];
 
-   /**
-   * Gives a lexicographic total order on bintrees, used for sorting.
-   * Blocks will be sorted according to z-order.
-   */
-   // public default Comparator<Bintree> getComparator() {
-   //      return new Comparator<Bintree>() {
-   //          public int compare(Bintree b1, Bintree b2) {
-   //              if (b1.isEmpty())
-   //                  return (b2.isEmpty()) ? 0 : -1;
-   //              else if (b1.isTop())
-   //                  return (b2.isTop()) ? 0 : 1;
-   //              else if (b2.isEmpty())
-   //                  return 1;
-   //              else if (b2.isTop())
-   //                  return -1;
-   //              else {
-   //                  int leftCT = compare(b1.left(), b2.left());
-   //                  return (leftCT == 0) ? compare(b1.right(), b2.right()) : leftCT;
-   //              }
-   //          }
-   //      };
-   //  }
+        for (int i = 0; i < n; i++) {
+            res[i] = new Block(size, i);
+        }
+        return res;
+    }
 }
