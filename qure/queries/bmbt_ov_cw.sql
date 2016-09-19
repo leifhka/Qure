@@ -1,15 +1,7 @@
-CREATE OR REPLACE FUNCTION bmbt_ov_cw(bm text, bt_name text) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION bmbt_ov_cw2(bm text, bt_name text) RETURNS integer AS $$
 DECLARE
   id_val integer;
-  len_s integer;
-  len_v integer;
-  len_b integer;
-  lh integer;
 BEGIN
-  len_s := 7;
-  len_v := 56;
-  len_b := ((len_s + len_v)+1);
-  lh := (1 << len_s)-1;
   FOR id_val IN EXECUTE ('SELECT * FROM ' || bm) LOOP
     EXECUTE '
     SELECT DISTINCT T2.gid 
@@ -21,10 +13,10 @@ BEGIN
                  (50), (51), (52), (53), (54)) AS V(n)
     WHERE T1.gid = ' || id_val || ' AND 
           ((T1.block & -2 <= T2.block AND
-            (((1::bigint << ((' || len_b || ' - 1) - ((T1.block & ' || lh || ')::int >> 1)) - 1) | T1.block) >= T2.block)) OR
-           (((T1.block & ' || lh || ') >> 1) >= V.n AND
-            T2.block >= ((T1.block & ~((1::bigint << ((' || len_b || ' - V.n) - 1)) - 1)) | (V.n<<1)) AND
-            T2.block <= ((T1.block & ~((1::bigint << ((' || len_b || ' - V.n) - 1)) - 1)) | ((V.n<<1)+1))) OR
+            (((1::bigint << (63 - ((T1.block & 127)::int >> 1)) - 1) | T1.block) >= T2.block)) OR
+           (((T1.block & 127) >> 1) >= V.n AND
+            T2.block >= ((T1.block & ~((1::bigint << ((64 - V.n) - 1)) - 1)) | (V.n<<1)) AND
+            T2.block <= ((T1.block & ~((1::bigint << ((64 - V.n) - 1)) - 1)) | ((V.n<<1)+1))) OR
             T2.block = 0)
 ';
   END LOOP;
