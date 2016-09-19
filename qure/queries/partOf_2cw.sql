@@ -1,7 +1,6 @@
 \set id_val 1350841
 \set geo_name geo.osm_no
 \set bt_name qure.osm_no_d20_k3_cw
-\set ov_name osmppov
 \set len_s 7
 \set len_v 56
 \set len_b ((:len_s + :len_v)+1)
@@ -12,7 +11,7 @@ SELECT count(block) AS number_of_blocks
 FROM :bt_name
 WHERE gid = :id_val;
 
-SELECT COUNT(DISTINCT T2.gid)
+SELECT DISTINCT T2.gid
 FROM 
   :bt_name T1, :bt_name T2,
   (VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12), (13),
@@ -27,7 +26,6 @@ WHERE
   T2.block >= ((T1.block & ~((1::bigint << ((:len_b - V.n) - 1)) - 1)) | (V.n<<1)) AND
   T2.block <= ((T1.block & ~((1::bigint << ((:len_b - V.n) - 1)) - 1)) | ((V.n<<1)+1));
  
---EXPLAIN ANALYZE
-SELECT COUNT(DISTINCT T2.gid)
+SELECT DISTINCT T2.gid
 FROM :geo_name T1, :geo_name T2
 WHERE T1.gid = :id_val AND ST_coveredBy(T1.geom, T2.geom);
