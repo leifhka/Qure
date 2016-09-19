@@ -31,100 +31,10 @@ public class Qure {
 
     public static void main(String[] args) {
 
-        // Block b1 = new Block(7, 45<<1);
-        // Block b2 = new Block(6, 45);
-
-        // System.out.println(b1.toString());
-        // System.out.println(b2.toString());
-        // System.out.println(b2.blockPartOf(b1));
-        // System.out.println(b1.blockPartOf(b2));
-
-        // Block[] bs = (new BintreeFactory()).makeNDistinct(10);
-        // Set<Block> bss = new HashSet<Block>();
-
-        // for (Block b : bs) {
-        //     System.out.println(b);
-        //     bss.add(b);
-        // }
-
-        // Bintree bt = new Bintree(bss, new BintreeFactory());
-        // System.out.println(bt);
-        // System.out.println(bt.normalize());
-        
-        runBulk(new Config("dallas", "newBlock8", 15, 3));
-        //runManyBulk();
+        runBulk(new Config("dallas", 15, 3));
     }
 
-    public static void runManyBulk() {
-        
-        Config[] configs = new Config[2];
-        int i = 0;
-
-        runMany(configs);
-    }
-
-
-    public static void runManyMD() {
-        
-        Config[] configs = new Config[6];
-        int i = 0;
-
-        Config dallas = new Config("dallas", "", 15, 3);
-        dallas.maxIterDepth = 20;
-        configs[i++] = dallas;
-
-        Config dallas2 = new Config("dallas", "nc_ins", 15, 3);
-        dallas2.maxIterDepth = 30;
-        configs[i++] = dallas2;
-
-        Config osmno = new Config("osm_no", "nc_ins", 20, 3);
-        osmno.maxIterDepth = 20;
-        configs[i++] = osmno;
-
-        Config osmno2 = new Config("osm_no", "nc_ins", 15, 3);
-        osmno2.maxIterDepth = 30;
-        configs[i++] = osmno2;
-
-        runMany(configs);
-    }
-
-
-    public static void runManyIns() {
-
-        Config[] configs = new Config[11];
-        int i = 0;
-
-        Config osmdk = new Config("osm_dk", "nc_ins", 20, 3);
-        configs[i++] = osmdk;
-
-        Config dallas = new Config("dallas", "nc_ins", 15, 3);
-        configs[i++] = dallas;
-
-        Config dallas2 = new Config("dallas", "nc_ins", 20, 3);
-        configs[i++] = dallas2;
-
-        Config dallas3 = new Config("dallas", "cf_ins", 25, 3);
-        configs[i++] = dallas3;
-
-        Config osmno = new Config("osm_no", "nc_ins", 20, 3);
-        configs[i++] = osmno;
-
-        Config osmno2 = new Config("osm_no", "nc_ins", 15, 3);
-        configs[i++] = osmno2;
-
-        Config osmno3 = new Config("osm_no", "cf_ins", 25, 3);
-        configs[i++] = osmno3;
-
-        Config npd = new Config("npd", "nc_ins", 15, 3);
-        npd.maxIterDepth = 30;
-        configs[i++] = npd;
-
-        //runMany(configs);
-        runManyInsert(configs);
-        //finishTime();
-    }
-
-    private static void takeTime(long before, long after, String name,
+    public static void takeTime(long before, long after, String name,
                                  String what, boolean print, boolean writeToFile) {
 
         long totalSec = (long) Math.round(((after - before) / 1000.0));
@@ -153,7 +63,7 @@ public class Qure {
         }
     }
 
-    private static void finishTime() {
+    public static void finishTime() {
         for (String what : times.keySet()) {
             long total = times.get(what);
             long mins = (long) Math.floor(total / 60.0);
@@ -170,45 +80,7 @@ public class Qure {
         times = new HashMap<String, Long>();
     }
             
-
-    private static void runMany(Config[] configs) {
-
-        for (int i = 0; i < configs.length; i++) {
-            Config config = configs[i];
-            runBulk(config);
-        }
-    }
-
-    private static void runManyInsert(Config[] configs) {
-
-        for (int i = 0; i < configs.length; i++) {
-            Config config = configs[i];
-            Set<Integer> urisToInsert = queryForInsertURIs(config);
-            Iterator<Integer> uriIter = urisToInsert.iterator();
-            int offset = config.insertTotal;
-
-            if (config.verbose) printConfig(config);
-            
-            Set<Integer> oneOffset = new HashSet<Integer>(config.insertOffset);
-            int count = 0;
-
-            while (uriIter.hasNext()) {
-
-                if (count == config.insertOffset) {
-                    System.out.println("Insert number: " + i);
-                    runInsert(config, oneOffset);
-                    oneOffset = new HashSet<Integer>(config.insertOffset);
-                    count = 0;
-                } else {
-                    oneOffset.add(uriIter.next());
-                    count++;
-                }
-            }
-            finishTime();
-        }
-    }
-
-    private static void printConfig(Config config) {
+    public static void printConfig(Config config) {
         System.out.println("Config:");
         System.out.println("--------------------------------------");
         System.out.println("* Geo. table: " + config.geoTableName);
@@ -220,7 +92,7 @@ public class Qure {
         System.out.println("--------------------------------------");
     }
     
-    private static void runBulk(Config config) {
+    public static void runBulk(Config config) {
 
         if (config.verbose) printConfig(config);
 
@@ -253,7 +125,7 @@ public class Qure {
         takeTime(before, after2, config.rawBTTableName, "Total time", true, true);
     }
 
-    private static void runInsert(Config config, Set<Integer> urisToInsert) {
+    public static void runInsert(Config config, Set<Integer> urisToInsert) {
 
         long beforeAll = System.currentTimeMillis();
 
@@ -286,7 +158,7 @@ public class Qure {
         takeTime(beforeAll, afterAll, config.rawBTTableName, "Total insert time", true, false);
     }
 
-    private static void runBenchmark(Config config, String bmName, String btName, String geoName) {
+    public static void runBenchmark(Config config, String bmName, String btName, String geoName) {
 
         try {
             Class.forName("org.postgresql.Driver");
@@ -350,7 +222,7 @@ public class Qure {
         }
     }
 
-    private static String makeBTOverlapsQuery(String gid, String btName) {
+    public static String makeBTOverlapsQuery(String gid, String btName) {
 
         String q;
         q =  "SELECT DISTINCT T2.gid ";
@@ -364,14 +236,14 @@ public class Qure {
         return q;
     }
 
-    private static String makeGeoOverlapsQuery(String gid, String geoName) {
+    public static String makeGeoOverlapsQuery(String gid, String geoName) {
 
         String q = "SELECT DISTINCT T2.gid FROM " + geoName + " AS T1, " + geoName + " AS T2 WHERE T1.gid = " + gid + " AND ST_intersects(T1.geom, T2.geom);";
         return q;
     }
 
 
-    private static Set<Integer> queryForInsertURIs(Config config) {
+    public static Set<Integer> queryForInsertURIs(Config config) {
 
         Set<Integer> res = new HashSet<Integer>();
 
@@ -389,7 +261,7 @@ public class Qure {
 
             statement = connect.createStatement();
 
-            String query = "SELECT * FROM " + config.insertTable + ";";
+            String query = "SELECT * FROM " + config.btTableName + ";";
             statement.execute(query);
             resultSet = statement.getResultSet();
  
@@ -409,7 +281,7 @@ public class Qure {
         return res;
     }
 
-    private static void writeBintreesToDB(Representation rep, Config config) throws Exception {
+    public static void writeBintreesToDB(Representation rep, Config config) throws Exception {
 
         Map<Integer, Bintree> res = rep.getRepresentation();
         Space universe = rep.getUniverse();
@@ -486,16 +358,16 @@ public class Qure {
         }
     }
 
-    private static String makePrefixQuery(String block) {
+    public static String makePrefixQuery(String block) {
         String expr = "(((1::bigint << (63 - (" + block + " & ((1 << 6)-1))::int)) - 1) | " + block + ")";
         String c1 = block + " <= block";
         String c2 = expr + " >= block";
         return "(" + c1 + " AND " + c2 + ")";
     }
 
-    private static void updateBintreesInDB(Representation rep, Config config) throws Exception {
+    public static void updateBintreesInDB(Representation rep, Config config) throws Exception {
 
-        Map<Integer, Bintree> res = new HashMap<Integer, Bintree>(); // TODO: FIx this!!! rep.getRepresentation();
+        Map<Integer, Bintree> res = rep.getRepresentation();
 
         try {
             Class.forName("org.postgresql.Driver");
@@ -579,7 +451,7 @@ public class Qure {
         }
     }
 
-    private static void createTable(Statement statement, Config config) {
+    public static void createTable(Statement statement, Config config) {
 
         boolean tableMade = false;
 
@@ -610,7 +482,7 @@ public class Qure {
     }
 
     // Need to close the resultSet
-    private static void close() {
+    public static void close() {
         try {
             if (statement != null) {
         	statement.close();
