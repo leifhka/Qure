@@ -13,6 +13,9 @@ resulting bintrees, use the SQL-queries
 in the queries-directory.
 
 To compile, simply run
+
     make compile
+
 and to run, execute
+
     make run
