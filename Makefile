@@ -28,7 +28,6 @@ CLASSES = \
         SpaceToBintree.java
 
 source_files = $(addprefix $(src_prefix), $(addprefix $(package_name), $(CLASSES)))
-binary_files = $(addprefix $(bin_prefix), $(addprefix $(package_name), $(CLASSES)))
 
 lib/jts.jar lib/postgresql-9.4.1208.jar:
 	tar axvf lib.tar.gz
