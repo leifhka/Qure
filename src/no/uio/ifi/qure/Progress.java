@@ -34,6 +34,10 @@ public class Progress {
         df = new DecimalFormat(format);
     }
 
+    public Reporter makeReporter() {
+        return new Reporter(this, step);
+    }
+
     public void setConvertToLong(boolean convertToLong) {
         this.convertToLong = convertToLong;
     }
@@ -68,21 +72,7 @@ public class Progress {
         if (longestStringLength < ls) longestStringLength = ls;
     }
 
-    public void update(String prefix, double done) {
-
-        this.prefix = prefix;
-
-        progress += done;
-        totalDone += done;
-        if (progress >= step) {
-            double surp = Math.floor(progress/step);
-            stepsDone += surp;
-            progress = progress - (surp*step);
-        }  
-        printProgress();
-    }
-
-    public void update(double done) {
+    public synchronized void update(double done) {
 
         progress += done;
         totalDone += done;
@@ -98,21 +88,7 @@ public class Progress {
         if (percentUpdate || printOnEveryUpdate) printProgress();
     }
 
-    public void update(String prefix) {
-
-        this.prefix = prefix;
-
-        totalDone++;
-        progress++;
-
-        if (progress >= step) {
-            stepsDone++;
-            progress = 0;
-        }
-        printProgress();
-    }
-
-    public void update() {
+    public synchronized void update() {
 
         progress++;
         totalDone++;
@@ -143,5 +119,38 @@ public class Progress {
         String end = " ";
         for (int i = 0; i < (longestStringLength) - done.length(); i++) end += " ";
         System.out.println("\r" + done + end);
+    }
+
+    /**
+     * Class used for reporting progress when using multiple threads.
+     */
+    class Reporter {
+
+        private double progress, step;
+        private Progress prog;
+
+        Reporter(Progress prog, double step) {
+            this.prog = prog;
+            this.step = step;
+            progress = 0;
+        }
+
+        public Reporter newReporter() { return prog.makeReporter(); }
+
+        public void update(double done) {
+            progress += done;
+            if (progress >= step) {
+                prog.update(progress);
+                progress = 0;
+            }
+        }
+
+        public void update() {
+            progress++;
+            if (progress >= step) {
+                prog.update(progress);
+                progress = 0;
+            }
+        }
     }
 }

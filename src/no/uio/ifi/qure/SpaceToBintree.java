@@ -14,7 +14,6 @@ import java.util.function.Predicate;
 public class SpaceToBintree {
 
     private Config config;
-    private Progress prog;
     private BintreeFactory bf;
 
     public SpaceToBintree(Config config) {
@@ -25,11 +24,12 @@ public class SpaceToBintree {
 
     public Representation constructRepresentations(SpaceProvider spaces) {
 
-        prog = new Progress("Traversing tree...", Math.pow(2, config.maxIterDepth+1)-1,
-                            0.001, "##0.000");
+        Progress prog = new Progress("Traversing tree...", Math.pow(2, config.maxIterDepth+1)-1,
+                                     0.001, "##0.000");
         if (config.verbose) prog.init();
 
         Node root = new Node(bf.makeTopBlock(), spaces, 0);
+        root.setReporter(prog.makeReporter());
         Node newRoot = traverseTree(root);
         
         if (config.verbose) prog.done();
@@ -43,7 +43,7 @@ public class SpaceToBintree {
 
         if (node.isEmpty()) {
             if (config.verbose)
-                prog.update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
+                node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
             return new Node(node.block);
         }
 
@@ -53,7 +53,7 @@ public class SpaceToBintree {
             newNode = new Node(node.getBlock(),
                                RelationshipGraph.makeRelationshipGraph(node, config.overlapsArity));
             if (config.verbose)
-                prog.update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
+                node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
         } else {
             Node[] nodes = node.splitNode(config.dim);
             node.deleteSpaces(); // Free memory
@@ -65,7 +65,7 @@ public class SpaceToBintree {
         
             newNode = newLeftNode.merge(newRightNode);
 
-            if (config.verbose) prog.update();
+            if (config.verbose) node.getReporter().update();
         }
 
         if (newNode.depth() == config.representationDepth) {
@@ -87,6 +87,7 @@ public class SpaceToBintree {
         private SpaceProvider spaces;
         private final int split; // if this block was splitted along the x-axis.
         private final Block block; // the bintree block of this spaceNode.
+        private Progress.Reporter reporter;
 
         public Node(Block block, SpaceProvider spaces, int split) {
             this.block = block;
@@ -123,6 +124,10 @@ public class SpaceToBintree {
             spaces = null;
             split = 0;
         }
+
+        public void setReporter(Progress.Reporter reporter) { this.reporter = reporter; }
+
+        public Progress.Reporter getReporter() { return reporter; }
 
         public Set<Integer> getOverlappingURIs() { return spaces.keySet(); }
 
@@ -223,6 +228,9 @@ public class SpaceToBintree {
                     result[i] = new Node(bs[i], sps[i], (split+1) % dim);
                 }
             }
+            
+            result[0].setReporter(reporter);
+            for (int i = 1; i < result.length; i++) result[i].setReporter(reporter.newReporter());
 
             return result;
         }

@@ -26,7 +26,7 @@ public class Config {
         rawGeoTableName = table;
         geoTableName = "geo." + rawGeoTableName;
 
-        rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity;
+        rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity + "_tester";
         btTableName = "qure." + rawBTTableName;
 
         geoQuerySelectFromStr = "select " + uriColumn + ", " + geoColumn + " from " + geoTableName;
