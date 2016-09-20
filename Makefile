@@ -38,10 +38,8 @@ libs : lib/jts.jar lib/postgresql-9.4.1208.jar
 bin :
 	mkdir -p bin
 
-$(binary_files) : libs bin $(source_files)
+compile : libs bin $(source_files)
 	@$(javac) src/no/uio/ifi/qure/*.java -d bin/
-
-compile : $(binary_files)
 
 run: 
 	date; $(java) no.uio.ifi.qure.Qure; date
