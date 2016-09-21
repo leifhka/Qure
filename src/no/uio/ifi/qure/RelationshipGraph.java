@@ -352,7 +352,7 @@ public class RelationshipGraph {
      * Constructs a relaionship graph based on the relationships between the spaces in spaceNode with
      * overlaps-arity up to overlapsArity.
      */
-    public static RelationshipGraph makeRelationshipGraph(SpaceToBintree.Node spaceNode, int overlapsArity) {
+    public static RelationshipGraph makeRelationshipGraph(TreeNode spaceNode, int overlapsArity) {
 
         SpaceProvider spaces = spaceNode.getSpaceProvider();
         Set<Integer> uris = spaceNode.getOverlappingURIs();
@@ -686,7 +686,7 @@ public class RelationshipGraph {
 
         minimize();
 
-        Block[] witnessesArr = bf.makeNDistinct(nodes.keySet().size()+1);
+        Block[] witnessesArr = Block.makeNDistinct(nodes.keySet().size()+1);
 
         Map<Integer, Bintree> localRep = new HashMap<Integer, Bintree>();
         Map<Integer, Block> wit = new HashMap<Integer, Block>();

@@ -9,20 +9,17 @@ import java.util.Iterator;
 
 public class Bintree {
 
-    private final BintreeFactory bf;
     private final Set<Block> bt;
     private final boolean normalized;
     private int hashCode;
     private boolean hashCodeSet;
 
-    public Bintree(Set<Block> bt, BintreeFactory bf) {
+    public Bintree(Set<Block> bt) {
 	this.bt = removeRedundantUniqueParts(bt);
-	this.bf = bf;
         normalized = false;
     }
 
-    private Bintree(Set<Block> bt, BintreeFactory bf, boolean normalized) {
-	this.bf = bf;
+    private Bintree(Set<Block> bt, boolean normalized) {
 	this.bt = bt;
 	this.normalized = normalized;
     }
@@ -65,11 +62,14 @@ public class Bintree {
     }
     
     public boolean isTop() {
-	return equals(bf.makeTop());
+        if (bt.size() != 1) return false;
+
+        Block b = getBlocks().iterator().next(); 
+	return b.equals(Block.TOPBLOCK);
     }
 
     public boolean isEmpty() {
-	return equals(bf.makeEmpty());
+	return bt.isEmpty();
     }
 
     public int depth() {
@@ -146,7 +146,7 @@ public class Bintree {
             bnc = new HashSet<Block>(bn);
         }
         
-	return new Bintree(bn, bf, true);
+	return new Bintree(bn, true);
     }
 
     /**
@@ -176,7 +176,7 @@ public class Bintree {
             }
         }
 
-        return new Bintree(res, bf);
+        return new Bintree(res);
     }
 
     public Bintree union(Bintree b) {
@@ -184,7 +184,7 @@ public class Bintree {
 	Set<Block> rep = new HashSet<Block>(getBlocks());
         rep.addAll(b.getBlocks());
 
-	return new Bintree(rep, bf);
+	return new Bintree(rep);
     }
 
     public boolean overlaps(Bintree b) {

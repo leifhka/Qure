@@ -33,8 +33,8 @@ public class Config {
         geoQueryStr = geoQuerySelectFromStr + ";";
     }
 
-    public Predicate<SpaceToBintree.Node> atMaxDepth = new Predicate<SpaceToBintree.Node>() {
-        public boolean test(SpaceToBintree.Node node) {
+    public Predicate<TreeNode> atMaxDepth = new Predicate<TreeNode>() {
+        public boolean test(TreeNode node) {
             int d = node.getBlock().depth();
             return d >= maxIterDepth ||
                    (d >= representationDepth && node.getOverlappingURIs().size() <= blockMemberCount);

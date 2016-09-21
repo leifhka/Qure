@@ -26,6 +26,20 @@ public class Representation {
         isNormalized = true;
     }
 
+    public Representation merge(Representation other) {
+
+        Map<Integer, Bintree> orep = other.getRepresentation();
+
+        for (Integer oid : orep.keySet()) {
+            if (!representation.containsKey(oid))
+                representation.put(oid, orep.get(oid));
+            else 
+                representation.put(oid, representation.get(oid).union(orep.get(oid)));
+        }
+
+        return this;
+    }
+
     public Map<Integer, Bintree> getRepresentation() { return representation; }
 
     public Space getUniverse() {

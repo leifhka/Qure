@@ -204,4 +204,22 @@ public class Block {
         for (int i = 0; i < Long.numberOfLeadingZeros(value); i++) zeros += "0";
         return zeros + Long.toBinaryString(value);
     }
+
+    /**
+     * @param n the number of distinct objects to return
+     * @return an array of n pairwise disjoint bintrees
+     */
+    public static Block[] makeNDistinct(int n) {
+         
+        double log2n = Math.log(n)/Math.log(2);
+        int size = Math.toIntExact(Math.round(Math.ceil(log2n)));
+
+        Block[] res = new Block[n];
+
+        for (int i = 0; i < n; i++) {
+            res[i] = new Block(size, i);
+        }
+        return res;
+    }
+
  }
