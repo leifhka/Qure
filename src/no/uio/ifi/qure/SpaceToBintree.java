@@ -14,12 +14,10 @@ import java.util.function.Predicate;
 public class SpaceToBintree {
 
     private Config config;
-    private BintreeFactory bf;
 
     public SpaceToBintree(Config config) {
 
         this.config = config;
-        this.bf = config.bf;
     }
 
     public Representation constructRepresentations(SpaceProvider spaces) {
@@ -28,7 +26,7 @@ public class SpaceToBintree {
                                      0.001, "##0.000");
         if (config.verbose) prog.init();
 
-        TreeNode root = new TreeNode(bf.makeTopBlock(), spaces, 0);
+        TreeNode root = new TreeNode(Block.TOPBLOCK, spaces, 0);
         root.setReporter(prog.makeReporter());
         TreeNode newRoot = traverseTree(root);
         
@@ -44,7 +42,7 @@ public class SpaceToBintree {
         if (node.isEmpty()) {
             if (config.verbose)
                 node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
-            return new TreeNode(node.block);
+            return new TreeNode(node.getBlock());
         }
 
         TreeNode newNode;
@@ -55,7 +53,7 @@ public class SpaceToBintree {
             if (config.verbose)
                 node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
         } else {
-            TreeNode[] nodes = node.splitNode(config.dim);
+            TreeNode[] nodes = node.splitNode(config.dim, config.representationDepth);
             node.deleteSpaces(); // Free memory
             TreeNode leftNode = nodes[0];
             TreeNode rightNode = nodes[1];
@@ -71,7 +69,7 @@ public class SpaceToBintree {
         if (newNode.depth() == config.representationDepth) {
             
             newNode = new TreeNode(newNode.getBlock(), 
-                                   newNode.getGraph().constructRepresentation(config.bf));
+                                   newNode.getGraph().constructRepresentation());
         }
 
         newNode = newNode.addCovering(node.getCovering());

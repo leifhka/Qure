@@ -673,7 +673,7 @@ public class RelationshipGraph {
         }
     }
 
-    public Representation constructRepresentation(BintreeFactory bf) { //, Map<Integer, Bintree> witnesses) {
+    public Representation constructRepresentation() { 
 
         Set<Integer> nus = new HashSet<Integer>(nodes.keySet());
         for (Integer u : nus) {
@@ -697,7 +697,7 @@ public class RelationshipGraph {
             bt = block.append(witnessesArr[i++]);
             if (!isOverlapsNode(node))
                 wit.put(node, bt);
-            localRep.put(node, bf.newBintree(bt));
+            localRep.put(node, Bintree.fromBlock(bt));
         }
 
         while (!nodes.isEmpty()) {
@@ -733,7 +733,7 @@ public class RelationshipGraph {
                     else
                         cbs.add(b);
                 }
-                urisRep.put(uri, new Bintree(cbs, bf));
+                urisRep.put(uri, new Bintree(cbs));
             }
         }
 

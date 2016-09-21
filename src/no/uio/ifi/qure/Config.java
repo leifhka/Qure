@@ -11,7 +11,6 @@ public class Config {
     public String geoQuerySelectFromStr;
     public String geoQueryStr;
 
-    public BintreeFactory bf = new BintreeFactory();
     public int maxIterDepth = 40;
     public int blockMemberCount = 30;
     public int representationDepth = 15;
@@ -27,6 +26,21 @@ public class Config {
         geoTableName = "geo." + rawGeoTableName;
 
         rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity + "_tester";
+        btTableName = "qure." + rawBTTableName;
+
+        geoQuerySelectFromStr = "select " + uriColumn + ", " + geoColumn + " from " + geoTableName;
+        geoQueryStr = geoQuerySelectFromStr + ";";
+    }
+
+    public Config(String table, String suff, int representationDepth, int overlapsArity) {
+
+        this.overlapsArity = overlapsArity;
+        this.representationDepth = representationDepth;
+
+        rawGeoTableName = table;
+        geoTableName = "geo." + rawGeoTableName;
+
+        rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity + "_" + suff;
         btTableName = "qure." + rawBTTableName;
 
         geoQuerySelectFromStr = "select " + uriColumn + ", " + geoColumn + " from " + geoTableName;

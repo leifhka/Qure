@@ -469,9 +469,9 @@ public class Qure {
             } catch (SQLException sqlex) {
                 System.out.println("Error on table creation with name " + config.btTableName + ":");
                 System.out.println(sqlex.getMessage());
-                System.out.print("Try a new table name (or just hit return twice to abort): ");
+                System.out.print("Try to add a new table name suffix (or just hit return twice to abort): ");
                 Scanner scan = new Scanner(System.in).useDelimiter("[ \n]"); // Table name is only one word
-                config.btTableName = scan.next();
+                config = new Config(config.rawGeoTableName, scan.next(), config.representationDepth, config.overlapsArity);
                 System.out.println("");
                 if (config.btTableName.equals("")) {
                     close();

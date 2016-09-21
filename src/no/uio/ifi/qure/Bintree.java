@@ -24,6 +24,13 @@ public class Bintree {
 	this.normalized = normalized;
     }
 
+    public static Bintree fromBlock(Block block) {
+        Set<Block> nbt = new HashSet<Block>();
+        nbt.add(block);
+
+        return new Bintree(nbt);
+    }
+
     /**
      * Returns a set of blocks equal to argument, but where at most one block is a unique part.
      */
