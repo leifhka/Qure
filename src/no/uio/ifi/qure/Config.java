@@ -17,6 +17,9 @@ public class Config {
     public int overlapsArity = 3;
     public int dim = 2;
 
+    public int maxDiff = 1000;
+    public int maxSplit = 5;
+ 
     public Config(String table, int representationDepth, int overlapsArity) {
 
         this.overlapsArity = overlapsArity;
@@ -25,7 +28,7 @@ public class Config {
         rawGeoTableName = table;
         geoTableName = "geo." + rawGeoTableName;
 
-        rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity + "_tester";
+        rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity;
         btTableName = "qure." + rawBTTableName;
 
         geoQuerySelectFromStr = "select " + uriColumn + ", " + geoColumn + " from " + geoTableName;

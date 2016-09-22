@@ -53,7 +53,8 @@ public class SpaceToBintree {
             if (config.verbose)
                 node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
         } else {
-            TreeNode[] nodes = node.splitNode(config.dim, config.representationDepth);
+            TreeNode[] nodes = node.splitNodeEvenly(config.dim, config.representationDepth,
+                                                    config.maxSplit, config.maxDiff);
             node.deleteSpaces(); // Free memory
             TreeNode leftNode = nodes[0];
             TreeNode rightNode = nodes[1];

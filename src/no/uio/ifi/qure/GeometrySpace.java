@@ -33,20 +33,19 @@ public class GeometrySpace implements Space {
         return gc.getFactory().buildGeometry(gs);
     }
 
-    public Geometry getGeometry() {
-        return geo;
-    }
+    public GeometrySpace clone() { return new GeometrySpace((Geometry)(Geometry)  getGeometry().clone()); }
 
-    public boolean isEmpty() {
-        return geo.isEmpty();
-    }
+    public Geometry getGeometry() { return geo; }
 
-    public boolean isPoint() {
-        return geo.getDimension() == 0;
-    }
+    public boolean isEmpty() { return geo.isEmpty(); }
 
-    public int getComplexityMeasure() {
-        return geo.getNumPoints();
+    public boolean isPoint() { return geo.getDimension() == 0; }
+
+    public int getComplexityMeasure() { return geo.getNumPoints(); }
+
+    public GeometrySpace union(Space o) {
+        Geometry go = ((GeometrySpace) o).getGeometry();
+        return new GeometrySpace(geo.union(go));
     }
 
     public GeometrySpace intersection(Space o) {
@@ -77,14 +76,10 @@ public class GeometrySpace implements Space {
     }
 
     public GeometrySpace[] split(int dim) {
-        return split(dim == 0);
-    }
-    
-    public GeometrySpace[] split(boolean xSplit) {
 
         Envelope te = geo.getEnvelopeInternal();
 
-        Envelope[] es = splitEnvelope(te, xSplit);
+        Envelope[] es = splitEnvelope(te, dim == 0);
         GeometryFactory gf = geo.getFactory();
         GeometrySpace gs1 = new GeometrySpace(gf.toGeometry(es[0]));
         GeometrySpace gs2 = new GeometrySpace(gf.toGeometry(es[1]));
@@ -99,7 +94,10 @@ public class GeometrySpace implements Space {
     }
 
     public String toString() {
-        return geo.toString();
+        if (geo.isRectangle())
+            return geo.getEnvelopeInternal().toString();
+        else
+            return geo.toString();
     }
 
     public boolean equals(Object o) {

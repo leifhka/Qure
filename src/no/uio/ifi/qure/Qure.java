@@ -20,6 +20,18 @@ import java.sql.Statement;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.PrecisionModel;
+import com.vividsolutions.jts.geom.CoordinateSequence;
+import com.vividsolutions.jts.io.ParseException;
+import com.vividsolutions.jts.precision.EnhancedPrecisionOp;
+import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
+import com.vividsolutions.jts.geom.IntersectionMatrix;
+import com.vividsolutions.jts.geom.Envelope;
+
+
+
 public class Qure {
 
     private static Connection connect = null;
@@ -31,7 +43,7 @@ public class Qure {
 
     public static void main(String[] args) {
 
-        runBulk(new Config("dallas", 15, 3));
+        runBulk(new Config("osm_no", "es", 15, 3));
     }
 
     public static void takeTime(long before, long after, String name,

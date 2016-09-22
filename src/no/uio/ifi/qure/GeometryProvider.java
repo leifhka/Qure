@@ -9,6 +9,7 @@ import com.vividsolutions.jts.io.WKBReader;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.PrecisionModel;
+import com.vividsolutions.jts.geom.CoordinateSequence;
 import com.vividsolutions.jts.io.ParseException;
 import com.vividsolutions.jts.precision.EnhancedPrecisionOp;
 import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
@@ -84,12 +85,12 @@ public class GeometryProvider implements SpaceProvider {
         }
     }
 
-    public Map<Integer, GeometrySpace> getSpaces() {
-        return geometries;
-    }
+    public Map<Integer, GeometrySpace> getSpaces() { return geometries; }
 
-    public GeometryFactory getGeometryFactory() {
-        return geometryFactory;
+    public GeometryFactory getGeometryFactory() { return geometryFactory; }
+
+    public GeometrySpace makeEmptySpace() { 
+         return new GeometrySpace(geometryFactory.createPoint((CoordinateSequence) null));
     }
 
     private void obtainUniverse() {
@@ -118,21 +119,13 @@ public class GeometryProvider implements SpaceProvider {
         if (config.verbose) System.out.println("Universe set to: " + universe.toString());
     }
 
-    public GeometrySpace getUniverse() {
-        return universe;
-    }
+    public GeometrySpace getUniverse() { return universe; }
 
-    public Set<Integer> getCoversUniverse() {
-        return coversUniverse;
-    }
+    public Set<Integer> getCoversUniverse() { return coversUniverse; }
 
-    public Geometry toGeometry(Envelope envelope) {
-        return getGeometryFactory().toGeometry(envelope);
-    }
+    public Geometry toGeometry(Envelope envelope) { return getGeometryFactory().toGeometry(envelope); }
 
-    public Set<Integer> keySet() {
-        return getSpaces().keySet();
-    }
+    public Set<Integer> keySet() { return getSpaces().keySet(); }
 
     public GeometrySpace get(Integer uri) {
 
@@ -147,13 +140,8 @@ public class GeometryProvider implements SpaceProvider {
         }
     }
 
-    public GeometryProvider[] splitProvider(int split, int depth) {
-        return splitProvider(split == 0, depth);
-    }
+    private GeometryProvider[] makeSubProviders(GeometrySpace[] childUniverseres, int depth) {
 
-    public GeometryProvider[] splitProvider(boolean xSplit, int depth) {
-
-        GeometrySpace[] childUniverseres = universe.split(xSplit);
         GeometryProvider[] res = new GeometryProvider[childUniverseres.length];
 
         for (int i = 0; i < childUniverseres.length; i++) {
@@ -183,6 +171,37 @@ public class GeometryProvider implements SpaceProvider {
         }
 
         return res;
+    }
+
+    public GeometryProvider[] splitProvider(int split, int depth) {
+
+        GeometrySpace[] childUniverseres = universe.split(split);
+
+        return makeSubProviders(childUniverseres, depth);
+    }
+
+    public GeometryProvider[] splitProvider(int split, int depth, Block splitBlock) {
+
+        GeometrySpace spL = makeEmptySpace(), spR = makeEmptySpace();
+        GeometrySpace[] splitLR = getUniverse().split(split);
+        GeometrySpace splitL = splitLR[0], splitR = splitLR[1];
+
+        for (int i = 0; i < splitBlock.depth(); i++) {
+
+            if (splitBlock.getBit(i) == 1L) {
+                spL = spL.union(splitL);
+                splitLR = splitR.split(split);
+                splitL = splitLR[0];
+                splitR = splitLR[1];
+            } else {
+                spR = spR.union(splitR);
+                splitLR = splitL.split(split);
+                splitL = splitLR[0];
+                splitR = splitLR[1];
+            }
+        }
+
+        return makeSubProviders(new GeometrySpace[]{spL.union(splitL), spR.union(splitR)}, depth);
     }
 
     public void populateWithExternalOverlapping() {
