@@ -396,7 +396,7 @@ public class RelationshipGraph {
         }
 
         newNode.computeKIntersections(intersections, uris, overlapsArity, spaces);
-        newNode.minimize(); //KIntersections(overlapsArity);
+        //newNode.minimize(); //KIntersections(overlapsArity);
 
         return newNode;
     }
@@ -646,7 +646,6 @@ public class RelationshipGraph {
     /**
      * This method minimizes the graph by merging k+1 k-ary overlaps into one k+1-ary overlaps,
      * for any k greater than or equal to config.overlapsArity.
-     * Note: This function should only be called right before a call to constructRepresentation.
      */
     public void minimize() {
 

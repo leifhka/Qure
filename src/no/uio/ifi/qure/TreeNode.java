@@ -54,6 +54,8 @@ public class TreeNode {
 
     public Set<Integer> getOverlappingURIs() { return spaces.keySet(); }
 
+    public int size() { return spaces.keySet().size(); }
+
     public Set<Integer> getCovering() { return (covering == null) ? spaces.getCoversUniverse() : covering; }
 
     public SpaceProvider getSpaceProvider() { return spaces; }
@@ -116,9 +118,9 @@ public class TreeNode {
 
     public TreeNode[] splitNodeEvenly(int dim, int repDepth, int maxSplit, int maxDiff) {
 
-        Block splitBlock = getSpaceProvider().getEvenSplit(split, maxSplit, maxDiff);
+        EvenSplit evenSplit = getSpaceProvider().getEvenSplit(split, maxSplit, maxDiff);
         int childDepth = block.depth() + 1;
-        SpaceProvider[] sps = getSpaceProvider().splitProvider(split, childDepth, splitBlock);
+        SpaceProvider[] sps = getSpaceProvider().splitProvider(split, childDepth, evenSplit);
         return makeChildNodes(dim, repDepth, sps);
     }
 

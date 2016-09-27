@@ -67,7 +67,7 @@ public class SpaceToBintree {
             if (config.verbose) node.getReporter().update();
         }
 
-        if (newNode.depth() == config.representationDepth) {
+        if (config.atRepDepth.test(newNode)) { //newNode.depth() == config.representationDepth) {
             
             newNode = new TreeNode(newNode.getBlock(), 
                                    newNode.getGraph().constructRepresentation());

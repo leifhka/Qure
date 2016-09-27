@@ -20,17 +20,6 @@ import java.sql.Statement;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.PrecisionModel;
-import com.vividsolutions.jts.geom.CoordinateSequence;
-import com.vividsolutions.jts.io.ParseException;
-import com.vividsolutions.jts.precision.EnhancedPrecisionOp;
-import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
-import com.vividsolutions.jts.geom.IntersectionMatrix;
-import com.vividsolutions.jts.geom.Envelope;
-
-
 
 public class Qure {
 
@@ -43,8 +32,37 @@ public class Qure {
 
     public static void main(String[] args) {
 
-        runBulk(new Config("osm_no", "es", 15, 3));
+        Config[] configs = new Config[7];
+        int i = 0;
+
+        // Config o2 = new Config("dallas", "es_bc50", 20, 3);
+        // configs[i++] = o2;
+
+        // Config o3 = new Config("dallas", "es_bc40", 20, 3);
+        // o3.blockMemberCount = 40;
+        // configs[i++] = o3;
+
+        Config o4 = new Config("osm_no", "dd_bc50", 20, 3);
+        configs[i++] = o4;
+
+        Config o5 = new Config("osm_no", "dd_bc70", 20, 3);
+        o5.blockMemberCount = 70;
+        configs[i++] = o5;
+
+        Config o6 = new Config("osm_dk", "dd_bc50", 20, 3);
+        configs[i++] = o6;
+
+        runMany(configs);
     }
+
+    private static void runMany(Config[] configs) {
+
+        for (int i = 0; i < configs.length; i++) {
+            Config config = configs[i];
+            runBulk(config);
+        }
+    }
+
 
     public static void takeTime(long before, long after, String name,
                                  String what, boolean print, boolean writeToFile) {

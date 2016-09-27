@@ -11,19 +11,20 @@ public class Config {
     public String geoQuerySelectFromStr;
     public String geoQueryStr;
 
-    public int maxIterDepth = 40;
-    public int blockMemberCount = 30;
-    public int representationDepth = 15;
+    public int maxIterDepth = 20;
+    public int blockMemberCount = 50;
+    public int representationDepth = 20;
     public int overlapsArity = 3;
     public int dim = 2;
 
-    public int maxDiff = 1000;
-    public int maxSplit = 5;
+    public int maxDiff = 25;
+    public int maxSplit = 10;
  
     public Config(String table, int representationDepth, int overlapsArity) {
 
         this.overlapsArity = overlapsArity;
         this.representationDepth = representationDepth;
+        this.maxIterDepth = representationDepth;
 
         rawGeoTableName = table;
         geoTableName = "geo." + rawGeoTableName;
@@ -39,6 +40,7 @@ public class Config {
 
         this.overlapsArity = overlapsArity;
         this.representationDepth = representationDepth;
+        this.maxIterDepth = representationDepth;
 
         rawGeoTableName = table;
         geoTableName = "geo." + rawGeoTableName;
@@ -54,7 +56,13 @@ public class Config {
         public boolean test(TreeNode node) {
             int d = node.getBlock().depth();
             return d >= maxIterDepth ||
-                   (d >= representationDepth && node.getOverlappingURIs().size() <= blockMemberCount);
+                   (node.getOverlappingURIs().size() <= blockMemberCount);
+        }
+    };
+
+    public Predicate<TreeNode> atRepDepth = new Predicate<TreeNode>() {
+        public boolean test(TreeNode node) {
+            return node.isGraph();
         }
     };
 

@@ -140,35 +140,38 @@ public class GeometryProvider implements SpaceProvider {
         }
     }
 
-    private GeometryProvider[] makeSubProviders(GeometrySpace[] childUniverseres, int depth) {
+    private GeometryProvider makeSubProvder(GeometrySpace uni, Set<Integer> ints, int depth) {
 
-        GeometryProvider[] res = new GeometryProvider[childUniverseres.length];
+        Map<Integer, GeometrySpace> geoms = new HashMap<Integer, GeometrySpace>();
+        Set<Integer> coversChildUniverse = new HashSet<Integer>();
 
-        for (int i = 0; i < childUniverseres.length; i++) {
+        for (Integer uri : ints) {
 
-            Map<Integer, GeometrySpace> geoms = new HashMap<Integer, GeometrySpace>();
-            Set<Integer> coversChildUniverse = new HashSet<Integer>();
+            GeometrySpace gs = get(uri);
+            GeometrySpace ngs = gs.intersection(uni);
 
-            for (Integer uri : keySet()) {
-
-                GeometrySpace gs = get(uri);
-                GeometrySpace ngs = gs.intersection(childUniverseres[i]);
-
-                if (!ngs.isEmpty())  {
-                    if (ngs.covers(childUniverseres[i]))
-                        coversChildUniverse.add(uri);
-                    else
-                        geoms.put(uri, ngs);
-                }
+            if (!ngs.isEmpty())  {
+                if (ngs.covers(uni))
+                    coversChildUniverse.add(uri);
+                else
+                    geoms.put(uri, ngs);
             }
-
-            if (urisToInsert == null)
-                res[i] = new GeometryProvider(config, childUniverseres[i], geoms, coversChildUniverse,
-                                              geometryFactory);
-            else
-                res[i] = new GeometryProvider(config, childUniverseres[i], geoms, coversChildUniverse,
-                                              geometryFactory, urisToInsert);
         }
+
+        if (urisToInsert == null)
+            return new GeometryProvider(config, uni, geoms, coversChildUniverse,
+                                        geometryFactory);
+        else
+            return new GeometryProvider(config, uni, geoms, coversChildUniverse,
+                                        geometryFactory, urisToInsert);
+    }
+
+    private GeometryProvider[] makeSubProviders(GeometrySpace childUniL, GeometrySpace childUniR,
+                                                Set<Integer> intL, Set<Integer> intR, int depth) {
+
+        GeometryProvider subPL = makeSubProvder(childUniL, intL, depth);
+        GeometryProvider subPR = makeSubProvder(childUniR, intR, depth);
+        GeometryProvider[] res = new GeometryProvider[]{subPL, subPR};
 
         return res;
     }
@@ -177,11 +180,12 @@ public class GeometryProvider implements SpaceProvider {
 
         GeometrySpace[] childUniverseres = universe.split(split);
 
-        return makeSubProviders(childUniverseres, depth);
+        return makeSubProviders(childUniverseres[0], childUniverseres[1], keySet(), keySet(), depth);
     }
 
-    public GeometryProvider[] splitProvider(int split, int depth, Block splitBlock) {
+    public GeometryProvider[] splitProvider(int split, int depth, EvenSplit evenSplit) {
 
+        Block splitBlock = evenSplit.splitBlock;
         GeometrySpace spL = makeEmptySpace(), spR = makeEmptySpace();
         GeometrySpace[] splitLR = getUniverse().split(split);
         GeometrySpace splitL = splitLR[0], splitR = splitLR[1];
@@ -201,7 +205,8 @@ public class GeometryProvider implements SpaceProvider {
             }
         }
 
-        return makeSubProviders(new GeometrySpace[]{spL.union(splitL), spR.union(splitR)}, depth);
+        return makeSubProviders(spL.union(splitL), spR.union(splitR),
+                                evenSplit.intL, evenSplit.intR, depth);
     }
 
     public void populateWithExternalOverlapping() {
