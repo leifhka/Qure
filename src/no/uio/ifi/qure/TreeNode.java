@@ -1,6 +1,7 @@
 package no.uio.ifi.qure;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,13 +15,16 @@ public class TreeNode {
     private SpaceProvider spaces; // the spaces overlapping this node.
     private int split; // splitting dimension.
     private Block block; // the bintree block of this spaceNode.
+    private Map<Block, Block> evenSplits;
+    private Block evenSplitBlock;
     private Progress.Reporter reporter;
     private final NodeType type;
 
-    public TreeNode(Block block, SpaceProvider spaces, int split) {
+    public TreeNode(Block block, SpaceProvider spaces, Map<Block, Block> evenSplits, int split) {
         this.block = block;
         this.spaces = spaces;
         this.split = split;
+        this.evenSplits = evenSplits;
 
         type = NodeType.TO_SPLIT;
     }
@@ -47,6 +51,8 @@ public class TreeNode {
 
         type = NodeType.EMPTY;
     }
+
+    public Block getEvenSplitBlock() { return evenSplitBlock; }
 
     public void setReporter(Progress.Reporter reporter) { this.reporter = reporter; }
 
@@ -106,7 +112,9 @@ public class TreeNode {
         if (isGraph() && other.isGraph()) {
             return new TreeNode(block.getParent(), graph.merge(other.getGraph()));
         } else if (isRepresentation() && other.isRepresentation()) {
-            return new TreeNode(block.getParent(), representation.merge(other.getRepresentation()));
+            Representation newRep = representation.merge(other.getRepresentation());
+            TreeNode newNode = new TreeNode(block.getParent(), newRep);
+            return newNode;
         } else {
             System.err.println("ERROR: Trying to merge graph with representation!");
             System.err.println("Types: " + type + ", " + other.type);
@@ -118,7 +126,16 @@ public class TreeNode {
 
     public TreeNode[] splitNodeEvenly(int dim, int repDepth, int maxSplit, int maxDiff) {
 
-        EvenSplit evenSplit = getSpaceProvider().getEvenSplit(split, maxSplit, maxDiff);
+
+        EvenSplit evenSplit;
+        if (evenSplits.containsKey(block)) {
+            Block evenSplitBlock = evenSplits.get(block);
+            evenSplit = new EvenSplit(evenSplitBlock, getOverlappingURIs(), getOverlappingURIs());
+        } else {
+            evenSplit = getSpaceProvider().getEvenSplit(split, maxSplit, maxDiff);
+            evenSplitBlock = evenSplit.splitBlock;
+        }
+
         int childDepth = block.depth() + 1;
         SpaceProvider[] sps = getSpaceProvider().splitProvider(split, childDepth, evenSplit);
         return makeChildNodes(dim, repDepth, sps);
@@ -131,6 +148,17 @@ public class TreeNode {
         return makeChildNodes(dim, repDepth, sps);
     }
 
+    private Map<Block, Block> getSplitBlocks(Block b) {
+
+        Map<Block, Block> m = new HashMap<Block, Block>();
+        
+        for (Block block : evenSplits.keySet()) {
+            if (block.blockPartOf(b))
+                m.put(block, evenSplits.get(block));
+        }
+        return m;
+    }
+
     private TreeNode[] makeChildNodes(int dim, int repDepth, SpaceProvider[] sps) {
 
         Block[] bs = block.split();
@@ -139,18 +167,24 @@ public class TreeNode {
 
         for (int i = 0; i < sps.length; i++) {
 
-            TreeNode child = new TreeNode(bs[i], sps[i], (split+1) % dim);
+            TreeNode child = new TreeNode(bs[i], sps[i], getSplitBlocks(bs[i]), (split+1) % dim);
 
             if (!sps[i].isEmpty() && childDepth == repDepth)
                 child.getSpaceProvider().populateWithExternalOverlapping();
                 
             result[i] = child;
         }
-        
+
         result[0].setReporter(reporter);
         for (int i = 1; i < result.length; i++) result[i].setReporter(reporter.newReporter());
 
         return result;
+    }
+
+    public TreeNode makeRepresentation(int overlapsArity) {
+
+        RelationshipGraph graph = RelationshipGraph.makeRelationshipGraph(this, overlapsArity);
+        return new TreeNode(block, graph.constructRepresentation());
     }
 
     public void deleteSpaces() {

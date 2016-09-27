@@ -26,7 +26,7 @@ public class SpaceToBintree {
                                      0.001, "##0.000");
         if (config.verbose) prog.init();
 
-        TreeNode root = new TreeNode(Block.TOPBLOCK, spaces, 0);
+        TreeNode root = new TreeNode(Block.TOPBLOCK, spaces, new HashMap<Block, Block>(), 0); //TODO: fix evenSplits
         root.setReporter(prog.makeReporter());
         TreeNode newRoot = traverseTree(root);
         
@@ -38,6 +38,36 @@ public class SpaceToBintree {
     }
 
     private TreeNode traverseTree(TreeNode node) {
+
+        TreeNode newNode;
+
+        if (node.isEmpty() || config.atMaxDepth.test(node)) {
+            newNode = node.makeRepresentation(config.overlapsArity);
+            if (config.verbose)
+                node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
+        } else {
+            TreeNode[] nodes = node.splitNodeEvenly(config.dim, config.representationDepth,
+                                                    config.maxSplit, config.maxDiff);
+            node.deleteSpaces(); // Free memory
+            TreeNode leftNode = nodes[0];
+            TreeNode rightNode = nodes[1];
+    
+            TreeNode newLeftNode = traverseTree(leftNode);
+            TreeNode newRightNode = traverseTree(rightNode);
+        
+            newNode = newLeftNode.merge(newRightNode);
+
+            if (config.verbose) node.getReporter().update();
+        }
+
+        newNode = newNode.addCovering(node.getCovering());
+        if (node.getEvenSplitBlock() != null)
+            newNode.getRepresentation().addSplitBlock(node.getBlock(), node.getEvenSplitBlock());
+
+        return newNode;
+    }
+
+    private TreeNode traverseTreeOld(TreeNode node) {
 
         if (node.isEmpty()) {
             if (config.verbose)

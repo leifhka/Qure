@@ -10,6 +10,7 @@ public class Config {
     public String btTableName;
     public String geoQuerySelectFromStr;
     public String geoQueryStr;
+    public String splitTable;
 
     public int maxIterDepth = 20;
     public int blockMemberCount = 50;
@@ -47,6 +48,8 @@ public class Config {
 
         rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity + "_" + suff;
         btTableName = "qure." + rawBTTableName;
+
+        splitTable = "split." + rawBTTableName;
 
         geoQuerySelectFromStr = "select " + uriColumn + ", " + geoColumn + " from " + geoTableName;
         geoQueryStr = geoQuerySelectFromStr + ";";

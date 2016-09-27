@@ -32,25 +32,25 @@ public class Qure {
 
     public static void main(String[] args) {
 
-        Config[] configs = new Config[7];
+        Config[] configs = new Config[1];
         int i = 0;
 
-        // Config o2 = new Config("dallas", "es_bc50", 20, 3);
-        // configs[i++] = o2;
+        Config o2 = new Config("dallas", "es_bc50", 15, 3);
+        configs[i++] = o2;
 
         // Config o3 = new Config("dallas", "es_bc40", 20, 3);
         // o3.blockMemberCount = 40;
         // configs[i++] = o3;
 
-        Config o4 = new Config("osm_no", "dd_bc50", 20, 3);
-        configs[i++] = o4;
+        // Config o4 = new Config("osm_no", "dd_bc50", 20, 3);
+        // configs[i++] = o4;
 
-        Config o5 = new Config("osm_no", "dd_bc70", 20, 3);
-        o5.blockMemberCount = 70;
-        configs[i++] = o5;
+        // Config o5 = new Config("osm_no", "dd_bc70", 20, 3);
+        // o5.blockMemberCount = 70;
+        // configs[i++] = o5;
 
-        Config o6 = new Config("osm_dk", "dd_bc50", 20, 3);
-        configs[i++] = o6;
+        // Config o6 = new Config("osm_dk", "dd_bc50", 20, 3);
+        // configs[i++] = o6;
 
         runMany(configs);
     }
@@ -114,9 +114,8 @@ public class Qure {
         System.out.println("Config:");
         System.out.println("--------------------------------------");
         System.out.println("* Geo. table: " + config.geoTableName);
-        System.out.println("* Max iter. depth: " + config.maxIterDepth);
+        System.out.println("* Max depth: " + config.maxIterDepth);
         System.out.println("* Block member count: " + config.blockMemberCount);
-        System.out.println("* Representation depth: " + config.representationDepth);
         System.out.println("* Overlaps arity: " + config.overlapsArity);
         System.out.println("* Write to: " + config.btTableName);
         System.out.println("--------------------------------------");
@@ -311,10 +310,12 @@ public class Qure {
         return res;
     }
 
+    // TODO: Fix so that it also deletes if inserting in already existing structure.
     public static void writeBintreesToDB(Representation rep, Config config) throws Exception {
 
-        Map<Integer, Bintree> res = rep.getRepresentation();
+        Map<Integer, Bintree> bintrees = rep.getRepresentation();
         Space universe = rep.getUniverse();
+        Map<Block, Block> splits = rep.getSplits();
 
         try {
             Class.forName("org.postgresql.Driver");
@@ -333,51 +334,10 @@ public class Qure {
             statement = connect.createStatement();
 
             createTable(statement, config);
-
-            if (config.verbose) System.out.println("Table " + config.btTableName + " created.");
-            Progress prog = new Progress("Making query...", res.size(), 1, "##0");
-            if (config.verbose) prog.init();
-
-            String query;
-
-            for (Integer uri : res.keySet()) {
-
-                query = "INSERT INTO " + config.btTableName + " VALUES ";
-                Set<Block> blocksArr = res.get(uri).getBlocks();
-                Block[] blocks = blocksArr.toArray(new Block[blocksArr.size()]);
-
-                boolean witDone = false;
-
-                for (int i = 0; i < blocks.length-1; i++)
-                    query += "('" + uri + "', " + blocks[i].getRepresentation() + "), ";
-
-                query += "('" + uri + "', " + blocks[blocks.length-1].getRepresentation() + ");";
-
-                statement.addBatch(query);
-                if (config.verbose) prog.update();
-            }
-            if (config.verbose) {
-                prog.done();
-                System.out.print("Executing insert batch query, writing to table " +
-                                 config.btTableName + "...");
-            }
-
-
-            statement.executeBatch();
-
-            if (config.verbose) System.out.println(" Done");
-
-            if (config.verbose) System.out.print("Inserting universe into " + config.universeTable + "...");
-            String universeStr = universe.toDBString();
-            statement.executeUpdate("INSERT INTO " + config.universeTable + " VALUES ('" +
-                                    config.btTableName + "', '" + universeStr + "');");
-            if (config.verbose) System.out.println(" Done.");
-
-            if (config.verbose) System.out.print("Constructing index structures...");
-            statement.executeUpdate("CREATE INDEX " + config.rawBTTableName + "_gid_index ON " + config.btTableName + "(gid);");
-            statement.executeUpdate("CREATE INDEX " + config.rawBTTableName + "_block_index ON " + config.btTableName + "(block);");
-            statement.executeUpdate("CREATE INDEX " + config.rawBTTableName + "_wit_index ON " + config.btTableName + "(block) WHERE block % 2 != 0;");
-            if (config.verbose) System.out.println(" Done.");
+            insertBintrees(bintrees, config);
+            insertUniverse(universe, config);
+            insertSplits(splits, config);
+            createIndexStructures(config);
 
         } catch (ClassNotFoundException e) {
             System.err.println("Class not found: " + e.getMessage());
@@ -386,6 +346,116 @@ public class Qure {
         } finally {
             close();
         }
+    }
+
+    public static void insertBintrees(Map<Integer, Bintree> bintrees, Config config) 
+        throws SQLException {
+
+        Progress prog = new Progress("Making query...", bintrees.size(), 1, "##0");
+        if (config.verbose) prog.init();
+
+        String query;
+
+        for (Integer uri : bintrees.keySet()) {
+
+            query = "INSERT INTO " + config.btTableName + " VALUES ";
+            Set<Block> blocksArr = bintrees.get(uri).getBlocks();
+            Block[] blocks = blocksArr.toArray(new Block[blocksArr.size()]);
+
+            for (int i = 0; i < blocks.length-1; i++)
+                query += "('" + uri + "', " + blocks[i].getRepresentation() + "), ";
+
+            query += "('" + uri + "', " + blocks[blocks.length-1].getRepresentation() + ");";
+
+            statement.addBatch(query);
+            if (config.verbose) prog.update();
+        }
+        if (config.verbose) {
+            prog.done();
+            System.out.print("Executing insert batch query, writing to table " +
+                             config.btTableName + "...");
+        }
+
+        statement.executeBatch();
+        if (config.verbose) System.out.println(" Done");
+    }
+
+
+    public static void insertUniverse(Space universe, Config config) 
+        throws SQLException {
+
+        if (config.verbose) System.out.print("Inserting universe into " + config.universeTable + "...");
+        String universeStr = universe.toDBString();
+        statement.executeUpdate("INSERT INTO " + config.universeTable + " VALUES ('" +
+                                config.btTableName + "', '" + universeStr + "');");
+        if (config.verbose) System.out.println(" Done.");
+    }
+
+
+    public static void insertSplits(Map<Block, Block> splits, Config config) 
+        throws SQLException {
+
+        if (config.verbose) System.out.print("Inserting even splits into " + config.splitTable + "...");
+        statement.executeUpdate("CREATE TABLE " + config.splitTable + " (block bigint, split bigint);");
+
+        String splitStr = "INSERT INTO " + config.splitTable + " VALUES ";
+        for (Block block : splits.keySet())
+            splitStr += "(" + block.getRepresentation() + ", " + splits.get(block).getRepresentation() + "), ";
+        splitStr = splitStr.substring(0, splitStr.length()-2) + ";";
+
+        statement.executeUpdate(splitStr);
+
+        if (config.verbose) System.out.println(" Done.");
+    }
+
+    public static void createIndexStructures(Config config) 
+        throws SQLException {
+
+        if (config.verbose) System.out.print("Constructing index structures...");
+
+        statement.executeUpdate("CREATE INDEX " + config.rawBTTableName
+                                + "_gid_index ON " + config.btTableName + "(gid);");
+        statement.executeUpdate("CREATE INDEX " + config.rawBTTableName 
+                                + "_block_index ON " + config.btTableName + "(block);");
+        statement.executeUpdate("CREATE INDEX " + config.rawBTTableName
+                                + "_wit_index ON " + config.btTableName + "(block) WHERE block % 2 != 0;");
+
+        if (config.verbose) System.out.println(" Done.");
+    }
+
+    // TODO: Fix wrong blocks deleted (should delete all blocks contained in blocks at rep. depth)
+    public static void deleteBintrees(Map<Integer, Bintree> res, Config config) 
+        throws SQLException {
+        // To update the representations we will first delete the old representations for
+        // the blocks were a new representation is created.
+        Progress prog = new Progress("Making delete query...", res.size(), 1, "##0");
+        if (config.verbose) prog.init();
+
+        for (Integer uri : res.keySet()) {
+            String delQuery = "DELETE FROM " + config.btTableName + " WHERE ";
+            delQuery += config.uriColumn + " = '" + uri + "' AND (false";
+            for (Block block : res.get(uri).getBlocks()) {
+                String blockStr = block.toString();
+                if (block.depth() <= config.representationDepth)
+                    delQuery += " OR block = " + blockStr;
+                else
+                    delQuery += " OR " + makePrefixQuery(blockStr);
+            }
+            delQuery += ");";
+            statement.addBatch(delQuery);
+            if (config.verbose) prog.update();
+        }
+        if (config.verbose) {
+            prog.done();
+            System.out.print("Executing delete query...");
+        }
+        int[] deleted = statement.executeBatch();
+        statement.clearBatch();
+        int delSum = 0;
+        for (int i = 0; i < deleted.length; i++)
+            delSum += deleted[i];
+
+        if (config.verbose) System.out.println(" Done. [Deleted " + delSum + " rows.]");
     }
 
     public static String makePrefixQuery(String block) {
@@ -414,37 +484,9 @@ public class Qure {
 
             statement = connect.createStatement();
 
-            // To update the representations we will first delete the old representations for
-            // the blocks were a new representation is created.
-            Progress prog = new Progress("Making delete query...", res.size(), 1, "##0");
-            if (config.verbose) prog.init();
+            deleteBintrees(res, config);
 
-            for (Integer uri : res.keySet()) {
-                String delQuery = "DELETE FROM " + config.btTableName + " WHERE ";
-                delQuery += config.uriColumn + " = '" + uri + "' AND (false";
-                for (Block block : res.get(uri).getBlocks()) {
-                    String blockStr = block.toString();
-                    if (block.depth() <= config.representationDepth)
-                        delQuery += " OR block = " + blockStr;
-                    else
-                        delQuery += " OR " + makePrefixQuery(blockStr);
-                }
-                delQuery += ");";
-                statement.addBatch(delQuery);
-                if (config.verbose) prog.update();
-            }
-            if (config.verbose) {
-                prog.done();
-                System.out.print("Executing delete query...");
-            }
-            int[] deleted = statement.executeBatch();
-            statement.clearBatch();
-            int delSum = 0;
-            for (int i = 0; i < deleted.length; i++)
-                delSum += deleted[i];
-
-            if (config.verbose) System.out.println(" Done. [Deleted " + delSum + " rows.]");
-            prog = new Progress("Making insert query...", res.size(), 1, "##0");
+            Progress prog = new Progress("Making insert query...", res.size(), 1, "##0");
             if (config.verbose) prog.init();
 
             String insQuery;
@@ -509,6 +551,8 @@ public class Qure {
                 }
             } 
         }
+
+        if (config.verbose) System.out.println("Table " + config.btTableName + " created.");
     }
 
     // Need to close the resultSet
