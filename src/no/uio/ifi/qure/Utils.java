@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 
+// TODO: make function that takes an informationProvider-object,
+// queries for evensplits from DB and constructs a map EvenSplits from blocks to blocks.
 public class Utils {
 
     public static Set<Integer> getIntersecting(Space space, Set<Integer> elems,

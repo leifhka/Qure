@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Scanner;
 import java.util.Iterator;
 
+import java.sql.DatabaseMetaData;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -35,7 +36,7 @@ public class Qure {
         Config[] configs = new Config[1];
         int i = 0;
 
-        Config o2 = new Config("dallas", "es_bc50", 15, 3);
+        Config o2 = new Config("npd", "es_bc50", 15, 3);
         configs[i++] = o2;
 
         // Config o3 = new Config("dallas", "es_bc40", 20, 3);
@@ -125,8 +126,8 @@ public class Qure {
 
         if (config.verbose) printConfig(config);
 
-        SpaceProvider geometries = new GeometryProvider(config);
-        geometries.populate();
+        SpaceProvider geometries = new GeometryProvider(config, new DBDataProvider(config));
+        geometries.populateBulk();
         SpaceToBintree gtb = new SpaceToBintree(config);
 
         long before = System.currentTimeMillis();
@@ -154,12 +155,12 @@ public class Qure {
         takeTime(before, after2, config.rawBTTableName, "Total time", true, true);
     }
 
-    public static void runInsert(Config config, Set<Integer> urisToInsert) {
+    public static void runInsert(Config config) {
 
         long beforeAll = System.currentTimeMillis();
 
-        SpaceProvider geometries = new GeometryProvider(config, urisToInsert);
-        geometries.populate();
+        SpaceProvider geometries = new GeometryProvider(config, new DBDataProvider(config));
+        geometries.populateUpdate();
         SpaceToBintree gtb = new SpaceToBintree(config);
 
         long before = System.currentTimeMillis();
@@ -187,135 +188,11 @@ public class Qure {
         takeTime(beforeAll, afterAll, config.rawBTTableName, "Total insert time", true, false);
     }
 
-    public static void runBenchmark(Config config, String bmName, String btName, String geoName) {
-
-        try {
-            Class.forName("org.postgresql.Driver");
-            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName + "?user=" +
-                                                  config.dbUsername + "&password=" + config.dbPWD);
-            statement = connect.createStatement();
-
-            statement.execute("SELECT gid FROM " + bmName + ";");
-            resultSet = statement.getResultSet();
-            Set<Integer> gidsSet = new HashSet<Integer>();
-            while (resultSet.next()) 
-                gidsSet.add(Integer.parseInt(resultSet.getString(1)));
-
-            Integer[] gids = gidsSet.toArray(new Integer[gidsSet.size()]); 
-            String[] btQueries = new String[gids.length];
-            String[] geoQueries = new String[gids.length];
-
-            for (int i = 0; i < gids.length; i++) {
-                btQueries[i] = makeBTOverlapsQuery(gids[i].toString(), btName);
-                geoQueries[i] = makeGeoOverlapsQuery(gids[i].toString(), geoName);
-            }
-            System.out.println("Done with gids!");
-
-            long geoBefore = System.currentTimeMillis();
-            for (String query : geoQueries) {
-                statement.execute(query);
-                resultSet = statement.getResultSet();
-            }
-            long geoAfter = System.currentTimeMillis();
-            System.out.println("Done with GEO!");
-
-            long btBefore = System.currentTimeMillis();
-            for (String query : btQueries) {
-                statement.execute(query);
-                resultSet = statement.getResultSet();
-            }
-            long btAfter = System.currentTimeMillis();
-
-            long geoT = 0;
-            long btT = 0;
-            for (int i = 0; i < gids.length; i++) {
-                long gB = System.currentTimeMillis();
-                statement.execute(geoQueries[i]);
-                resultSet = statement.getResultSet();
-                long gA = System.currentTimeMillis();
-                geoT += (gA - gB);
-
-                long btB = System.currentTimeMillis();
-                statement.execute(btQueries[i]);
-                resultSet = statement.getResultSet();
-                long btA = System.currentTimeMillis();
-                btT += (btA - btB);
-            }
-
-            System.out.println("BT: " + (btAfter - btBefore));
-            System.out.println("Geo: " + (geoAfter - geoBefore));
-            System.out.println("Both: " + btT + " "  + geoT);
-
-        } catch (Exception e) {
-            System.err.println("Error in runBenchmark(): " + e.toString());
-        }
-    }
-
-    public static String makeBTOverlapsQuery(String gid, String btName) {
-
-        String q;
-        q =  "SELECT DISTINCT T2.gid ";
-        q += "FROM " + btName + " AS T1, " + btName + " AS T2, ";
-        q +=   "(VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12), (13), (14), (15), (16), (17), (18), (19), (20), (21), (22), (23), (24), (25), (26), (27), (28), (29), (30), (31), (32), (33), (34), (35), (36), (37), (38), (39), (40), (41), (42), (43), (44), (45), (46), (47), (48), (49), (50), (51), (52), (53), (54), (55), (56)) AS V(n) ";
-        q += "WHERE T1.gid = " + gid + " AND ";
-        q +=       "((T1.block <= T2.block AND ";
-        q +=        "(((1::bigint << ((64 - 1) - (T1.block & ((1 << 6)-1))::int)) - 1) | T1.block) >= T2.block) OR ";
-        q +=       "((T1.block & ((1 << 6)-1)) >= V.n AND T2.block = ((T1.block & ~((1::bigint << ((64 - V.n) - 1)) - 1)) | V.n)) OR ";
-        q +=       "T2.block = 0);";
-        return q;
-    }
-
-    public static String makeGeoOverlapsQuery(String gid, String geoName) {
-
-        String q = "SELECT DISTINCT T2.gid FROM " + geoName + " AS T1, " + geoName + " AS T2 WHERE T1.gid = " + gid + " AND ST_intersects(T1.geom, T2.geom);";
-        return q;
-    }
-
-
-    public static Set<Integer> queryForInsertURIs(Config config) {
-
-        Set<Integer> res = new HashSet<Integer>();
-
-        try {
-            Class.forName("org.postgresql.Driver");
-            if (config.verbose) {
-                System.out.println("--------------------------------------");
-                System.out.print("Connecting to database " + config.dbName +
-                                 " as user " + config.dbUsername + "...");
-            }
-
-            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName + "?user=" +
-                                                  config.dbUsername + "&password=" + config.dbPWD);
-            if (config.verbose) System.out.println(" Done");
-
-            statement = connect.createStatement();
-
-            String query = "SELECT * FROM " + config.btTableName + ";";
-            statement.execute(query);
-            resultSet = statement.getResultSet();
- 
-            while (resultSet.next()) {
-                Integer uri = Integer.parseInt(resultSet.getString(1));
-                res.add(uri);
-            }
-        } catch (SQLException e) {
-            System.err.println("SQLError: " + e.toString());
-            System.err.println(e.getNextException());
-        } catch (Exception e) {
-            System.out.println("Error in queryForInsert(): " + e.toString());
-        } finally {
-            close();
-        }
-
-        return res;
-    }
-
-    // TODO: Fix so that it also deletes if inserting in already existing structure.
     public static void writeBintreesToDB(Representation rep, Config config) throws Exception {
 
         Map<Integer, Bintree> bintrees = rep.getRepresentation();
         Space universe = rep.getUniverse();
-        Map<Block, Block> splits = rep.getSplits();
+        Map<Block, Block> splits = rep.getEvenSplits();
 
         try {
             Class.forName("org.postgresql.Driver");
@@ -333,7 +210,12 @@ public class Qure {
 
             statement = connect.createStatement();
 
-            createTable(statement, config);
+            DatabaseMetaData meta = connect.getMetaData();
+            ResultSet res = meta.getTables(null, "qure", "posm_no_d15_k3_es", null);
+            if (res.next())
+                deleteBintrees(rep, config);
+            else
+                createTable(statement, config);
             insertBintrees(bintrees, config);
             insertUniverse(universe, config);
             insertSplits(splits, config);
@@ -423,11 +305,11 @@ public class Qure {
         if (config.verbose) System.out.println(" Done.");
     }
 
-    // TODO: Fix wrong blocks deleted (should delete all blocks contained in blocks at rep. depth)
-    public static void deleteBintrees(Map<Integer, Bintree> res, Config config) 
+    public static void deleteBintrees(Representation rep, Config config) 
         throws SQLException {
         // To update the representations we will first delete the old representations for
         // the blocks were a new representation is created.
+        Map<Integer, Bintree> res = rep.getRepresentation();
         Progress prog = new Progress("Making delete query...", res.size(), 1, "##0");
         if (config.verbose) prog.init();
 
@@ -435,11 +317,9 @@ public class Qure {
             String delQuery = "DELETE FROM " + config.btTableName + " WHERE ";
             delQuery += config.uriColumn + " = '" + uri + "' AND (false";
             for (Block block : res.get(uri).getBlocks()) {
-                String blockStr = block.toString();
-                if (block.depth() <= config.representationDepth)
-                    delQuery += " OR block = " + blockStr;
-                else
-                    delQuery += " OR " + makePrefixQuery(blockStr);
+                Block parent = getParentInSet(block, rep.getEvenSplits().keySet());
+                String blockStr = "" + parent.getRepresentation(); 
+                delQuery += " OR " + makePrefixQuery(blockStr);
             }
             delQuery += ");";
             statement.addBatch(delQuery);
@@ -458,9 +338,17 @@ public class Qure {
         if (config.verbose) System.out.println(" Done. [Deleted " + delSum + " rows.]");
     }
 
+    public static Block getParentInSet(Block block, Set<Block> bs) {
+        for (Block b : bs) {
+            if (block.blockPartOf(b))
+                return b;
+        }
+        return null;
+    }
+
     public static String makePrefixQuery(String block) {
-        String expr = "(((1::bigint << (63 - (" + block + " & ((1 << 6)-1))::int)) - 1) | " + block + ")";
-        String c1 = block + " <= block";
+        String expr = "(((1::bigint << (63 - (" + block + " & ((1 << 7)-1))::int)) - 1) | " + block + ")";
+        String c1 = block + " & -2 <= block";
         String c2 = expr + " >= block";
         return "(" + c1 + " AND " + c2 + ")";
     }
@@ -484,7 +372,7 @@ public class Qure {
 
             statement = connect.createStatement();
 
-            deleteBintrees(res, config);
+            deleteBintrees(rep, config);
 
             Progress prog = new Progress("Making insert query...", res.size(), 1, "##0");
             if (config.verbose) prog.init();

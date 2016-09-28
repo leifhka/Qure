@@ -6,7 +6,9 @@ import java.util.Set;
 
 public interface SpaceProvider {
 
-    public void populate();
+    public void populateBulk();
+
+    public void populateUpdate();
 
     public Map<Integer, ? extends Space> getSpaces();
 

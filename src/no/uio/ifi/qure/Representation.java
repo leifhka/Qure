@@ -20,7 +20,7 @@ public class Representation {
 
     public void setUniverse(Space universe) { this.universe = universe; }
 
-    public Map<Block, Block> getSplits() { return splits; }
+    public Map<Block, Block> getEvenSplits() { return splits; }
 
     public void addSplitBlock(Block block, Block split) { splits.put(block, split); }
 
@@ -48,7 +48,7 @@ public class Representation {
                 representation.put(oid, representation.get(oid).union(orep.get(oid)));
         }
 
-        splits.putAll(other.getSplits());
+        splits.putAll(other.getEvenSplits());
 
         return this;
     }

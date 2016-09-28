@@ -130,6 +130,10 @@ public class Block {
         return value < 0;
     }
 
+    public Block getParentAtDepth(int depth) {
+        return getParent(depth - getSize());
+    }
+
     public Block getParent(int n) {
 
         return new Block(getSize() - n, getRawBitsShifted() >> n);
