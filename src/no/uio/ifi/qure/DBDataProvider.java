@@ -32,7 +32,6 @@ public class DBDataProvider implements RawDataProvider {
         try {
             Class.forName("org.postgresql.Driver");
             if (config.verbose) {
-                System.out.println("--------------------------------------");
                 System.out.print("Connecting to database " + config.dbName +
                                  " as user " + config.dbUsername + "...");
             }
@@ -58,6 +57,8 @@ public class DBDataProvider implements RawDataProvider {
             System.err.println(e.getNextException());
         } catch (Exception e) {
             System.out.println("Error in queryForInsert(): " + e.toString());
+            e.printStackTrace();
+            System.exit(1);
         } finally {
             close();
         }
@@ -87,6 +88,7 @@ public class DBDataProvider implements RawDataProvider {
             }
         } catch (Exception e) {
             System.err.println("Error in query process: " + e.toString());
+            e.printStackTrace();
             System.exit(1);
         } finally {
     	    close();
@@ -113,6 +115,7 @@ public class DBDataProvider implements RawDataProvider {
             universeStr = resultSet.getString(1);
         } catch (Exception e) {
             System.err.println("Error querying for universe: " + e.toString());
+            e.printStackTrace();
             System.exit(1);
         } finally {
     	    close();
@@ -137,7 +140,7 @@ public class DBDataProvider implements RawDataProvider {
 
             if (config.verbose) {
                 System.out.println(" Done");
-                System.out.print("Retriving geometries from table " + config.geoTableName + "...");
+                System.out.print("Retriving spaces from table " + config.geoTableName + "...");
             }
 
             statement = connect.createStatement();
@@ -152,6 +155,7 @@ public class DBDataProvider implements RawDataProvider {
             if (config.verbose) System.out.println(" Done");
         } catch (Exception e) {
             System.err.println("Error in query process: " + e.toString());
+            e.printStackTrace();
             System.exit(1);
         } finally {
     	    close();
@@ -162,13 +166,14 @@ public class DBDataProvider implements RawDataProvider {
 
     public Map<Integer,String> getSpaces(Set<Integer> uris) {
 
+        if (uris.isEmpty()) return new HashMap<Integer, String>();
+
         Map<Integer, String> res = new HashMap<Integer,String>();
 
         try {
             Class.forName("org.postgresql.Driver");
 
             if (config.verbose) {
-                System.out.println("--------------------------------------");
                 System.out.print("Connecting to database " + config.dbName +
                                  " as user " + config.dbUsername + "...");
             }
@@ -177,7 +182,7 @@ public class DBDataProvider implements RawDataProvider {
 
             if (config.verbose) {
                 System.out.println(" Done");
-                System.out.print("Retriving geometries from table " + config.geoTableName + "...");
+                System.out.print("Retriving spaces from table " + config.geoTableName + "...");
             }
 
             statement = connect.createStatement();
@@ -192,6 +197,7 @@ public class DBDataProvider implements RawDataProvider {
             if (config.verbose) System.out.println(" Done");
         } catch (Exception e) {
             System.err.println("Error in query process: " + e.toString());
+            e.printStackTrace();
             System.exit(1);
         } finally {
     	    close();
@@ -215,6 +221,40 @@ public class DBDataProvider implements RawDataProvider {
         return query;
     }
 
+    public Map<Block, Block> getEvenSplits() {
+
+        Map<Block, Block> res = new HashMap<Block, Block>();
+
+        try {
+            Class.forName("org.postgresql.Driver");
+
+            if (config.verbose)
+                System.out.print("Retrieving splitting blocks...");
+
+            connect = DriverManager.getConnection(config.connectionStr);
+            statement = connect.createStatement();
+            
+            statement.execute(config.splitQuery);
+            ResultSet resultSet = statement.getResultSet();
+
+            while (resultSet.next()) {
+                long block = resultSet.getLong(1);
+                long split = resultSet.getLong(2);
+                res.put(new Block(block), new Block(split));
+            }
+
+            if (config.verbose) System.out.println(" Done");
+        } catch (Exception e) {
+            System.err.println("Error in query process: " + e.toString());
+            e.printStackTrace();
+            System.exit(1);
+        } finally {
+    	    close();
+        }
+
+        return res;
+    }
+
     private void close() {
         try {
             if (resultSet != null) {
@@ -233,5 +273,3 @@ public class DBDataProvider implements RawDataProvider {
         }
     }
 }
-
-

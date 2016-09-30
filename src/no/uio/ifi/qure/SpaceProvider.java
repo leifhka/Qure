@@ -34,9 +34,9 @@ public interface SpaceProvider {
 
     public void populateWithExternalOverlapping();
 
-    public SpaceProvider[] splitProvider(int split, int depth);
+    public SpaceProvider[] splitProvider(int split);
 
-    public SpaceProvider[] splitProvider(int split, int depth, EvenSplit evenSplit);
+    public SpaceProvider[] splitProvider(int split, EvenSplit evenSplit);
 
     public default EvenSplit getEvenSplit(int split, int maxSplits, int maxDiff) {
 
@@ -63,24 +63,23 @@ public interface SpaceProvider {
 
                 spL = spL.union(splitL);
                 intL.addAll(intSpL);
-                undecided.removeAll(intSpL);
+                undecided = intSpR;
 
                 splitLR = splitR.split(split);
-                splitL = splitLR[0];
-                splitR = splitLR[1];
                 splitBlock = splitBlock.addOne();
 
             } else {
 
                 spR = spR.union(splitR);
                 intR.addAll(intSpR);
-                undecided.removeAll(intSpR);
+                undecided = intSpL;
 
                 splitLR = splitL.split(split);
-                splitL = splitLR[0];
-                splitR = splitLR[1];
                 splitBlock = splitBlock.addZero();
             }
+
+            splitL = splitLR[0];
+            splitR = splitLR[1];
 
             intSpL = Utils.getIntersecting(splitL, undecided, getSpaces());
             intSpR = Utils.getIntersecting(splitR, undecided, getSpaces());

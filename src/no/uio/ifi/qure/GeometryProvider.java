@@ -16,8 +16,6 @@ import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
 import com.vividsolutions.jts.geom.IntersectionMatrix;
 import com.vividsolutions.jts.geom.Envelope;
 
-// TODO: Move all DB-functions into its own class (InformationProvider)
-// and such an object as argument to constructor.
 public class GeometryProvider implements SpaceProvider {
 
     private Map<Integer, GeometrySpace> geometries;
@@ -33,17 +31,6 @@ public class GeometryProvider implements SpaceProvider {
         this.dataProvider = dataProvider;
         geometryFactory = new GeometryFactory(config.geometryFactoryPrecision);
         coversUniverse = new HashSet<Integer>();
-    }
-
-    private GeometryProvider(Config config, RawDataProvider dataProvider, 
-                             GeometrySpace universe, Map<Integer, GeometrySpace> geometries,
-                             Set<Integer> coversUniverse, GeometryFactory geometryFactory) {
-        this.config = config;
-        this.dataProvider = dataProvider;
-        this.universe = universe;
-        this.geometries = geometries;
-        this.coversUniverse = coversUniverse;
-        this.geometryFactory = geometryFactory;
     }
 
     private GeometryProvider(Config config, RawDataProvider dataProvider,
@@ -129,7 +116,7 @@ public class GeometryProvider implements SpaceProvider {
         }
     }
 
-    private GeometryProvider makeSubProvder(GeometrySpace uni, Set<Integer> ints, int depth) {
+    private GeometryProvider makeSubProvider(GeometrySpace uni, Set<Integer> ints) {
 
         Map<Integer, GeometrySpace> geoms = new HashMap<Integer, GeometrySpace>();
         Set<Integer> coversChildUniverse = new HashSet<Integer>();
@@ -147,32 +134,27 @@ public class GeometryProvider implements SpaceProvider {
             }
         }
 
-        if (urisToInsert == null)
-            return new GeometryProvider(config, dataProvider, uni, geoms, coversChildUniverse,
-                                        geometryFactory);
-        else
-            return new GeometryProvider(config, dataProvider, uni, geoms, coversChildUniverse,
-                                        geometryFactory, urisToInsert);
+        return new GeometryProvider(config, dataProvider, uni, geoms, coversChildUniverse,
+                                    geometryFactory, urisToInsert);
     }
 
     private GeometryProvider[] makeSubProviders(GeometrySpace childUniL, GeometrySpace childUniR,
-                                                Set<Integer> intL, Set<Integer> intR, int depth) {
+                                                Set<Integer> intL, Set<Integer> intR) {
 
-        GeometryProvider subPL = makeSubProvder(childUniL, intL, depth);
-        GeometryProvider subPR = makeSubProvder(childUniR, intR, depth);
-        GeometryProvider[] res = new GeometryProvider[]{subPL, subPR};
+        GeometryProvider subPL = makeSubProvider(childUniL, intL);
+        GeometryProvider subPR = makeSubProvider(childUniR, intR);
 
-        return res;
+        return new GeometryProvider[]{subPL, subPR};
     }
 
-    public GeometryProvider[] splitProvider(int split, int depth) {
+    public GeometryProvider[] splitProvider(int split) {
 
         GeometrySpace[] childUniverseres = universe.split(split);
 
-        return makeSubProviders(childUniverseres[0], childUniverseres[1], keySet(), keySet(), depth);
+        return makeSubProviders(childUniverseres[0], childUniverseres[1], keySet(), keySet());
     }
 
-    public GeometryProvider[] splitProvider(int split, int depth, EvenSplit evenSplit) {
+    public GeometryProvider[] splitProvider(int split, EvenSplit evenSplit) {
 
         Block splitBlock = evenSplit.splitBlock;
         GeometrySpace spL = makeEmptySpace(), spR = makeEmptySpace();
@@ -195,23 +177,20 @@ public class GeometryProvider implements SpaceProvider {
         }
 
         return makeSubProviders(spL.union(splitL), spR.union(splitR),
-                                evenSplit.intL, evenSplit.intR, depth);
+                                evenSplit.intL, evenSplit.intR);
     }
 
     public void populateWithExternalOverlapping() {
 
         if (urisToInsert == null) return; // Do not get external if not in insert mode
         
-        String whereClause = "ST_intersects(geom, ST_GeomFromText('" + universe.getGeometry().toString() + "'))";
-        Map<Integer, String> extWkbs = dataProvider.getExternalOverlapping(whereClause);
-        Map<Integer, GeometrySpace> extGeos = parseGeometries(extWkbs, false);
+        Map<Integer, GeometrySpace> extGeos = getExternalOverlapping(universe);
         Set<Integer> extGeoKeys = new HashSet<Integer>(extGeos.keySet());
 
         for (Integer uri : extGeoKeys) {
             if (extGeos.get(uri).covers(universe))
                 extGeos.remove(uri);
         }
-
         geometries.putAll(extGeos);
     }
 

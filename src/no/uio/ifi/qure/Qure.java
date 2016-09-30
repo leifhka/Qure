@@ -36,7 +36,7 @@ public class Qure {
         Config[] configs = new Config[1];
         int i = 0;
 
-        Config o2 = new Config("npd", "es_bc50", 15, 3);
+        Config o2 = new Config("npd", "es_ins4", 15, 3);
         configs[i++] = o2;
 
         // Config o3 = new Config("dallas", "es_bc40", 20, 3);
@@ -53,7 +53,8 @@ public class Qure {
         // Config o6 = new Config("osm_dk", "dd_bc50", 20, 3);
         // configs[i++] = o6;
 
-        runMany(configs);
+        runInsert(o2);
+        //runMany(configs);
     }
 
     private static void runMany(Config[] configs) {
@@ -159,9 +160,11 @@ public class Qure {
 
         long beforeAll = System.currentTimeMillis();
 
-        SpaceProvider geometries = new GeometryProvider(config, new DBDataProvider(config));
+        RawDataProvider dataProvider = new DBDataProvider(config);
+        SpaceProvider geometries = new GeometryProvider(config, dataProvider);
         geometries.populateUpdate();
-        SpaceToBintree gtb = new SpaceToBintree(config);
+        Map<Block, Block> evenSplits = dataProvider.getEvenSplits();
+        SpaceToBintree gtb = new SpaceToBintree(config, evenSplits);
 
         long before = System.currentTimeMillis();
 
@@ -171,12 +174,13 @@ public class Qure {
 
         if (rep != null && config.writeBintreesToDB) {
              try {
-                 updateBintreesInDB(rep, config);
+                 writeBintreesToDB(rep, config);
              } catch (SQLException e) {
                  System.err.println("SQLError: " + e.getMessage());
                  System.err.println(e.getNextException());
              } catch (Exception e) {
-                 System.out.println("Error in runInsert(): " + e.toString());
+                 System.err.println("Error in runInsert(): " + e.toString());
+                 e.printStackTrace();
              } finally {
                  close();
              }
@@ -211,7 +215,7 @@ public class Qure {
             statement = connect.createStatement();
 
             DatabaseMetaData meta = connect.getMetaData();
-            ResultSet res = meta.getTables(null, "qure", "posm_no_d15_k3_es", null);
+            ResultSet res = meta.getTables(null, "qure", config.rawBTTableName, null);
             if (res.next())
                 deleteBintrees(rep, config);
             else
@@ -318,8 +322,10 @@ public class Qure {
             delQuery += config.uriColumn + " = '" + uri + "' AND (false";
             for (Block block : res.get(uri).getBlocks()) {
                 Block parent = getParentInSet(block, rep.getEvenSplits().keySet());
-                String blockStr = "" + parent.getRepresentation(); 
-                delQuery += " OR " + makePrefixQuery(blockStr);
+                if (parent != null) {
+                    String blockStr = "" + parent.getRepresentation(); 
+                    delQuery += " OR " + makePrefixQuery(blockStr);
+                }
             }
             delQuery += ");";
             statement.addBatch(delQuery);

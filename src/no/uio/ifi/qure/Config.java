@@ -11,9 +11,10 @@ public class Config {
     public String geoQuerySelectFromStr;
     public String geoQueryStr;
     public String splitTable;
+    public String splitQuery;
 
     public int maxIterDepth = 20;
-    public int blockMemberCount = 50;
+    public int blockMemberCount = 20;
     public int representationDepth = 20;
     public int overlapsArity = 3;
     public int dim = 2;
@@ -33,6 +34,9 @@ public class Config {
         rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity;
         btTableName = "qure." + rawBTTableName;
 
+        splitTable = "split." + rawBTTableName;
+        splitQuery = "SELECT * FROM " + splitTable + ";";
+
         geoQuerySelectFromStr = "select " + uriColumn + ", " + geoColumn + " from " + geoTableName;
         geoQueryStr = geoQuerySelectFromStr + ";";
     }
@@ -50,9 +54,11 @@ public class Config {
         btTableName = "qure." + rawBTTableName;
 
         splitTable = "split." + rawBTTableName;
+        splitQuery = "SELECT * FROM " + splitTable + ";";
 
         geoQuerySelectFromStr = "select " + uriColumn + ", " + geoColumn + " from " + geoTableName;
         geoQueryStr = geoQuerySelectFromStr + ";";
+
     }
 
     public Predicate<TreeNode> atMaxDepth = new Predicate<TreeNode>() {

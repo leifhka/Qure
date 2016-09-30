@@ -54,6 +54,8 @@ public class TreeNode {
 
     public Block getEvenSplitBlock() { return evenSplitBlock; }
 
+    public boolean hasEvenSplit() { return evenSplits.containsKey(block); }
+
     public void setReporter(Progress.Reporter reporter) { this.reporter = reporter; }
 
     public Progress.Reporter getReporter() { return reporter; }
@@ -124,8 +126,7 @@ public class TreeNode {
         }
     }
 
-    public TreeNode[] splitNodeEvenly(int dim, int repDepth, int maxSplit, int maxDiff) {
-
+    public TreeNode[] splitNodeEvenly(int dim, int maxSplit, int maxDiff) {
 
         EvenSplit evenSplit;
         if (evenSplits.containsKey(block)) {
@@ -136,22 +137,20 @@ public class TreeNode {
             evenSplitBlock = evenSplit.splitBlock;
         }
 
-        int childDepth = block.depth() + 1;
-        SpaceProvider[] sps = getSpaceProvider().splitProvider(split, childDepth, evenSplit);
-        return makeChildNodes(dim, repDepth, sps);
+        SpaceProvider[] sps = getSpaceProvider().splitProvider(split, evenSplit);
+        return makeChildNodes(dim, sps);
     }
 
-    public TreeNode[] splitNodeRegularly(int dim, int repDepth) {
+    public TreeNode[] splitNodeRegularly(int dim) {
 
-        int childDepth = block.depth() + 1;
-        SpaceProvider[] sps = getSpaceProvider().splitProvider(split, childDepth);
-        return makeChildNodes(dim, repDepth, sps);
+        SpaceProvider[] sps = getSpaceProvider().splitProvider(split);
+        return makeChildNodes(dim, sps);
     }
 
     private Map<Block, Block> getSplitBlocks(Block b) {
 
         Map<Block, Block> m = new HashMap<Block, Block>();
-        
+        int n = evenSplits.size(); 
         for (Block block : evenSplits.keySet()) {
             if (block.blockPartOf(b))
                 m.put(block, evenSplits.get(block));
@@ -159,20 +158,16 @@ public class TreeNode {
         return m;
     }
 
-    private TreeNode[] makeChildNodes(int dim, int repDepth, SpaceProvider[] sps) {
+    private TreeNode[] makeChildNodes(int dim, SpaceProvider[] sps) {
 
         Block[] bs = block.split();
         TreeNode[] result = new TreeNode[sps.length];
-        int childDepth = block.depth() + 1;
 
         for (int i = 0; i < sps.length; i++) {
-
-            TreeNode child = new TreeNode(bs[i], sps[i], getSplitBlocks(bs[i]), (split+1) % dim);
-
-            if (!sps[i].isEmpty() && childDepth == repDepth)
-                child.getSpaceProvider().populateWithExternalOverlapping();
-                
-            result[i] = child;
+            result[i] = new TreeNode(bs[i], sps[i], getSplitBlocks(bs[i]), (split+1) % dim);
+            int b = sps[i].size();
+            if (!sps[i].isEmpty() && !result[i].hasEvenSplit())
+                sps[i].populateWithExternalOverlapping();
         }
 
         result[0].setReporter(reporter);
@@ -183,6 +178,8 @@ public class TreeNode {
 
     public TreeNode makeRepresentation(int overlapsArity) {
 
+        if (spaces.isEmpty()) return new TreeNode(block, new Representation());
+        if (block.depth() < 15 && spaces.size() > 20) System.out.println("ERR: " + block.depth() + " " + spaces.size());
         RelationshipGraph graph = RelationshipGraph.makeRelationshipGraph(this, overlapsArity);
         return new TreeNode(block, graph.constructRepresentation());
     }

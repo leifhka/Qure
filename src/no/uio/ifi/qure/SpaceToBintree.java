@@ -14,10 +14,18 @@ import java.util.function.Predicate;
 public class SpaceToBintree {
 
     private Config config;
+    private Map<Block, Block> evenSplits;
 
     public SpaceToBintree(Config config) {
 
         this.config = config;
+        evenSplits = new HashMap<Block, Block>();
+    }
+
+    public SpaceToBintree(Config config, Map<Block, Block> evenSplits) {
+
+        this.config = config;
+        this.evenSplits = evenSplits;
     }
 
     public Representation constructRepresentations(SpaceProvider spaces) {
@@ -26,7 +34,7 @@ public class SpaceToBintree {
                                      0.001, "##0.000");
         if (config.verbose) prog.init();
 
-        TreeNode root = new TreeNode(Block.TOPBLOCK, spaces, new HashMap<Block, Block>(), 0); //TODO: fix evenSplits
+        TreeNode root = new TreeNode(Block.TOPBLOCK, spaces, evenSplits, 0);
         root.setReporter(prog.makeReporter());
         TreeNode newRoot = traverseTree(root);
         
@@ -41,13 +49,12 @@ public class SpaceToBintree {
 
         TreeNode newNode;
 
-        if (node.isEmpty() || config.atMaxDepth.test(node)) {
+        if (node.isEmpty() || (!node.hasEvenSplit() && config.atMaxDepth.test(node))) {
             newNode = node.makeRepresentation(config.overlapsArity);
             if (config.verbose)
                 node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
         } else {
-            TreeNode[] nodes = node.splitNodeEvenly(config.dim, config.representationDepth,
-                                                    config.maxSplit, config.maxDiff);
+            TreeNode[] nodes = node.splitNodeEvenly(config.dim, config.maxSplit, config.maxDiff);
             node.deleteSpaces(); // Free memory
             TreeNode leftNode = nodes[0];
             TreeNode rightNode = nodes[1];
@@ -83,8 +90,7 @@ public class SpaceToBintree {
             if (config.verbose)
                 node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
         } else {
-            TreeNode[] nodes = node.splitNodeEvenly(config.dim, config.representationDepth,
-                                                    config.maxSplit, config.maxDiff);
+            TreeNode[] nodes = node.splitNodeEvenly(config.dim, config.maxSplit, config.maxDiff);
             node.deleteSpaces(); // Free memory
             TreeNode leftNode = nodes[0];
             TreeNode rightNode = nodes[1];

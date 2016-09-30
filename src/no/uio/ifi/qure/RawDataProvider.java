@@ -16,6 +16,8 @@ public interface RawDataProvider {
     public Map<Integer,String> getSpaces();
     
     public Map<Integer,String> getSpaces(Set<Integer> uris);
+
+    public Map<Block, Block> getEvenSplits();
 }
 
 

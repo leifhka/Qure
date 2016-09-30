@@ -12,6 +12,12 @@ public class Representation {
     private Space universe;
     private boolean isNormalized;
 
+    public Representation() {
+        representation = new HashMap<Integer, Bintree>();
+        splits = new HashMap<Block, Block>();
+        isNormalized = false;
+    }
+
     public Representation(Map<Integer, Bintree> representation) {
         this.representation = representation;
         splits = new HashMap<Block, Block>();
