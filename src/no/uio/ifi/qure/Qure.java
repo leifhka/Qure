@@ -36,7 +36,7 @@ public class Qure {
         Config[] configs = new Config[1];
         int i = 0;
 
-        Config o2 = new Config("npd", "es_ins4", 15, 3);
+        Config o2 = new Config("npd", "es_ins5", 15, 3);
         configs[i++] = o2;
 
         // Config o3 = new Config("dallas", "es_bc40", 20, 3);
@@ -216,14 +216,19 @@ public class Qure {
 
             DatabaseMetaData meta = connect.getMetaData();
             ResultSet res = meta.getTables(null, "qure", config.rawBTTableName, null);
-            if (res.next())
+            boolean insert = res.next();
+            if (insert)
                 deleteBintrees(rep, config);
             else
                 createTable(statement, config);
+
             insertBintrees(bintrees, config);
-            insertUniverse(universe, config);
-            insertSplits(splits, config);
-            createIndexStructures(config);
+
+            if (!insert) {
+                insertUniverse(universe, config);
+                createIndexStructures(config);
+            }
+            if (!splits.isEmpty()) insertSplits(splits, config);
 
         } catch (ClassNotFoundException e) {
             System.err.println("Class not found: " + e.getMessage());
@@ -282,7 +287,12 @@ public class Qure {
         throws SQLException {
 
         if (config.verbose) System.out.print("Inserting even splits into " + config.splitTable + "...");
-        statement.executeUpdate("CREATE TABLE " + config.splitTable + " (block bigint, split bigint);");
+
+        DatabaseMetaData meta = connect.getMetaData();
+        ResultSet res = meta.getTables(null, "split", config.rawBTTableName, null);
+        boolean insert = res.next();
+        if (!insert)
+            statement.executeUpdate("CREATE TABLE " + config.splitTable + " (block bigint, split bigint);");
 
         String splitStr = "INSERT INTO " + config.splitTable + " VALUES ";
         for (Block block : splits.keySet())

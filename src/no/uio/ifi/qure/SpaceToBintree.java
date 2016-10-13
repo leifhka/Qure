@@ -55,6 +55,7 @@ public class SpaceToBintree {
                 node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
         } else {
             TreeNode[] nodes = node.splitNodeEvenly(config.dim, config.maxSplit, config.maxDiff);
+            int s = node.getSpaceProvider().size();
             node.deleteSpaces(); // Free memory
             TreeNode leftNode = nodes[0];
             TreeNode rightNode = nodes[1];

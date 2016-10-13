@@ -394,9 +394,7 @@ public class RelationshipGraph {
                 }
             }
         }
-
         newNode.computeKIntersections(intersections, uris, overlapsArity, spaces);
-        //newNode.minimize(); //KIntersections(overlapsArity);
 
         return newNode;
     }

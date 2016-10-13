@@ -188,12 +188,13 @@ public class GeometryProvider implements SpaceProvider {
         Set<Integer> extGeoKeys = new HashSet<Integer>(extGeos.keySet());
 
         for (Integer uri : extGeoKeys) {
-            if (extGeos.get(uri).covers(universe))
+            GeometrySpace newG = universe.intersection(extGeos.get(uri));
+            if (newG.covers(universe))
                 extGeos.remove(uri);
+            else
+                geometries.put(uri, newG);
         }
-        geometries.putAll(extGeos);
     }
-
    
     private Map<Integer, GeometrySpace> getExternalOverlapping(Space s) {
 

@@ -130,11 +130,10 @@ public class TreeNode {
 
         EvenSplit evenSplit;
         if (evenSplits.containsKey(block)) {
-            Block evenSplitBlock = evenSplits.get(block);
-            evenSplit = new EvenSplit(evenSplitBlock, getOverlappingURIs(), getOverlappingURIs());
+            evenSplit = new EvenSplit(evenSplits.get(block), getOverlappingURIs(), getOverlappingURIs());
         } else {
             evenSplit = getSpaceProvider().getEvenSplit(split, maxSplit, maxDiff);
-            evenSplitBlock = evenSplit.splitBlock;
+            evenSplitBlock = evenSplit.splitBlock; // Save for representation, will be written to DB
         }
 
         SpaceProvider[] sps = getSpaceProvider().splitProvider(split, evenSplit);
@@ -150,7 +149,6 @@ public class TreeNode {
     private Map<Block, Block> getSplitBlocks(Block b) {
 
         Map<Block, Block> m = new HashMap<Block, Block>();
-        int n = evenSplits.size(); 
         for (Block block : evenSplits.keySet()) {
             if (block.blockPartOf(b))
                 m.put(block, evenSplits.get(block));
@@ -165,9 +163,9 @@ public class TreeNode {
 
         for (int i = 0; i < sps.length; i++) {
             result[i] = new TreeNode(bs[i], sps[i], getSplitBlocks(bs[i]), (split+1) % dim);
-            int b = sps[i].size();
-            if (!sps[i].isEmpty() && !result[i].hasEvenSplit())
+            if (!sps[i].isEmpty() && !result[i].hasEvenSplit()) {
                 sps[i].populateWithExternalOverlapping();
+            }
         }
 
         result[0].setReporter(reporter);
@@ -179,7 +177,7 @@ public class TreeNode {
     public TreeNode makeRepresentation(int overlapsArity) {
 
         if (spaces.isEmpty()) return new TreeNode(block, new Representation());
-        if (block.depth() < 15 && spaces.size() > 20) System.out.println("ERR: " + block.depth() + " " + spaces.size());
+        //System.out.println("\n B" + block.getRepresentation() + " " + block.depth() + " " + spaces.size());
         RelationshipGraph graph = RelationshipGraph.makeRelationshipGraph(this, overlapsArity);
         return new TreeNode(block, graph.constructRepresentation());
     }
