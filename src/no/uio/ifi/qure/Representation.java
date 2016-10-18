@@ -30,6 +30,8 @@ public class Representation {
 
     public void addSplitBlock(Block block, Block split) { splits.put(block, split); }
 
+    public void addAllSplitBlocks(Map<Block, Block> newSplits) { splits.putAll(newSplits); }
+
     public Map<Integer, Bintree> getRepresentation() { return representation; }
 
     public Space getUniverse() { return universe; }

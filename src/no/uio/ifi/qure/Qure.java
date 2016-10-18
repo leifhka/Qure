@@ -36,7 +36,7 @@ public class Qure {
         Config[] configs = new Config[1];
         int i = 0;
 
-        Config o2 = new Config("npd", "es_ins5", 15, 3);
+        Config o2 = new Config("osm_no", "es_nmk2", 15, 3);
         configs[i++] = o2;
 
         // Config o3 = new Config("dallas", "es_bc40", 20, 3);
@@ -53,7 +53,7 @@ public class Qure {
         // Config o6 = new Config("osm_dk", "dd_bc50", 20, 3);
         // configs[i++] = o6;
 
-        runInsert(o2);
+        runBulk(o2);
         //runMany(configs);
     }
 
@@ -215,7 +215,7 @@ public class Qure {
             statement = connect.createStatement();
 
             DatabaseMetaData meta = connect.getMetaData();
-            ResultSet res = meta.getTables(null, "qure", config.rawBTTableName, null);
+            ResultSet res = meta.getTables(config.dbName, config.schemaName, config.rawBTTableName, null);
             boolean insert = res.next();
             if (insert)
                 deleteBintrees(rep, config);
@@ -341,6 +341,7 @@ public class Qure {
             statement.addBatch(delQuery);
             if (config.verbose) prog.update();
         }
+        System.out.println("SPLITS: " + rep.getEvenSplits().size());
         if (config.verbose) {
             prog.done();
             System.out.print("Executing delete query...");
@@ -355,11 +356,14 @@ public class Qure {
     }
 
     public static Block getParentInSet(Block block, Set<Block> bs) {
+
+        Block smallest = Block.TOPBLOCK;
+
         for (Block b : bs) {
-            if (block.blockPartOf(b))
-                return b;
+            if (block.blockPartOf(b) && b.blockPartOf(smallest))
+                smallest = b;
         }
-        return null;
+        return (smallest.equals(Block.TOPBLOCK)) ? null : smallest;
     }
 
     public static String makePrefixQuery(String block) {

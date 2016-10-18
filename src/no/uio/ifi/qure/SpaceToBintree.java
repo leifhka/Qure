@@ -42,6 +42,7 @@ public class SpaceToBintree {
 
         Representation rootRep = newRoot.getRepresentation();
         rootRep.setUniverse(spaces.getUniverse());
+        if (evenSplits != null) rootRep.addAllSplitBlocks(evenSplits);
         return rootRep;
     }
 

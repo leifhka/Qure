@@ -12,9 +12,10 @@ public class Config {
     public String geoQueryStr;
     public String splitTable;
     public String splitQuery;
+    public String schemaName;
 
     public int maxIterDepth = 20;
-    public int blockMemberCount = 20;
+    public int blockMemberCount = 30;
     public int representationDepth = 20;
     public int overlapsArity = 3;
     public int dim = 2;
@@ -32,7 +33,8 @@ public class Config {
         geoTableName = "geo." + rawGeoTableName;
 
         rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity;
-        btTableName = "qure." + rawBTTableName;
+        schemaName = "qure";
+        btTableName = schemaName + "." + rawBTTableName;
 
         splitTable = "split." + rawBTTableName;
         splitQuery = "SELECT * FROM " + splitTable + ";";
@@ -50,8 +52,9 @@ public class Config {
         rawGeoTableName = table;
         geoTableName = "geo." + rawGeoTableName;
 
-        rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity + "_" + suff;
-        btTableName = "qure." + rawBTTableName;
+        rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity + "_bc" + blockMemberCount + "_" + suff;
+        schemaName = "qure";
+        btTableName = schemaName + "." + rawBTTableName;
 
         splitTable = "split." + rawBTTableName;
         splitQuery = "SELECT * FROM " + splitTable + ";";

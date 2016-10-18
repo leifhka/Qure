@@ -357,6 +357,8 @@ public class RelationshipGraph {
         SpaceProvider spaces = spaceNode.getSpaceProvider();
         Set<Integer> uris = spaceNode.getOverlappingURIs();
 
+        Map<Integer, Set<Integer>> intMap = new HashMap<Integer, Set<Integer>>();
+        for (Integer uri : uris) intMap.put(uri, new HashSet<Integer>());
         RelationshipGraph newNode = new RelationshipGraph(spaceNode.getBlock(), uris, overlapsArity);
 
         Integer[] urisArr = uris.toArray(new Integer[uris.size()]);
@@ -390,11 +392,13 @@ public class RelationshipGraph {
                         Space s = si.intersection(sj);
                         Intersection nin = new Intersection(s, elems);
                         intersections.add(nin);
+                        intMap.get(ui).add(uj);
+                        intMap.get(uj).add(ui);
                     }
                 }
             }
         }
-        newNode.computeKIntersections(intersections, uris, overlapsArity, spaces);
+        newNode.computeKIntersections(intersections, uris, overlapsArity, spaces, intMap);
 
         return newNode;
     }
@@ -406,9 +410,7 @@ public class RelationshipGraph {
      *         will give an empty intersection.
      */
     public void computeKIntersections(Set<Intersection> intersections, Set<Integer> elems,
-                                      int k, SpaceProvider spaces) {
-
-        int size = intersections.size();
+                                      int k, SpaceProvider spaces, Map<Integer, Set<Integer>> intMap) {
 
         Set<Intersection> ints = new HashSet<Intersection>(intersections);
 
@@ -421,7 +423,12 @@ public class RelationshipGraph {
 
                 boolean updated = false; // States whether the <in> has become part of a larger intersection
 
-                for (Integer e : elems) {
+                // Need only check the elements already intersection an element in nin
+                Set<Integer> possible = new HashSet<Integer>();
+                for (Integer ine : in.getElements()) possible.addAll(intMap.get(ine));
+                possible.removeAll(in.getElements());
+
+                for (Integer e : possible) {
 
                     Intersection nin = in.add(e, spaces);
 
@@ -458,12 +465,12 @@ public class RelationshipGraph {
 
     private boolean allKaryOverlapsWith(Set<Integer> uris1, Set<Integer> uris2, int k) {
 
-        Set<Integer> common = new HashSet<Integer>(uris1);
-        common.retainAll(uris2);
-        Set<Integer> diff1 = new HashSet<Integer>(uris1);
-        diff1.removeAll(common);
-        Set<Integer> diff2 = new HashSet<Integer>(uris2);
-        diff2.removeAll(common);
+        Set<Integer> common = Utils.intersection(uris1, uris2); //new HashSet<Integer>(uris1);
+        //common.retainAll(uris2);
+        Set<Integer> diff1 = Utils.difference(uris1, common); //new HashSet<Integer>(uris1);
+        //diff1.removeAll(common);
+        Set<Integer> diff2 = Utils.difference(uris2, common); //new HashSet<Integer>(uris2);
+        //diff2.removeAll(common);
 
         for (Integer u2 : diff2) 
             if (!allKaryOverlapsWith(diff1, u2, k)) return false;
