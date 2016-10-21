@@ -38,7 +38,7 @@ public interface SpaceProvider {
 
     public SpaceProvider[] splitProvider(int split, EvenSplit evenSplit);
 
-    public default EvenSplit getEvenSplit(int split, int maxSplits, int maxDiff) {
+    public default EvenSplit getEvenSplit(int split, Config config) {
 
         Space spL = makeEmptySpace(), spR = makeEmptySpace();
         Space[] splitLR = getUniverse().split(split);
@@ -46,8 +46,8 @@ public interface SpaceProvider {
 
         Set<Integer> undecided = new HashSet<Integer>(keySet());
         Set<Integer> intL = new HashSet<Integer>(), intR = new HashSet<Integer>();
-        Set<Integer> intSpL = Utils.getIntersecting(splitL, undecided, getSpaces());
-        Set<Integer> intSpR = Utils.getIntersecting(splitR, undecided, getSpaces());
+        Set<Integer> intSpL = Utils.getIntersecting(splitL, undecided, getSpaces(), config.numThreads);
+        Set<Integer> intSpR = Utils.getIntersecting(splitR, undecided, getSpaces(), config.numThreads);
 
         int diff = Math.abs(intSpL.size() - intSpR.size());
         int bestDiff = diff;
@@ -57,7 +57,7 @@ public interface SpaceProvider {
 
         int i = 0;
 
-        while (i++ < maxSplits && diff > maxDiff) {
+        while (i++ < config.maxSplits && diff > config.maxDiff) {
 
             if (intSpR.size() > intSpL.size()) {
 
@@ -81,8 +81,8 @@ public interface SpaceProvider {
             splitL = splitLR[0];
             splitR = splitLR[1];
 
-            intSpL = Utils.getIntersecting(splitL, undecided, getSpaces());
-            intSpR = Utils.getIntersecting(splitR, undecided, getSpaces());
+            intSpL = Utils.getIntersecting(splitL, undecided, getSpaces(), config.numThreads);
+            intSpR = Utils.getIntersecting(splitR, undecided, getSpaces(), config.numThreads);
             diff = Math.abs(Utils.union(intL, intSpL).size() - Utils.union(intR, intSpR).size());
             if (diff < bestDiff) {
                 bestSplit = new EvenSplit(splitBlock, Utils.union(intL, intSpL), Utils.union(intR, intSpR));

@@ -656,21 +656,16 @@ public class RelationshipGraph {
 
         Set<Integer> toCheck = new HashSet<Integer>(nodes.keySet());
 
-        int nrB = nodes.keySet().size(); boolean added = false;
-
         while (true) {
 
             Set<Set<Integer>> overlaps = findMinimizers(k, toCheck);
-
             toCheck = new HashSet<Integer>();
 
             if (!overlaps.isEmpty()) {
-                added = true;
                 for (Set<Integer> ov : overlaps) {
                     Integer newNode = addOverlapsWithRedundancyCheck(ov);
                     if (newNode != null) toCheck.add(newNode);
                 }
-
             } else {
                 break;
             }
@@ -704,26 +699,35 @@ public class RelationshipGraph {
             localRep.put(node, Bintree.fromBlock(bt));
         }
 
-        while (!nodes.isEmpty()) {
-
-            Integer uri = popNextNode();
+        for (Integer uri : nodes.keySet()) {
             Node n = nodes.get(uri);
             Bintree nodeBT = localRep.get(uri);
 
-            // Propagate child's value to parents
-            for (Integer parent : n.succs)
-                localRep.put(parent, localRep.get(parent).union(nodeBT));
-
-            nodes.remove(uri);
-            for (Integer sUri : n.succs) {
-                if (nodes.containsKey(sUri)) {
-                    Node s = nodes.get(sUri);
-                    s.preds.remove(uri);
-                    if (s.preds.isEmpty())
-                        roots.add(sUri);
-                }
-            }
+            for (Integer parent : n.preds)
+                nodeBT = nodeBT.union(localRep.get(parent));
+            localRep.put(uri, nodeBT);
         }
+
+        // while (!nodes.isEmpty()) {
+
+        //     Integer uri = popNextNode();
+        //     Node n = nodes.get(uri);
+        //     Bintree nodeBT = localRep.get(uri);
+
+        //     // Propagate child's value to parents
+        //     for (Integer parent : n.succs)
+        //         localRep.put(parent, localRep.get(parent).union(nodeBT));
+
+        //     nodes.remove(uri);
+        //     for (Integer sUri : n.succs) {
+        //         if (nodes.containsKey(sUri)) {
+        //             Node s = nodes.get(sUri);
+        //             s.preds.remove(uri);
+        //             if (s.preds.isEmpty())
+        //                 roots.add(sUri);
+        //         }
+        //     }
+        // }
 
         Map<Integer, Bintree> urisRep = new HashMap<Integer, Bintree>();
         for (Integer uri : localRep.keySet()) {

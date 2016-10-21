@@ -36,7 +36,7 @@ public class Qure {
         Config[] configs = new Config[1];
         int i = 0;
 
-        Config o2 = new Config("osm_no", "es_nmk2", 15, 3);
+        Config o2 = new Config("dallas", "par_ncstr", 13, 3);
         configs[i++] = o2;
 
         // Config o3 = new Config("dallas", "es_bc40", 20, 3);
@@ -341,7 +341,6 @@ public class Qure {
             statement.addBatch(delQuery);
             if (config.verbose) prog.update();
         }
-        System.out.println("SPLITS: " + rep.getEvenSplits().size());
         if (config.verbose) {
             prog.done();
             System.out.print("Executing delete query...");
@@ -451,7 +450,7 @@ public class Qure {
                 System.out.println(sqlex.getMessage());
                 System.out.print("Try to add a new table name suffix (or just hit return twice to abort): ");
                 Scanner scan = new Scanner(System.in).useDelimiter("[ \n]"); // Table name is only one word
-                config = new Config(config.rawGeoTableName, scan.next(), config.representationDepth, config.overlapsArity);
+                config = new Config(config.rawGeoTableName, scan.next(), config.maxIterDepth, config.overlapsArity);
                 System.out.println("");
                 if (config.btTableName.equals("")) {
                     close();

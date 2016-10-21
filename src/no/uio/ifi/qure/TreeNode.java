@@ -7,10 +7,6 @@ import java.util.Set;
 
 public class TreeNode {
 
-    private static enum NodeType {GRAPH, REPRESENTATION, TO_SPLIT, EMPTY};
-
-    private RelationshipGraph graph; // the relationship graph of this node.
-    private Representation representation; // the bintree representation of this node.
     private Set<Integer> covering; // the URI of spaces covering this node.
     private SpaceProvider spaces; // the spaces overlapping this node.
     private int split; // splitting dimension.
@@ -18,39 +14,18 @@ public class TreeNode {
     private Map<Block, Block> evenSplits;
     private Block evenSplitBlock;
     private Progress.Reporter reporter;
-    private final NodeType type;
+    private Config config;
 
-    public TreeNode(Block block, SpaceProvider spaces, Map<Block, Block> evenSplits, int split) {
+    public TreeNode(Block block, SpaceProvider spaces, Map<Block, Block> evenSplits, int split, Config config) {
+
         this.block = block;
         this.spaces = spaces;
         this.split = split;
         this.evenSplits = evenSplits;
-
-        type = NodeType.TO_SPLIT;
+        this.config = config;
     }
 
-    public TreeNode(Block block, RelationshipGraph graph) {
-        this.block = block;
-        this.graph = graph;
-
-        type = NodeType.GRAPH;
-    }
-
-    public TreeNode(Block block, Representation representation) {
-        this.block = block;
-        this.representation = representation;
-
-        type = NodeType.REPRESENTATION;
-    }
-
-    public TreeNode(Block block) {
-        this.block = block;
-
-        graph = new RelationshipGraph(block, new HashSet<Integer>(), 0);
-        representation = new Representation(new HashMap<Integer, Bintree>());
-
-        type = NodeType.EMPTY;
-    }
+    public boolean isEmpty() { return getOverlappingURIs().isEmpty(); }
 
     public Block getEvenSplitBlock() { return evenSplitBlock; }
 
@@ -74,76 +49,24 @@ public class TreeNode {
 
     public int depth() { return block.depth(); }
 
-    public boolean isEmpty() { return spaces == null || getOverlappingURIs().isEmpty(); }
-
-    public boolean isGraph() { return type == NodeType.GRAPH || type == NodeType.EMPTY; }
-
-    public boolean isRepresentation() { return type == NodeType.REPRESENTATION || type == NodeType.EMPTY; }
-
-    public RelationshipGraph getGraph() { return graph; }
-
-    public Representation getRepresentation() { return representation; }
-
-    public TreeNode addCovering(Set<Integer> covering) {
-
-        if (isGraph()) {
-
-            RelationshipGraph graph = getGraph();
-            graph.addUris(covering);
-
-            for (Integer pUri : covering) {
-                for (Integer cUri : graph.getNodes().keySet()) {
-                    if (pUri != cUri)
-                        graph.addCoveredBy(cUri, pUri);
-                }
-            }
-        } else if (isRepresentation()) {
-
-            for (Integer uri : covering)
-                representation.getRepresentation().put(uri, Bintree.fromBlock(block));
-        } else {
-            System.err.println("ERROR: Trying to add covering to a node that is neither rep. or graph.");
-            System.exit(1);
-        }
-
-        return this;
-    }
-
-    public TreeNode merge(TreeNode other) {
-
-        if (isGraph() && other.isGraph()) {
-            return new TreeNode(block.getParent(), graph.merge(other.getGraph()));
-        } else if (isRepresentation() && other.isRepresentation()) {
-            Representation newRep = representation.merge(other.getRepresentation());
-            TreeNode newNode = new TreeNode(block.getParent(), newRep);
-            return newNode;
-        } else {
-            System.err.println("ERROR: Trying to merge graph with representation!");
-            System.err.println("Types: " + type + ", " + other.type);
-            System.err.println("Depths: " + block.depth() + ", " + other.block.depth());
-            System.exit(1);
-            return null;
-        }
-    }
-
-    public TreeNode[] splitNodeEvenly(int dim, int maxSplit, int maxDiff) {
+    public TreeNode[] splitNodeEvenly() {
 
         EvenSplit evenSplit;
         if (evenSplits.containsKey(block)) {
             evenSplit = new EvenSplit(evenSplits.get(block), getOverlappingURIs(), getOverlappingURIs());
         } else {
-            evenSplit = getSpaceProvider().getEvenSplit(split, maxSplit, maxDiff);
+            evenSplit = getSpaceProvider().getEvenSplit(split, config);
             evenSplitBlock = evenSplit.splitBlock; // Save for representation, will be written to DB
         }
 
         SpaceProvider[] sps = getSpaceProvider().splitProvider(split, evenSplit);
-        return makeChildNodes(dim, sps);
+        return makeChildNodes(sps);
     }
 
-    public TreeNode[] splitNodeRegularly(int dim) {
+    public TreeNode[] splitNodeRegularly() {
 
         SpaceProvider[] sps = getSpaceProvider().splitProvider(split);
-        return makeChildNodes(dim, sps);
+        return makeChildNodes(sps);
     }
 
     private Map<Block, Block> getSplitBlocks(Block b) {
@@ -156,13 +79,13 @@ public class TreeNode {
         return m;
     }
 
-    private TreeNode[] makeChildNodes(int dim, SpaceProvider[] sps) {
+    private TreeNode[] makeChildNodes(SpaceProvider[] sps) {
 
         Block[] bs = block.split();
         TreeNode[] result = new TreeNode[sps.length];
 
         for (int i = 0; i < sps.length; i++) {
-            result[i] = new TreeNode(bs[i], sps[i], getSplitBlocks(bs[i]), (split+1) % dim);
+            result[i] = new TreeNode(bs[i], sps[i], getSplitBlocks(bs[i]), (split+1) % config.dim, config);
             if (!sps[i].isEmpty() && !result[i].hasEvenSplit()) {
                 sps[i].populateWithExternalOverlapping();
             }
@@ -174,12 +97,11 @@ public class TreeNode {
         return result;
     }
 
-    public TreeNode makeRepresentation(int overlapsArity) {
+    public Representation makeRepresentation(int overlapsArity) {
 
-        if (spaces.isEmpty()) return new TreeNode(block, new Representation());
-        //System.out.println("\n B" + block.getRepresentation() + " " + block.depth() + " " + spaces.size());
+        if (spaces.isEmpty()) return new Representation();
         RelationshipGraph graph = RelationshipGraph.makeRelationshipGraph(this, overlapsArity);
-        return new TreeNode(block, graph.constructRepresentation());
+        return graph.constructRepresentation();
     }
 
     public void deleteSpaces() {

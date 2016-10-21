@@ -118,21 +118,14 @@ public class GeometryProvider implements SpaceProvider {
 
     private GeometryProvider makeSubProvider(GeometrySpace uni, Set<Integer> ints) {
 
-        Map<Integer, GeometrySpace> geoms = new HashMap<Integer, GeometrySpace>();
+        Map<Integer, Space> spMap = new HashMap<Integer, Space>();
         Set<Integer> coversChildUniverse = new HashSet<Integer>();
 
-        for (Integer uri : ints) {
+        Utils.getIntersections(uni, ints, geometries, config.numThreads, spMap, coversChildUniverse);
 
-            GeometrySpace gs = get(uri);
-            GeometrySpace ngs = gs.intersection(uni);
-
-            if (!ngs.isEmpty())  {
-                if (ngs.covers(uni))
-                    coversChildUniverse.add(uri);
-                else
-                    geoms.put(uri, ngs);
-            }
-        }
+        Map<Integer, GeometrySpace> geoms = new HashMap<Integer, GeometrySpace>();
+        for (Integer uri : spMap.keySet())
+            geoms.put(uri, (GeometrySpace) spMap.get(uri));
 
         return new GeometryProvider(config, dataProvider, uni, geoms, coversChildUniverse,
                                     geometryFactory, urisToInsert);

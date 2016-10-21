@@ -14,19 +14,18 @@ public class Config {
     public String splitQuery;
     public String schemaName;
 
-    public int maxIterDepth = 20;
+    public int maxIterDepth;
+    public int overlapsArity;
+    public int numThreads = 8;
     public int blockMemberCount = 30;
-    public int representationDepth = 20;
-    public int overlapsArity = 3;
     public int dim = 2;
 
     public int maxDiff = 25;
-    public int maxSplit = 10;
+    public int maxSplits = 10;
  
     public Config(String table, int representationDepth, int overlapsArity) {
 
         this.overlapsArity = overlapsArity;
-        this.representationDepth = representationDepth;
         this.maxIterDepth = representationDepth;
 
         rawGeoTableName = table;
@@ -46,7 +45,6 @@ public class Config {
     public Config(String table, String suff, int representationDepth, int overlapsArity) {
 
         this.overlapsArity = overlapsArity;
-        this.representationDepth = representationDepth;
         this.maxIterDepth = representationDepth;
 
         rawGeoTableName = table;
@@ -69,12 +67,6 @@ public class Config {
             int d = node.getBlock().depth();
             return d >= maxIterDepth ||
                    (node.getOverlappingURIs().size() <= blockMemberCount);
-        }
-    };
-
-    public Predicate<TreeNode> atRepDepth = new Predicate<TreeNode>() {
-        public boolean test(TreeNode node) {
-            return node.isGraph();
         }
     };
 

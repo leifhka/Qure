@@ -34,85 +34,43 @@ public class SpaceToBintree {
                                      0.001, "##0.000");
         if (config.verbose) prog.init();
 
-        TreeNode root = new TreeNode(Block.TOPBLOCK, spaces, evenSplits, 0);
+        TreeNode root = new TreeNode(Block.TOPBLOCK, spaces, evenSplits, 0, config);
         root.setReporter(prog.makeReporter());
-        TreeNode newRoot = traverseTree(root);
-        
+        Representation representation = traverseTree(root);
+       
         if (config.verbose) prog.done();
 
-        Representation rootRep = newRoot.getRepresentation();
-        rootRep.setUniverse(spaces.getUniverse());
-        if (evenSplits != null) rootRep.addAllSplitBlocks(evenSplits);
-        return rootRep;
+        representation.setUniverse(spaces.getUniverse());
+        if (evenSplits != null) representation.addAllSplitBlocks(evenSplits);
+        return representation;
     }
 
-    private TreeNode traverseTree(TreeNode node) {
+    private Representation traverseTree(TreeNode node) {
 
-        TreeNode newNode;
+        Representation representation;
 
         if (node.isEmpty() || (!node.hasEvenSplit() && config.atMaxDepth.test(node))) {
-            newNode = node.makeRepresentation(config.overlapsArity);
+            representation = node.makeRepresentation(config.overlapsArity);
             if (config.verbose)
                 node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
         } else {
-            TreeNode[] nodes = node.splitNodeEvenly(config.dim, config.maxSplit, config.maxDiff);
-            int s = node.getSpaceProvider().size();
+            TreeNode[] nodes = node.splitNodeEvenly();
             node.deleteSpaces(); // Free memory
             TreeNode leftNode = nodes[0];
             TreeNode rightNode = nodes[1];
-    
-            TreeNode newLeftNode = traverseTree(leftNode);
-            TreeNode newRightNode = traverseTree(rightNode);
+ 
+            Representation newLeftRep = traverseTree(leftNode);
+            Representation newRightRep = traverseTree(rightNode);
         
-            newNode = newLeftNode.merge(newRightNode);
+            representation = newLeftRep.merge(newRightRep);
 
             if (config.verbose) node.getReporter().update();
         }
 
-        newNode = newNode.addCovering(node.getCovering());
+        representation.addCovering(node.getCovering(), node.getBlock());
         if (node.getEvenSplitBlock() != null)
-            newNode.getRepresentation().addSplitBlock(node.getBlock(), node.getEvenSplitBlock());
+            representation.addSplitBlock(node.getBlock(), node.getEvenSplitBlock());
 
-        return newNode;
-    }
-
-    private TreeNode traverseTreeOld(TreeNode node) {
-
-        if (node.isEmpty()) {
-            if (config.verbose)
-                node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
-            return new TreeNode(node.getBlock());
-        }
-
-        TreeNode newNode;
-
-        if (config.atMaxDepth.test(node)) {
-            newNode = new TreeNode(node.getBlock(),
-                                   RelationshipGraph.makeRelationshipGraph(node, config.overlapsArity));
-            if (config.verbose)
-                node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
-        } else {
-            TreeNode[] nodes = node.splitNodeEvenly(config.dim, config.maxSplit, config.maxDiff);
-            node.deleteSpaces(); // Free memory
-            TreeNode leftNode = nodes[0];
-            TreeNode rightNode = nodes[1];
-    
-            TreeNode newLeftNode = traverseTree(leftNode);
-            TreeNode newRightNode = traverseTree(rightNode);
-        
-            newNode = newLeftNode.merge(newRightNode);
-
-            if (config.verbose) node.getReporter().update();
-        }
-
-        if (config.atRepDepth.test(newNode)) { //newNode.depth() == config.representationDepth) {
-            
-            newNode = new TreeNode(newNode.getBlock(), 
-                                   newNode.getGraph().constructRepresentation());
-        }
-
-        newNode = newNode.addCovering(node.getCovering());
-
-        return newNode;
+        return representation;
     }
 }
