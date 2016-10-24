@@ -19,8 +19,8 @@ import com.vividsolutions.jts.geom.Envelope;
 public class GeometryProvider implements SpaceProvider {
 
     private Map<Integer, GeometrySpace> geometries;
+    private boolean updating;
     private Set<Integer> coversUniverse;
-    private Set<Integer> urisToInsert;
     private GeometrySpace universe;
     private GeometryFactory geometryFactory;
     private RawDataProvider dataProvider;
@@ -36,26 +36,28 @@ public class GeometryProvider implements SpaceProvider {
     private GeometryProvider(Config config, RawDataProvider dataProvider,
                              GeometrySpace universe, Map<Integer, GeometrySpace> geometries, 
                              Set<Integer> coversUniverse, GeometryFactory geometryFactory,
-                             Set<Integer> urisToInsert) {
+                             boolean updating) {
         this.config = config;
         this.dataProvider = dataProvider;
         this.universe = universe;
         this.geometries = geometries;
         this.coversUniverse = coversUniverse;
         this.geometryFactory = geometryFactory;
-        this.urisToInsert = urisToInsert;
+        this.updating = updating;
     }
 
     public void populateBulk() {
 
+        updating = false;
         Map<Integer, String> wkbs = dataProvider.getSpaces();
         geometries = parseGeometries(wkbs, config.verbose);
-        makeUniverse();
+        makeAndSetUniverse();
     }
 
     public void populateUpdate() {
 
-        urisToInsert = dataProvider.getInsertURIs();
+        updating = true;
+        Set<Integer> urisToInsert = dataProvider.getInsertURIs();
         Map<Integer, String> wkbs = dataProvider.getSpaces(urisToInsert);
         geometries = parseGeometries(wkbs, config.verbose);
         obtainUniverse();
@@ -64,6 +66,14 @@ public class GeometryProvider implements SpaceProvider {
     public Map<Integer, GeometrySpace> getSpaces() { return geometries; }
 
     public GeometryFactory getGeometryFactory() { return geometryFactory; }
+
+    public GeometrySpace getUniverse() { return universe; }
+
+    public Set<Integer> getCoversUniverse() { return coversUniverse; }
+
+    public Geometry toGeometry(Envelope envelope) { return getGeometryFactory().toGeometry(envelope); }
+
+    public Set<Integer> keySet() { return getSpaces().keySet(); }
 
     public GeometrySpace makeEmptySpace() { 
          return new GeometrySpace(geometryFactory.createPoint((CoordinateSequence) null));
@@ -78,30 +88,27 @@ public class GeometryProvider implements SpaceProvider {
         universe = ugm.get(0);
     }
 
-    private void makeUniverse() {
+    private GeometrySpace constructUniverse(boolean verbose) {
 
         Envelope universeEnv = new Envelope();
 
         Progress prog = new Progress("Making universe...", geometries.keySet().size(), 1, "##0");
         prog.setConvertToLong(true);
-        if (config.verbose) prog.init();
+        if (verbose) prog.init();
         
         for (GeometrySpace gs : geometries.values()) {
             universeEnv.expandToInclude(gs.getGeometry().getEnvelopeInternal());
-            if (config.verbose) prog.update();
+            if (verbose) prog.update();
         }
-        universe = new GeometrySpace(geometryFactory.toGeometry(universeEnv));
-        if (config.verbose) prog.done();
-        if (config.verbose) System.out.println("Universe set to: " + universe.toString());
+        if (verbose) prog.done();
+
+        return new GeometrySpace(geometryFactory.toGeometry(universeEnv));
     }
 
-    public GeometrySpace getUniverse() { return universe; }
-
-    public Set<Integer> getCoversUniverse() { return coversUniverse; }
-
-    public Geometry toGeometry(Envelope envelope) { return getGeometryFactory().toGeometry(envelope); }
-
-    public Set<Integer> keySet() { return getSpaces().keySet(); }
+    private void makeAndSetUniverse() {
+        universe = constructUniverse(config.verbose);
+        if (config.verbose) System.out.println("Universe set to: " + universe.toString());
+    }
 
     public GeometrySpace get(Integer uri) {
 
@@ -118,17 +125,21 @@ public class GeometryProvider implements SpaceProvider {
 
     private GeometryProvider makeSubProvider(GeometrySpace uni, Set<Integer> ints) {
 
-        Map<Integer, Space> spMap = new HashMap<Integer, Space>();
         Set<Integer> coversChildUniverse = new HashSet<Integer>();
+        Map<Integer, GeometrySpace> overlappingChildUniverse = new HashMap<Integer, GeometrySpace>();
+        getIntersections(uni, ints, geometries, overlappingChildUniverse, coversChildUniverse);
 
-        Utils.getIntersections(uni, ints, geometries, config.numThreads, spMap, coversChildUniverse);
+        return new GeometryProvider(config, dataProvider, uni, overlappingChildUniverse, coversChildUniverse,
+                                    geometryFactory, updating);
+    }
 
-        Map<Integer, GeometrySpace> geoms = new HashMap<Integer, GeometrySpace>();
-        for (Integer uri : spMap.keySet())
-            geoms.put(uri, (GeometrySpace) spMap.get(uri));
+    private void getIntersections(GeometrySpace uni, Set<Integer> elems,  Map<Integer, GeometrySpace> geos,
+                                  Map<Integer, GeometrySpace> overlapping, Set<Integer> covers) {
 
-        return new GeometryProvider(config, dataProvider, uni, geoms, coversChildUniverse,
-                                    geometryFactory, urisToInsert);
+        Map<Integer, Space> spMap = new HashMap<Integer, Space>();
+        Utils.getIntersections(uni, elems, geos, config.numThreads, spMap, covers);
+
+        for (Integer uri : spMap.keySet()) overlapping.put(uri, (GeometrySpace) spMap.get(uri));
     }
 
     private GeometryProvider[] makeSubProviders(GeometrySpace childUniL, GeometrySpace childUniR,
@@ -143,7 +154,6 @@ public class GeometryProvider implements SpaceProvider {
     public GeometryProvider[] splitProvider(int split) {
 
         GeometrySpace[] childUniverseres = universe.split(split);
-
         return makeSubProviders(childUniverseres[0], childUniverseres[1], keySet(), keySet());
     }
 
@@ -175,18 +185,10 @@ public class GeometryProvider implements SpaceProvider {
 
     public void populateWithExternalOverlapping() {
 
-        if (urisToInsert == null) return; // Do not get external if not in insert mode
+        if (!updating) return; // Do not get external if not in insert mode
         
-        Map<Integer, GeometrySpace> extGeos = getExternalOverlapping(universe);
-        Set<Integer> extGeoKeys = new HashSet<Integer>(extGeos.keySet());
-
-        for (Integer uri : extGeoKeys) {
-            GeometrySpace newG = universe.intersection(extGeos.get(uri));
-            if (newG.covers(universe))
-                extGeos.remove(uri);
-            else
-                geometries.put(uri, newG);
-        }
+        Map<Integer, GeometrySpace> external = getExternalOverlapping(universe);
+        geometries.putAll(external);
     }
    
     private Map<Integer, GeometrySpace> getExternalOverlapping(Space s) {

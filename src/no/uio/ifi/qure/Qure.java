@@ -36,7 +36,7 @@ public class Qure {
         Config[] configs = new Config[1];
         int i = 0;
 
-        Config o2 = new Config("dallas", "par_ncstr", 13, 3);
+        Config o2 = new Config("dallas", "int2", 13, 3, 30);
         configs[i++] = o2;
 
         // Config o3 = new Config("dallas", "es_bc40", 20, 3);
@@ -53,6 +53,7 @@ public class Qure {
         // Config o6 = new Config("osm_dk", "dd_bc50", 20, 3);
         // configs[i++] = o6;
 
+        //runInsertBM(o2, 100, 0.0001);
         runBulk(o2);
         //runMany(configs);
     }
@@ -154,6 +155,11 @@ public class Qure {
         long after2 = System.currentTimeMillis();
         takeTime(before, after, config.rawBTTableName, "Construction time", true, true);
         takeTime(before, after2, config.rawBTTableName, "Total time", true, true);
+    }
+
+    public static void runInsertBM(Config config, int n, double epsilon) {
+        deleteBintrees(n, epsilon, config);
+        runInsert(config);
     }
 
     public static void runInsert(Config config) {
@@ -291,9 +297,12 @@ public class Qure {
         DatabaseMetaData meta = connect.getMetaData();
         ResultSet res = meta.getTables(null, "split", config.rawBTTableName, null);
         boolean insert = res.next();
-        if (!insert)
-            statement.executeUpdate("CREATE TABLE " + config.splitTable + " (block bigint, split bigint);");
-
+        if (!insert) {
+            if (config.blockSize > 31)
+                statement.executeUpdate("CREATE TABLE " + config.splitTable + " (block bigint, split bigint);");
+            else
+                statement.executeUpdate("CREATE TABLE " + config.splitTable + " (block int, split int);");
+        }
         String splitStr = "INSERT INTO " + config.splitTable + " VALUES ";
         for (Block block : splits.keySet())
             splitStr += "(" + block.getRepresentation() + ", " + splits.get(block).getRepresentation() + "), ";
@@ -317,6 +326,28 @@ public class Qure {
                                 + "_wit_index ON " + config.btTableName + "(block) WHERE block % 2 != 0;");
 
         if (config.verbose) System.out.println(" Done.");
+    }
+
+    private static void deleteBintrees(int n, double epsilon, Config config) {
+        try {
+            Class.forName("org.postgresql.Driver");
+
+            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName + "?user=" +
+                                                  config.dbUsername + "&password=" + config.dbPWD);
+            statement = connect.createStatement();
+            String delQuery = "DELETE FROM " + config.btTableName + " WHERE " + config.uriColumn + " IN ";
+            delQuery = delQuery + "(SELECT " + config.uriColumn + " FROM " + config.btTableName + " WHERE random() < " + epsilon + " LIMIT " + n + ");";
+            
+            int deleted = 0;
+            while (deleted < n)
+                deleted += statement.executeUpdate(delQuery);
+        } catch (Exception ex) {
+            System.err.println(ex.toString());
+            ex.printStackTrace();
+            System.exit(1);
+        } finally {
+            close();
+        }
     }
 
     public static void deleteBintrees(Representation rep, Config config) 
@@ -436,21 +467,18 @@ public class Qure {
 
         while (!tableMade) {
             try {
-                if (config.convertUriToInt) {
-                    statement.executeUpdate("CREATE TABLE " + config.btTableName +
-                                            " (gid int, block bigint);");
-                    tableMade = true;
-                } else {
-                    statement.executeUpdate("CREATE TABLE " + config.btTableName +
-                                            " (id text, block bigint);");
-                    tableMade = true;
-                }
+                String blockType = (config.blockSize > 31) ? "bigint" : "int";
+                if (config.convertUriToInt)
+                    statement.executeUpdate("CREATE TABLE " + config.btTableName + " (gid int, block " + blockType + ");");
+                else
+                    statement.executeUpdate("CREATE TABLE " + config.btTableName + " (id text, block " + blockType + ");");
+                tableMade = true;
             } catch (SQLException sqlex) {
                 System.out.println("Error on table creation with name " + config.btTableName + ":");
                 System.out.println(sqlex.getMessage());
                 System.out.print("Try to add a new table name suffix (or just hit return twice to abort): ");
                 Scanner scan = new Scanner(System.in).useDelimiter("[ \n]"); // Table name is only one word
-                config = new Config(config.rawGeoTableName, scan.next(), config.maxIterDepth, config.overlapsArity);
+                config = new Config(config.rawGeoTableName, scan.next(), config.maxIterDepth, config.overlapsArity, config.blockMemberCount);
                 System.out.println("");
                 if (config.btTableName.equals("")) {
                     close();

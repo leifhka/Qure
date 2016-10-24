@@ -6,7 +6,9 @@ import java.util.Arrays;
 public class Block {
 
     // Total number of bits per block.
-    private static final int BLOCK_SIZE = Long.SIZE - 1;
+    private static int BLOCK_SIZE = Long.SIZE - 1;
+
+    public static void setBlockSize(int size) { BLOCK_SIZE = size; }
 
     // Total number of bits for meta information (size + unique part flag)
     private static final int META_SIZE = 1 + (Integer.SIZE - Integer.numberOfLeadingZeros(BLOCK_SIZE));

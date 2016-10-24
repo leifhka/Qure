@@ -16,36 +16,18 @@ public class Config {
 
     public int maxIterDepth;
     public int overlapsArity;
+    public int blockMemberCount;
     public int numThreads = 8;
-    public int blockMemberCount = 30;
     public int dim = 2;
 
     public int maxDiff = 25;
     public int maxSplits = 10;
  
-    public Config(String table, int representationDepth, int overlapsArity) {
+    public Config(String table, String suff, int representationDepth, int overlapsArity, int blockMemberCount) {
 
         this.overlapsArity = overlapsArity;
         this.maxIterDepth = representationDepth;
-
-        rawGeoTableName = table;
-        geoTableName = "geo." + rawGeoTableName;
-
-        rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity;
-        schemaName = "qure";
-        btTableName = schemaName + "." + rawBTTableName;
-
-        splitTable = "split." + rawBTTableName;
-        splitQuery = "SELECT * FROM " + splitTable + ";";
-
-        geoQuerySelectFromStr = "select " + uriColumn + ", " + geoColumn + " from " + geoTableName;
-        geoQueryStr = geoQuerySelectFromStr + ";";
-    }
-
-    public Config(String table, String suff, int representationDepth, int overlapsArity) {
-
-        this.overlapsArity = overlapsArity;
-        this.maxIterDepth = representationDepth;
+        this.blockMemberCount = blockMemberCount;
 
         rawGeoTableName = table;
         geoTableName = "geo." + rawGeoTableName;
@@ -70,6 +52,7 @@ public class Config {
         }
     };
 
+    public int blockSize = 31;
     public String dbName = "test";
     public String dbPWD = "test";
     public String dbUsername = "leifhka";
