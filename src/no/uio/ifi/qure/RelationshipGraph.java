@@ -279,76 +279,6 @@ public class RelationshipGraph {
     }
 
     /**
-     * Returns a graph representing the merge of this and argument.
-     * An overlap relationship holds in the merged graph if it holds
-     * in either this or o, whereas a containment relationship contains(A,B)
-     * holds in the merged graph if it holds in the all the graphs which A is a part of.
-     */
-    public RelationshipGraph merge(RelationshipGraph o) {
-
-        // Start by making a new node, containing the uris from both o and this
-        Set<Integer> urisUnion = new HashSet<Integer>(uris);
-        urisUnion.addAll(o.getUris());
-
-        RelationshipGraph newNode = new RelationshipGraph(block.getParent(), urisUnion, k);
-        Map<Integer, Node> oNodes = new HashMap<Integer, Node>(o.getNodes());
-
-        Set<Set<Integer>> overlapsToAdd = new HashSet<Set<Integer>>();
-
-        // Then add all relationships from this
-        for (Integer uri : nodes.keySet()) {
-
-            Node n = nodes.get(uri);
-            Set<Integer> pUris = new HashSet<Integer>(n.succs);
-            
-            if (!isOverlapsNode(uri) && o.getUris().contains(uri)) {
-
-                Node on = oNodes.get(uri);
-                Set<Integer> opUris = new HashSet<Integer>(on.succs);
-                pUris.retainAll(opUris); // contains(uri, pUri) holds in newNode iff it holds in both o and this
-                newNode.addCoveredBy(uri, pUris);
-
-                if (pUris.size() != opUris.size() || pUris.size() != on.succs.size()) {
-                    // Since we have removed some overlaps, we need to add an
-                    // overlaps-relationship between uri and the removed succs.
-                    Set<Integer> removedSuccs = new HashSet<Integer>(n.succs);
-                    removedSuccs.removeAll(pUris);
-                    Set<Integer> removedO = new HashSet<Integer>(on.succs);
-                    removedO.removeAll(pUris);
-                    removedSuccs.addAll(removedO);
-                    removedSuccs.add(uri); // These should all overlap
-
-                    overlapsToAdd.add(removedSuccs); //Might be redundant, add after all covers.
-                    //newNode.addOverlapsWithRedundancyCheck(removedSuccs);
-                }
-
-                oNodes.remove(uri);
-            } else if (isOverlapsNode(uri)) {
-                overlapsToAdd.add(pUris);
-                //newNode.addOverlapsWithoutRedundancyCheck(pUris);
-            } else {
-                newNode.addCoveredBy(uri, pUris);
-            }
-        }
-
-        // Add all from o's coveredBy that was not in this, but add overlaps later,
-        // as redundancy first can be checked after all containments are added.
-        for (Integer uri : oNodes.keySet()) {
-            Node n = oNodes.get(uri);
-            if (o.isOverlapsNode(uri))
-                overlapsToAdd.add(n.succs); //Might be redundant, add after all covers.
-            else
-                newNode.addCoveredBy(uri, n.succs); 
-        }
-
-        //Then add all new overlaps
-        for (Set<Integer> ps : overlapsToAdd)
-            newNode.addOverlapsWithRedundancyCheck(ps);
-
-        return newNode;
-    }
-
-    /**
      * Constructs a relaionship graph based on the relationships between the spaces in spaceNode with
      * overlaps-arity up to overlapsArity.
      */
@@ -394,6 +324,7 @@ public class RelationshipGraph {
                         intersections.add(nin);
                         intMap.get(ui).add(uj);
                         intMap.get(uj).add(ui);
+                        newNode.addOverlapsWithoutRedundancyCheck(elems);
                     }
                 }
             }
@@ -413,6 +344,7 @@ public class RelationshipGraph {
                                       int k, SpaceProvider spaces, Map<Integer, Set<Integer>> intMap) {
 
         Set<Intersection> ints = new HashSet<Intersection>(intersections);
+        Set<Set<Integer>> added = new HashSet<Set<Integer>>();
 
         for (int i = 3; i <= k; i++) {
 
@@ -423,22 +355,40 @@ public class RelationshipGraph {
 
                 boolean updated = false; // States whether the <in> has become part of a larger intersection
 
-                // Need only check the elements already intersection an element in nin
+                // Need only check the elements already intersection all elements in nin
+                // so we compute the intersection of all overlapping elements
                 Set<Integer> possible = new HashSet<Integer>();
-                for (Integer ine : in.getElements()) possible.addAll(intMap.get(ine));
+                boolean first = true;
+                for (Integer ine : in.getElements()) {
+                    if (first) {
+                        possible.addAll(intMap.get(ine));
+                        first = false;
+                    } else {
+                        possible.retainAll(intMap.get(ine));
+                    }
+                }
                 possible.removeAll(in.getElements());
 
                 for (Integer e : possible) {
 
-                    Intersection nin = in.add(e, spaces);
+                    if (ints.contains(new Intersection(null, Utils.add(in.getElements(), e)))) {
+                        updated = true;
+                        continue;
+                    }
 
-                    if (nin != null) { // Intersection was successfull (i.e. non-empty, not implicit, etc)
+                    Intersection nin = null;
+                    nin = in.add(e, spaces);
+
+                    if (nin != null) { // Intersection was successfull (i.e. non-empty)
                         updated = true;
                         ints.add(nin); 
+                        addOverlapsWithRedundancyCheck(nin.getElements());
                     }
                 }
-                if (!updated)
+                if (!updated && !added.contains(in.getElements())) {
                     addOverlapsWithRedundancyCheck(in.getElements());
+                    added.add(in.getElements());
+                }
             }
         }
 
@@ -463,175 +413,69 @@ public class RelationshipGraph {
         return true;
     }
 
-    private boolean allKaryOverlapsWith(Set<Integer> uris1, Set<Integer> uris2, int k) {
-
-        Set<Integer> common = Utils.intersection(uris1, uris2); //new HashSet<Integer>(uris1);
-        //common.retainAll(uris2);
-        Set<Integer> diff1 = Utils.difference(uris1, common); //new HashSet<Integer>(uris1);
-        //diff1.removeAll(common);
-        Set<Integer> diff2 = Utils.difference(uris2, common); //new HashSet<Integer>(uris2);
-        //diff2.removeAll(common);
-
-        for (Integer u2 : diff2) 
-            if (!allKaryOverlapsWith(diff1, u2, k)) return false;
-
-        // for (Integer u2 : uris2)
-        //     if (!allKaryOverlapsWith(uris1, u2, k)) return false;
-
-        return true;
-    }
-
     private boolean allKaryOverlaps(Set<Integer> uris, int k) {
         return allKaryOverlaps(nodes.keySet(), uris.toArray(new Integer[uris.size()]), -1, k);
+    }
+
+    private boolean allKaryOverlapsWith(Set<Integer> uris1, Set<Integer> uris2, int k) {
+
+        return allKaryOverlaps(Utils.union(uris1, uris2), k);
+
+        //Set<Integer> diff = Utils.difference(uris1, uris2); 
+        //Set<Integer> union = Utils.difference(uris2, uris1);
+        //union.addAll(diff);
+        //return allKaryOverlaps(nodes.keySet(), union.toArray(new Integer[union.size()]), -1, k);
+        
+        //for (Integer u2 : diff2) 
+        //    if (!allKaryOverlapsWith(diff1, u2, k)) return false;
+
+        //return true;
     }
 
     private boolean allKaryOverlapsWith(Set<Integer> rest, Integer u, int rsize) {
         return allKaryOverlaps(nodes.get(u).preds, rest.toArray(new Integer[rest.size()]), -1, rsize-1);
     }
 
-    public void minimizeKIntersectionsOPT(int k) {
-
-        Map<Set<Integer>, Set<Integer>> ints = new HashMap<Set<Integer>, Set<Integer>>();
-        for (Integer i : nodes.keySet()) {
-            if (isOverlapsNode(i) && nodes.get(i).succs.size() >= k) {
-                Set<Integer> pss = new HashSet<Integer>();
-                for (Integer u : nodes.get(i).succs) {
-                    for (Integer up : nodes.get(u).preds) {
-                        for (Integer ups : nodes.get(up).succs) {
-                            pss.add(ups);
-                        }
-                    }
-                }
-                ints.put(nodes.get(i).succs, pss);
-            }
-        }
-
-        boolean someUpdated = true;
-
-        for (int i = k; !ints.isEmpty(); i++) {
-        
-            Map<Set<Integer>, Set<Integer>> iterSet = new HashMap<Set<Integer>, Set<Integer>>(ints);
-            ints = new HashMap<Set<Integer>, Set<Integer>>(); // Stores next iterations sets
-
-            for (Set<Integer> in : iterSet.keySet()) {
-
-                boolean updated = false; // States whether the <in> has become part of a larger overlap
-                Set<Integer> toRemove = new HashSet<Integer>();
-               
-                for (Integer u : iterSet.get(in)) {
-
-                    Set<Integer> nin = new HashSet<Integer>(in);
-                    nin.add(u);
-                    if (!ints.keySet().contains(nin) && allKaryOverlapsWith(in, u, k)) { 
-                        ints.put(nin, iterSet.get(in)); 
-                        updated = true;
-                        someUpdated = true;
-                    } else {
-                        toRemove.remove(u);
-                    }
-                }
-                if (!updated && i > k) {
-                    addOverlapsWithRedundancyCheck(in);
-                } else {
-                    ints.get(in).removeAll(toRemove);
-                }
-            }
-        }
-
-        for (Set<Integer> in : ints.keySet()) // Need to add remaining intersections
-            addOverlapsWithRedundancyCheck(in);
-    }
-
-    public void minimizeKIntersections(int k) {
-
-        Set<Set<Integer>> ints = new HashSet<Set<Integer>>();
-        for (Integer u : nodes.keySet()) {
-            if (isOverlapsNode(u) && nodes.get(u).succs.size() >= k)
-                ints.add(nodes.get(u).succs);
-        }
-
-        boolean someUpdated = true;
-
-        for (int i = k; someUpdated; i++) {
-        
-            someUpdated = false;
-            Set<Set<Integer>> iterSet = new HashSet<Set<Integer>>(ints);
-            ints = new HashSet<Set<Integer>>(); // Stores next iterations sets
-
-            for (Set<Integer> in : iterSet) {
-
-                boolean updated = false; // States whether the <in> has become part of a larger overlap
-
-                Set<Integer> pss = new HashSet<Integer>();
-                for (Integer u : in) {
-                    for (Integer up : nodes.get(u).preds) {
-                        for (Integer ups : nodes.get(up).succs) {
-                            if (!in.contains(ups))
-                                pss.add(ups);
-                        }
-                    }
-                }
-                
-                for (Integer u : pss) {
-
-                    Set<Integer> nin = new HashSet<Integer>(in);
-                    nin.add(u);
-                    if (!ints.contains(nin) && allKaryOverlapsWith(in, u, k)) { 
-                        ints.add(nin); 
-                        updated = true;
-                        someUpdated = true;
-                    }
-                }
-                if (!updated && i > k)
-                    addOverlapsWithRedundancyCheck(in);
-            }
-        }
-
-        for (Set<Integer> in : ints) // Need to add remaining intersections
-            addOverlapsWithRedundancyCheck(in);
-    }
-
     private Set<Set<Integer>> findMinimizers(int k, Set<Integer> toCheck) {
 
         Set<Set<Integer>> overlaps = new HashSet<Set<Integer>>();
 
-        for (Integer u : nodes.keySet()) {
-            if (!toCheck.contains(u)) continue;
+        for (Integer u : toCheck) {
 
             Node n = nodes.get(u);
+
+            if (!isOverlapsNode(u) || n.succs.size() < k) continue;
 
             // We check each k-ary overlaps node, whether this overlaps
             // can be merged with a k+1-ary overlaps. We can do this if
             // for k+1 nodes, all k-ary overlaps exists.
-            if (isOverlapsNode(u) && n.succs.size() >= k) {
-                Set<Integer> sps = new HashSet<Integer>();
+            // We only need to check the overlaps that have at least one common node with u,
+            // and represents a k-ary overlap.
+            Set<Integer> sps = new HashSet<Integer>();
 
-                // We only need to check the overlaps that have at least one common node with u,
-                // and represents a k-ary overlap.
-                for (Integer s : n.succs) {
-                    for (Integer sp : nodes.get(s).preds) {
-                        if (isOverlapsNode(sp) && !sp.equals(u) && nodes.get(sp).succs.size() >= k)
-                            sps.add(sp);
-                    }
+            for (Integer s : n.succs) {
+                for (Integer sp : nodes.get(s).preds) {
+                    if (isOverlapsNode(sp) && !sp.equals(u) && nodes.get(sp).succs.size() >= k)
+                        sps.add(sp);
                 }
+            }
                 
-                for (Integer sp : sps) {
-                    Node spn = nodes.get(sp);
-                    Set<Integer> commonSuccs = new HashSet<Integer>(); 
-                    for (Integer s : spn.succs) {
-                        if (n.succs.contains(s) && !containsSomeURI(s))
-                            commonSuccs.add(s);
-                    }
+            for (Integer sp : sps) {
+                Node spn = nodes.get(sp);
+                Set<Integer> commonSuccs = new HashSet<Integer>(); 
+                for (Integer s : spn.succs) {
+                    if (n.succs.contains(s) && !containsSomeURI(s))
+                        commonSuccs.add(s);
+                }
 
-                    if (commonSuccs.size() >= k-1) {
-                        Set<Integer> newOverlaps = new HashSet<Integer>(n.succs);
-                        newOverlaps.addAll(spn.succs);
-                        if (!overlaps.contains(newOverlaps) &&
-                            allKaryOverlapsWith(n.succs, spn.succs, k)) {
-                            
-                            overlaps.add(newOverlaps);
-                            break; 
-                        }
+                if (commonSuccs.size() >= k-1) {
+                    Set<Integer> newOverlaps = new HashSet<Integer>(n.succs);
+                    newOverlaps.addAll(spn.succs);
+                    if (!overlaps.contains(newOverlaps) &&
+                        allKaryOverlapsWith(n.succs, spn.succs, k)) {
+                        
+                        overlaps.add(newOverlaps);
+                        break; 
                     }
                 }
             }
@@ -659,21 +503,21 @@ public class RelationshipGraph {
         while (true) {
 
             Set<Set<Integer>> overlaps = findMinimizers(k, toCheck);
+            if (overlaps.isEmpty()) break;
+
             toCheck = new HashSet<Integer>();
 
-            if (!overlaps.isEmpty()) {
-                for (Set<Integer> ov : overlaps) {
-                    Integer newNode = addOverlapsWithRedundancyCheck(ov);
-                    if (newNode != null) toCheck.add(newNode);
-                }
-            } else {
-                break;
+            for (Set<Integer> ov : overlaps) {
+                Integer newNode = addOverlapsWithRedundancyCheck(ov);
+                if (newNode != null) toCheck.add(newNode);
             }
+            toCheck.retainAll(nodes.keySet());
         }
     }
 
     public Representation constructRepresentation() { 
 
+        // TODO: Red?
         Set<Integer> nus = new HashSet<Integer>(nodes.keySet());
         for (Integer u : nus) {
             if (nodes.containsKey(u) && isOverlapsNode(u)) {
@@ -763,4 +607,3 @@ public class RelationshipGraph {
         }
     }
 }
-

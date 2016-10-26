@@ -194,6 +194,7 @@ public class GeometryProvider implements SpaceProvider {
     private Map<Integer, GeometrySpace> getExternalOverlapping(Space s) {
 
         GeometrySpace geo = (GeometrySpace) s;
+        // TODO: test ST_intersects -> ST_overlaps (to remove geoms containing universe)
         String whereClause = "ST_intersects(geom, ST_GeomFromText('" + geo.getGeometry().toString() + "'))";
         Map<Integer, String> wkbs = dataProvider.getExternalOverlapping(whereClause);
         Map<Integer, GeometrySpace> res = parseGeometries(wkbs, false);

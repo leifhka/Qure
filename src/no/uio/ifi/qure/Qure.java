@@ -36,7 +36,7 @@ public class Qure {
         Config[] configs = new Config[1];
         int i = 0;
 
-        Config o2 = new Config("dallas", "int2", 13, 3, 30);
+        Config o2 = new Config("osm_no", "comp", 15, 3, 30);
         configs[i++] = o2;
 
         // Config o3 = new Config("dallas", "es_bc40", 20, 3);

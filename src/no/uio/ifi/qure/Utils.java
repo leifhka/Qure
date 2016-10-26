@@ -172,4 +172,10 @@ public class Utils {
         u.addAll(s2);
         return u;
     }
+
+    public static Set<Integer> add(Set<Integer> s, Integer e) {
+        Set<Integer> u = new HashSet<Integer>(s);
+        u.add(e);
+        return u;
+    }
 }
