@@ -36,7 +36,7 @@ public class Qure {
         Config[] configs = new Config[1];
         int i = 0;
 
-        Config o2 = new Config("osm_no", "comp", 15, 3, 30);
+        Config o2 = new Config("dallas", "compi", 15, 3, 30);
         configs[i++] = o2;
 
         // Config o3 = new Config("dallas", "es_bc40", 20, 3);
@@ -53,19 +53,15 @@ public class Qure {
         // Config o6 = new Config("osm_dk", "dd_bc50", 20, 3);
         // configs[i++] = o6;
 
-        //runInsertBM(o2, 100, 0.0001);
-        runBulk(o2);
+        runInsertBM(o2, 100);
+        //runBulk(o2);
         //runMany(configs);
     }
 
     private static void runMany(Config[] configs) {
-
-        for (int i = 0; i < configs.length; i++) {
-            Config config = configs[i];
-            runBulk(config);
-        }
+        for (int i = 0; i < configs.length; i++)
+            runBulk(configs[i]);
     }
-
 
     public static void takeTime(long before, long after, String name,
                                  String what, boolean print, boolean writeToFile) {
@@ -140,7 +136,7 @@ public class Qure {
 
         if (rep != null && config.writeBintreesToDB) {
              try {
-                 writeBintreesToDB(rep, config);
+                 writeBintreesToDB(rep, new HashSet<Block>(), config);
              } catch (SQLException e) {
                  System.err.println("SQLError: " + e.getMessage());
                  System.err.println(e.getNextException());
@@ -157,8 +153,8 @@ public class Qure {
         takeTime(before, after2, config.rawBTTableName, "Total time", true, true);
     }
 
-    public static void runInsertBM(Config config, int n, double epsilon) {
-        deleteBintrees(n, epsilon, config);
+    public static void runInsertBM(Config config, int n) {
+        deleteRandomBintrees(n, config);
         runInsert(config);
     }
 
@@ -169,8 +165,8 @@ public class Qure {
         RawDataProvider dataProvider = new DBDataProvider(config);
         SpaceProvider geometries = new GeometryProvider(config, dataProvider);
         geometries.populateUpdate();
-        Map<Block, Block> evenSplits = dataProvider.getEvenSplits();
-        SpaceToBintree gtb = new SpaceToBintree(config, evenSplits);
+        Map<Block, Block> oldSplits = dataProvider.getEvenSplits();
+        SpaceToBintree gtb = new SpaceToBintree(config, oldSplits);
 
         long before = System.currentTimeMillis();
 
@@ -180,7 +176,7 @@ public class Qure {
 
         if (rep != null && config.writeBintreesToDB) {
              try {
-                 writeBintreesToDB(rep, config);
+                 writeBintreesToDB(rep, oldSplits.keySet(), config);
              } catch (SQLException e) {
                  System.err.println("SQLError: " + e.getMessage());
                  System.err.println(e.getNextException());
@@ -198,7 +194,7 @@ public class Qure {
         takeTime(beforeAll, afterAll, config.rawBTTableName, "Total insert time", true, false);
     }
 
-    public static void writeBintreesToDB(Representation rep, Config config) throws Exception {
+    public static void writeBintreesToDB(Representation rep, Set<Block> oldSplits, Config config) throws Exception {
 
         Map<Integer, Bintree> bintrees = rep.getRepresentation();
         Space universe = rep.getUniverse();
@@ -224,11 +220,12 @@ public class Qure {
             ResultSet res = meta.getTables(config.dbName, config.schemaName, config.rawBTTableName, null);
             boolean insert = res.next();
             if (insert)
-                deleteBintrees(rep, config);
+                deleteBintrees(rep, oldSplits, config);
             else
                 createTable(statement, config);
-
-            insertBintrees(bintrees, config);
+            
+            Set<Integer> notNeedingUP = (insert) ? getURIsNotNeedingUniquePart(config, bintrees.keySet()) : new HashSet<Integer>();            
+            insertBintrees(bintrees, config, notNeedingUP);
 
             if (!insert) {
                 insertUniverse(universe, config);
@@ -245,7 +242,28 @@ public class Qure {
         }
     }
 
-    public static void insertBintrees(Map<Integer, Bintree> bintrees, Config config) 
+    private static Set<Integer> getURIsNotNeedingUniquePart(Config config, Set<Integer> elems) {
+
+        Set<Integer> result = new HashSet<Integer>();
+        
+        try {
+
+            statement.execute("SELECT gid FROM " + config.btTableName + " WHERE block % 2 != 0;");
+            ResultSet hasUniquePart = statement.getResultSet();
+            
+            while (hasUniquePart.next()) {
+                Integer uri = hasUniquePart.getInt(1);
+                if (elems.contains(uri)) result.add(uri);
+            }
+        } catch (Exception e) {
+            System.out.println("Error in getURIsNotNeedingUniquePart(): " + e.toString());
+            e.printStackTrace();
+            System.exit(1);
+        }
+        return result;
+    }
+
+    public static void insertBintrees(Map<Integer, Bintree> bintrees, Config config, Set<Integer> notNeedingUP) 
         throws SQLException {
 
         Progress prog = new Progress("Making query...", bintrees.size(), 1, "##0");
@@ -259,10 +277,10 @@ public class Qure {
             Set<Block> blocksArr = bintrees.get(uri).getBlocks();
             Block[] blocks = blocksArr.toArray(new Block[blocksArr.size()]);
 
-            for (int i = 0; i < blocks.length-1; i++)
-                query += "('" + uri + "', " + blocks[i].getRepresentation() + "), ";
-
-            query += "('" + uri + "', " + blocks[blocks.length-1].getRepresentation() + ");";
+            for (int i = 0; i < blocks.length; i++) {
+                long b = blocks[i].getRepresentation() & ((notNeedingUP.contains(uri)) ? -2L : -1L);
+                query += "('" + uri + "', " + b + ")" + ((i == blocks.length-1) ? ";" : ", ");
+            }
 
             statement.addBatch(query);
             if (config.verbose) prog.update();
@@ -273,8 +291,11 @@ public class Qure {
                              config.btTableName + "...");
         }
 
-        statement.executeBatch();
-        if (config.verbose) System.out.println(" Done");
+        int[] ins = statement.executeBatch();
+        int sum = 0;
+        for (int i=0; i < ins.length; i++) sum += ins[i];
+
+        if (config.verbose) System.out.println(" Done [Inserted " + sum + " rows]");
     }
 
 
@@ -308,9 +329,9 @@ public class Qure {
             splitStr += "(" + block.getRepresentation() + ", " + splits.get(block).getRepresentation() + "), ";
         splitStr = splitStr.substring(0, splitStr.length()-2) + ";";
 
-        statement.executeUpdate(splitStr);
+        int ins = statement.executeUpdate(splitStr);
 
-        if (config.verbose) System.out.println(" Done.");
+        if (config.verbose) System.out.println(" Done. [Inserted " + ins + " rows]");
     }
 
     public static void createIndexStructures(Config config) 
@@ -328,7 +349,7 @@ public class Qure {
         if (config.verbose) System.out.println(" Done.");
     }
 
-    private static void deleteBintrees(int n, double epsilon, Config config) {
+    private static void deleteRandomBintrees(int n, Config config) {
         try {
             Class.forName("org.postgresql.Driver");
 
@@ -336,11 +357,9 @@ public class Qure {
                                                   config.dbUsername + "&password=" + config.dbPWD);
             statement = connect.createStatement();
             String delQuery = "DELETE FROM " + config.btTableName + " WHERE " + config.uriColumn + " IN ";
-            delQuery = delQuery + "(SELECT " + config.uriColumn + " FROM " + config.btTableName + " WHERE random() < " + epsilon + " LIMIT " + n + ");";
-            
-            int deleted = 0;
-            while (deleted < n)
-                deleted += statement.executeUpdate(delQuery);
+            delQuery += "(SELECT " + config.uriColumn + " FROM (SELECT * FROM " + config.geoTableName + " ORDER BY random() LIMIT " + n + ") T);";
+            int dels = statement.executeUpdate(delQuery);
+            System.out.println("Deleted randomly " + n + " bintrees (" + dels + " rows).");
         } catch (Exception ex) {
             System.err.println(ex.toString());
             ex.printStackTrace();
@@ -350,7 +369,7 @@ public class Qure {
         }
     }
 
-    public static void deleteBintrees(Representation rep, Config config) 
+    public static void deleteBintrees(Representation rep, Set<Block> oldSplitBlocks, Config config) 
         throws SQLException {
         // To update the representations we will first delete the old representations for
         // the blocks were a new representation is created.
@@ -362,10 +381,10 @@ public class Qure {
             String delQuery = "DELETE FROM " + config.btTableName + " WHERE ";
             delQuery += config.uriColumn + " = '" + uri + "' AND (false";
             for (Block block : res.get(uri).getBlocks()) {
-                Block parent = getParentInSet(block, rep.getEvenSplits().keySet());
+                Block parent = getParentInSet(block, oldSplitBlocks);
                 if (parent != null) {
                     String blockStr = "" + parent.getRepresentation(); 
-                    delQuery += " OR " + makePrefixQuery(blockStr);
+                    delQuery += " OR " + makePrefixQuery(blockStr, config.blockSize);
                 }
             }
             delQuery += ");";
@@ -382,7 +401,7 @@ public class Qure {
         for (int i = 0; i < deleted.length; i++)
             delSum += deleted[i];
 
-        if (config.verbose) System.out.println(" Done. [Deleted " + delSum + " rows.]");
+        if (config.verbose) System.out.println(" Done. [Deleted " + delSum + " rows]");
     }
 
     public static Block getParentInSet(Block block, Set<Block> bs) {
@@ -393,72 +412,26 @@ public class Qure {
             if (block.blockPartOf(b) && b.blockPartOf(smallest))
                 smallest = b;
         }
-        return (smallest.equals(Block.TOPBLOCK)) ? null : smallest;
+        
+        // Need to split last block, as bs only contains blocks that were split
+        Block[] lr = smallest.split();
+        if (block.blockPartOf(lr[0])) 
+            return lr[0];
+        else if (block.blockPartOf(lr[1])) 
+            return lr[1];
+        else 
+            return null;
     }
 
-    public static String makePrefixQuery(String block) {
-        String expr = "(((1::bigint << (63 - (" + block + " & ((1 << 7)-1))::int)) - 1) | " + block + ")";
+    public static String makePrefixQuery(String block, int blockSize) {
+        String expr;
+        if (blockSize > 31)
+            expr = "(((1::bigint << (63 - ((" + block + " & 127) >> 1))::int)) - 1) | " + block + ")";
+        else
+            expr = "(((1 << (31 - ((" + block + " & 63) >> 1))) - 1) | " + block + ")";
         String c1 = block + " & -2 <= block";
         String c2 = expr + " >= block";
         return "(" + c1 + " AND " + c2 + ")";
-    }
-
-    public static void updateBintreesInDB(Representation rep, Config config) throws Exception {
-
-        Map<Integer, Bintree> res = rep.getRepresentation();
-
-        try {
-            Class.forName("org.postgresql.Driver");
-
-            if (config.verbose) {
-                System.out.println("--------------------------------------");
-                System.out.print("Connecting to database " + config.dbName +
-                                 " as user " + config.dbUsername + "...");
-            }
-
-            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName + "?user=" +
-                                                  config.dbUsername + "&password=" + config.dbPWD);
-            if (config.verbose) System.out.println(" Done");
-
-            statement = connect.createStatement();
-
-            deleteBintrees(rep, config);
-
-            Progress prog = new Progress("Making insert query...", res.size(), 1, "##0");
-            if (config.verbose) prog.init();
-
-            String insQuery;
-
-            for (Integer uri : res.keySet()) {
-                insQuery = "INSERT INTO " + config.btTableName + " VALUES ";
-                Set<Block> blocksSet = res.get(uri).getBlocks();
-                Block[] blocks = blocksSet.toArray(new Block[blocksSet.size()]);
-                for (int i = 0; i < blocks.length; i++) {
-                    insQuery += "('" + uri + "', " + blocks[i].getRepresentation() + "), ";
-                }
-                insQuery += "('" + uri + "', " + blocks[blocks.length-1].getRepresentation() + ");";
-                statement.addBatch(insQuery);
-                if (config.verbose) prog.update();
-            }
-            if (config.verbose) {
-                prog.done();
-                System.out.print("Executing update batch query, writing to table " +
-                                 config.btTableName + "...");
-            }
-
-            int[] r = statement.executeBatch();
-            if (config.verbose) System.out.println(" Done");
-            int sum = 0;
-            for (int ins : r) sum += ins;
-            System.out.println("Inserted " + sum + " rows.");
-
-        } catch (ClassNotFoundException e) {
-            System.err.println("Class not found: " + e.getMessage());
-        } catch (Exception e) {
-            throw e;
-        } finally {
-            close();
-        }
     }
 
     public static void createTable(Statement statement, Config config) {

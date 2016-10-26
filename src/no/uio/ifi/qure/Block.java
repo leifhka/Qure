@@ -212,9 +212,10 @@ public class Block {
 
     public String toString() {
         
+        String vs = Long.toBinaryString(value);
         String zeros = "";
-        for (int i = 0; i < Long.numberOfLeadingZeros(value); i++) zeros += "0";
-        return zeros + Long.toBinaryString(value);
+        for (int i = 0; i < BLOCK_SIZE - vs.length(); i++) zeros += "0";
+        return zeros + vs;
     }
 
     /**

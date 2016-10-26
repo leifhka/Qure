@@ -42,7 +42,7 @@ public class SpaceToBintree {
         if (config.verbose) prog.done();
 
         representation.setUniverse(spaces.getUniverse());
-        if (evenSplits != null) representation.addAllSplitBlocks(evenSplits);
+        //if (evenSplits != null) representation.addAllSplitBlocks(evenSplits);
         return representation;
     }
 
