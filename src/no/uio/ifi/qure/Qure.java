@@ -36,7 +36,7 @@ public class Qure {
         Config[] configs = new Config[1];
         int i = 0;
 
-        Config o2 = new Config("dallas", "compi", 15, 3, 30);
+        Config o2 = new Config("dallas", "gd2", 15, 3, 30);
         configs[i++] = o2;
 
         // Config o3 = new Config("dallas", "es_bc40", 20, 3);
@@ -53,8 +53,8 @@ public class Qure {
         // Config o6 = new Config("osm_dk", "dd_bc50", 20, 3);
         // configs[i++] = o6;
 
-        runInsertBM(o2, 100);
-        //runBulk(o2);
+        //runInsertBM(o2, 100);
+        runBulk(o2);
         //runMany(configs);
     }
 

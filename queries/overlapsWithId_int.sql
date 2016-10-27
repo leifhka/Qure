@@ -1,6 +1,6 @@
-\set id_val 13
-\set geo_name geo.osm_no
-\set bt_name qure.osm_no_d15_k3_bc30_comp
+\set id_val 1200
+\set geo_name geo.dallas
+\set bt_name qure.dallas_d15_k3_bc30_gd
 \set len_s 6
 \set len_v 25
 \set len_b ((:len_s + :len_v)+1)
@@ -12,7 +12,7 @@ FROM :bt_name
 WHERE gid = :id_val;
 
 
-SELECT DISTINCT T2.gid  
+SELECT COUNT(DISTINCT T2.gid)
 FROM :bt_name AS T1, :bt_name AS T2,
      (VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12), (13),
              (14), (15), (16), (17), (18), (19), (20), (21), (22), (23), (24), (25)) AS V(n)
@@ -24,7 +24,7 @@ WHERE T1.gid = :id_val AND
         T2.block <= ((T1.block & ~((1 << ((:len_b - V.n) - 1)) - 1)) | ((V.n<<1)+1))) OR
        T2.block = 0);
 
-SELECT DISTINCT T2.gid 
+SELECT COUNT(DISTINCT T2.gid) 
 FROM :geo_name AS T1, :geo_name AS T2 
 WHERE T1.gid = :id_val AND 
       ST_intersects(T1.geom, T2.geom);
