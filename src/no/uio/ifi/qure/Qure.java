@@ -33,34 +33,45 @@ public class Qure {
 
     public static void main(String[] args) {
 
-        Config[] configs = new Config[1];
-        int i = 0;
+        ArrayList<Config> configs = new ArrayList<Config>();
 
-        Config o2 = new Config("dallas", "gd2", 15, 3, 30);
-        configs[i++] = o2;
+        configs.add(new Config("npd", "t", 13, 3, 30));
+        configs.add(new Config("dallas", "t", 15, 3, 30));
+        configs.add(new Config("osm_no", "t", 15, 3, 30));
+        configs.add(new Config("osm_dk", "t", 15, 3, 30));
 
-        // Config o3 = new Config("dallas", "es_bc40", 20, 3);
-        // o3.blockMemberCount = 40;
-        // configs[i++] = o3;
+        
+        configs.add(new Config("npd", "t", 13, 2, 30));
+        configs.add(new Config("dallas", "t", 15, 2, 30));
+        configs.add(new Config("osm_no", "t", 15, 2, 30));
+        configs.add(new Config("osm_dk", "t", 15, 2, 30));
 
-        // Config o4 = new Config("osm_no", "dd_bc50", 20, 3);
-        // configs[i++] = o4;
 
-        // Config o5 = new Config("osm_no", "dd_bc70", 20, 3);
-        // o5.blockMemberCount = 70;
-        // configs[i++] = o5;
+        configs.add(new Config("npd", "t", 10, 3, 30));
+        configs.add(new Config("dallas", "t", 13, 3, 30));
+        configs.add(new Config("osm_no", "t", 13, 3, 30));
+        configs.add(new Config("osm_dk", "t", 13, 3, 30));
 
-        // Config o6 = new Config("osm_dk", "dd_bc50", 20, 3);
-        // configs[i++] = o6;
+
+        configs.add(new Config("npd", "t", 13, 3, 20));
+        configs.add(new Config("dallas", "t", 15, 3, 20));
+        configs.add(new Config("osm_no", "t", 15, 3, 20));
+        configs.add(new Config("osm_dk", "t", 15, 3, 20));
 
         //runInsertBM(o2, 100);
-        runBulk(o2);
-        //runMany(configs);
+        //runBulk(o2);
+        runMany(configs);
     }
 
-    private static void runMany(Config[] configs) {
-        for (int i = 0; i < configs.length; i++)
-            runBulk(configs[i]);
+    private static void runMany(Collection<Config> configs) {
+        for (Config config : configs) {
+            runBulk(config);
+            try {
+                Thread.sleep(1000*60*5);
+            } catch (InterruptedException ex) {
+                continue;
+            }
+        }
     }
 
     public static void takeTime(long before, long after, String name,
