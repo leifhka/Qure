@@ -188,7 +188,8 @@ public class GeometryProvider implements SpaceProvider {
         if (!updating) return; // Do not get external if not in insert mode
         
         Map<Integer, GeometrySpace> external = getExternalOverlapping(universe);
-        geometries.putAll(external);
+        for (Integer uri : external.keySet())
+            geometries.put(uri, universe.intersection(external.get(uri)));
     }
    
     private Map<Integer, GeometrySpace> getExternalOverlapping(Space s) {

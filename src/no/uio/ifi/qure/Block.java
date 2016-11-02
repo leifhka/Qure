@@ -8,19 +8,25 @@ public class Block {
     // Total number of bits per block.
     private static int BLOCK_SIZE = Long.SIZE - 1;
 
-    public static void setBlockSize(int size) { BLOCK_SIZE = size; }
-
     // Total number of bits for meta information (size + unique part flag)
-    private static final int META_SIZE = 1 + (Integer.SIZE - Integer.numberOfLeadingZeros(BLOCK_SIZE));
+    private static int META_SIZE = 1 + (Integer.SIZE - Integer.numberOfLeadingZeros(BLOCK_SIZE));
 
     // Maximum number of bits reserved for the bit-string.
-    private static final int MAX_SIZE = BLOCK_SIZE - META_SIZE;
+    private static int MAX_SIZE = BLOCK_SIZE - META_SIZE;
 
     // Long that if bitwise-AND-ed with a block returns a long containing only the meta-information.
-    private static final long META_SIZE_ONES = (1L << META_SIZE) - 1;
+    private static long META_SIZE_ONES = (1L << META_SIZE) - 1;
 
-    public static final Block EMPTYBLOCK = new Block(0,-1L);
-    public static final Block TOPBLOCK = new Block(0,0L);
+    public static Block EMPTYBLOCK = new Block(0,-1L);
+    public static Block TOPBLOCK = new Block(0,0L);
+
+    public static void setBlockSize(int size) { 
+        BLOCK_SIZE = size;
+        META_SIZE = 1 + (Integer.SIZE - Integer.numberOfLeadingZeros(BLOCK_SIZE));
+        MAX_SIZE = BLOCK_SIZE - META_SIZE;
+        META_SIZE_ONES = (1L << META_SIZE) - 1;
+    }
+
 
     // The long-representation of this block.
     private final long value;
@@ -137,7 +143,6 @@ public class Block {
     }
 
     public Block getParent(int n) {
-
         return new Block(getSize() - n, getRawBitsShifted() >> n);
     }
 
@@ -148,7 +153,6 @@ public class Block {
     public Block getNeighbor() {
 
         long neiVal = getRawBitsShifted() ^ 1;
-
         return new Block(getSize(), neiVal);
     }
 

@@ -35,32 +35,30 @@ public class Qure {
 
         ArrayList<Config> configs = new ArrayList<Config>();
 
-        configs.add(new Config("npd", "t", 13, 3, 30));
-        configs.add(new Config("dallas", "t", 15, 3, 30));
-        configs.add(new Config("osm_no", "t", 15, 3, 30));
-        configs.add(new Config("osm_dk", "t", 15, 3, 30));
+        //configs.add(new Config("dallas", "t2", 15, 3, 30));
+        configs.add(new Config("osm_no", "t2", 15, 3, 30));
+        configs.add(new Config("osm_dk", "t2", 15, 3, 30));
 
-        
-        configs.add(new Config("npd", "t", 13, 2, 30));
-        configs.add(new Config("dallas", "t", 15, 2, 30));
-        configs.add(new Config("osm_no", "t", 15, 2, 30));
-        configs.add(new Config("osm_dk", "t", 15, 2, 30));
+        configs.add(new Config("dallas", "t2", 13, 3, 30));
+        configs.add(new Config("osm_no", "t2", 13, 3, 30));
+        configs.add(new Config("osm_dk", "t2", 13, 3, 30));
 
+        configs.add(new Config("dallas", "t2", 15, 2, 30));
+        configs.add(new Config("osm_no", "t2", 15, 2, 30));
+        configs.add(new Config("osm_dk", "t2", 15, 2, 30));
 
-        configs.add(new Config("npd", "t", 10, 3, 30));
-        configs.add(new Config("dallas", "t", 13, 3, 30));
-        configs.add(new Config("osm_no", "t", 13, 3, 30));
-        configs.add(new Config("osm_dk", "t", 13, 3, 30));
+        configs.add(new Config("dallas", "t2", 15, 3, 20));
+        configs.add(new Config("osm_no", "t2", 15, 3, 20));
+        configs.add(new Config("osm_dk", "t2", 15, 3, 20));
 
+        configs.add(new Config("npd", "t2", 13, 3, 30));
+        configs.add(new Config("npd", "t2", 10, 3, 30));
+        configs.add(new Config("npd", "t2", 13, 3, 20));
+        configs.add(new Config("npd", "t2", 13, 2, 30));
 
-        configs.add(new Config("npd", "t", 13, 3, 20));
-        configs.add(new Config("dallas", "t", 15, 3, 20));
-        configs.add(new Config("osm_no", "t", 15, 3, 20));
-        configs.add(new Config("osm_dk", "t", 15, 3, 20));
-
-        //runInsertBM(o2, 100);
-        //runBulk(o2);
-        runMany(configs);
+        runAllInsertBM(configs, 100, 20);
+        //runBulk(configs.get(0));
+        //runMany(configs);
     }
 
     private static void runMany(Collection<Config> configs) {
@@ -68,6 +66,17 @@ public class Qure {
             runBulk(config);
             try {
                 Thread.sleep(1000*60*5);
+            } catch (InterruptedException ex) {
+                continue;
+            }
+        }
+    }
+
+    private static void runAllInsertBM(Collection<Config> configs, int n, int iterations) {
+        for (Config config : configs) {
+            runManyInsertBM(config, n, iterations);
+            try {
+                Thread.sleep(1000*60*1);
             } catch (InterruptedException ex) {
                 continue;
             }
@@ -93,7 +102,7 @@ public class Qure {
 
         if (writeToFile) {
             try {
-                FileWriter fw = new FileWriter("output.txt", true);
+                FileWriter fw = new FileWriter("output_ins.txt", true); //TODO: change back to output.txt
                 fw.write(name + " - " + timeStr + "\n");
                 fw.flush();
                 fw.close();
@@ -121,13 +130,13 @@ public class Qure {
     }
             
     public static void printConfig(Config config) {
-        System.out.println("Config:");
         System.out.println("--------------------------------------");
-        System.out.println("* Geo. table: " + config.geoTableName);
-        System.out.println("* Max depth: " + config.maxIterDepth);
-        System.out.println("* Block member count: " + config.blockMemberCount);
-        System.out.println("* Overlaps arity: " + config.overlapsArity);
-        System.out.println("* Write to: " + config.btTableName);
+        System.out.println("Config:");
+        System.out.println(" # Geo. table: " + config.geoTableName);
+        System.out.println(" # Max depth: " + config.maxIterDepth);
+        System.out.println(" # Block member count: " + config.blockMemberCount);
+        System.out.println(" # Overlaps arity: " + config.overlapsArity);
+        System.out.println(" # Write to: " + config.btTableName);
         System.out.println("--------------------------------------");
     }
     
@@ -162,6 +171,16 @@ public class Qure {
         long after2 = System.currentTimeMillis();
         takeTime(before, after, config.rawBTTableName, "Construction time", true, true);
         takeTime(before, after2, config.rawBTTableName, "Total time", true, true);
+    }
+
+    public static void runManyInsertBM(Config config, int n, int iterations) {
+        for (int i = 1; i <= iterations; i++) {
+            System.out.println("======================================");
+            System.out.println("Iteration: " + i + " / " + iterations + " of " + config.rawBTTableName);
+            System.out.println("--------------------------------------");
+            runInsertBM(config, n);
+        }
+        finishTime();
     }
 
     public static void runInsertBM(Config config, int n) {
@@ -215,7 +234,6 @@ public class Qure {
             Class.forName("org.postgresql.Driver");
 
             if (config.verbose) {
-                System.out.println("--------------------------------------");
                 System.out.print("Connecting to database " + config.dbName +
                                  " as user " + config.dbUsername + "...");
             }
@@ -389,6 +407,41 @@ public class Qure {
         if (config.verbose) prog.init();
 
         for (Integer uri : res.keySet()) {
+            StringBuilder delQuery = new StringBuilder("DELETE FROM " + config.btTableName + " WHERE ");
+            delQuery.append(config.uriColumn + " = '" + uri + "' AND (false");
+            for (Block block : res.get(uri).getBlocks()) {
+                Block parent = getParentInSet(block, oldSplitBlocks);
+                if (parent != null) {
+                    String blockStr = "" + parent.getRepresentation(); 
+                    delQuery.append(" OR " + makePrefixQuery(blockStr, config.blockSize));
+                }
+            }
+            delQuery.append(");");
+            statement.addBatch(delQuery.toString());
+            if (config.verbose) prog.update();
+        }
+        if (config.verbose) {
+            prog.done();
+            System.out.print("Executing delete query...");
+        }
+        int[] deleted = statement.executeBatch();
+        statement.clearBatch();
+        int delSum = 0;
+        for (int i = 0; i < deleted.length; i++)
+            delSum += deleted[i];
+
+        if (config.verbose) System.out.println(" Done. [Deleted " + delSum + " rows]");
+    }
+
+    public static void deleteBintreesOld(Representation rep, Set<Block> oldSplitBlocks, Config config) 
+        throws SQLException {
+        // To update the representations we will first delete the old representations for
+        // the blocks were a new representation is created.
+        Map<Integer, Bintree> res = rep.getRepresentation();
+        Progress prog = new Progress("Making delete query...", res.size(), 1, "##0");
+        if (config.verbose) prog.init();
+
+        for (Integer uri : res.keySet()) {
             String delQuery = "DELETE FROM " + config.btTableName + " WHERE ";
             delQuery += config.uriColumn + " = '" + uri + "' AND (false";
             for (Block block : res.get(uri).getBlocks()) {
@@ -416,6 +469,20 @@ public class Qure {
     }
 
     public static Block getParentInSet(Block block, Set<Block> bs) {
+
+        Block b = new Block(block.getRepresentation());
+        Block prev = b;
+
+        while (!b.isTop()) {
+            if (bs.contains(b)) return prev;
+            prev = b;
+            b = b.getParent();
+        }
+
+        return null;
+    }
+
+    public static Block getParentInSetOld(Block block, Set<Block> bs) {
 
         Block smallest = Block.TOPBLOCK;
 
