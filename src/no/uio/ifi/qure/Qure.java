@@ -35,28 +35,28 @@ public class Qure {
 
         ArrayList<Config> configs = new ArrayList<Config>();
 
-        //configs.add(new Config("dallas", "t2", 15, 3, 30));
-        configs.add(new Config("osm_no", "t2", 15, 3, 30));
-        configs.add(new Config("osm_dk", "t2", 15, 3, 30));
+        configs.add(new Config("dallas", "t2", 15, 3, 30));
+        //configs.add(new Config("osm_no", "t2", 15, 3, 30));
+        //configs.add(new Config("osm_dk", "t2", 15, 3, 30));
 
-        configs.add(new Config("dallas", "t2", 13, 3, 30));
-        configs.add(new Config("osm_no", "t2", 13, 3, 30));
-        configs.add(new Config("osm_dk", "t2", 13, 3, 30));
+        //configs.add(new Config("dallas", "t2", 13, 3, 30));
+        //configs.add(new Config("osm_no", "t2", 13, 3, 30));
+        //configs.add(new Config("osm_dk", "t2", 13, 3, 30));
 
-        configs.add(new Config("dallas", "t2", 15, 2, 30));
-        configs.add(new Config("osm_no", "t2", 15, 2, 30));
-        configs.add(new Config("osm_dk", "t2", 15, 2, 30));
+        //configs.add(new Config("dallas", "t2", 15, 2, 30));
+        //configs.add(new Config("osm_no", "t2", 15, 2, 30));
+        //configs.add(new Config("osm_dk", "t2", 15, 2, 30));
 
-        configs.add(new Config("dallas", "t2", 15, 3, 20));
-        configs.add(new Config("osm_no", "t2", 15, 3, 20));
-        configs.add(new Config("osm_dk", "t2", 15, 3, 20));
+        //configs.add(new Config("dallas", "t2", 15, 3, 20));
+        //configs.add(new Config("osm_no", "t2", 15, 3, 20));
+        //configs.add(new Config("osm_dk", "t2", 15, 3, 20));
 
-        configs.add(new Config("npd", "t2", 13, 3, 30));
-        configs.add(new Config("npd", "t2", 10, 3, 30));
-        configs.add(new Config("npd", "t2", 13, 3, 20));
-        configs.add(new Config("npd", "t2", 13, 2, 30));
+        //configs.add(new Config("npd", "t2", 13, 3, 30));
+        //configs.add(new Config("npd", "t2", 10, 3, 30));
+        //configs.add(new Config("npd", "t2", 13, 3, 20));
+        //configs.add(new Config("npd", "t2", 13, 2, 30));
 
-        runAllInsertBM(configs, 100, 20);
+        runAllInsertBM(configs, 1000, 20);
         //runBulk(configs.get(0));
         //runMany(configs);
     }
@@ -65,7 +65,7 @@ public class Qure {
         for (Config config : configs) {
             runBulk(config);
             try {
-                Thread.sleep(1000*60*5);
+                Thread.sleep(1000*60*1);
             } catch (InterruptedException ex) {
                 continue;
             }
@@ -76,7 +76,7 @@ public class Qure {
         for (Config config : configs) {
             runManyInsertBM(config, n, iterations);
             try {
-                Thread.sleep(1000*60*1);
+                Thread.sleep(1000*60*5);
             } catch (InterruptedException ex) {
                 continue;
             }
@@ -379,6 +379,26 @@ public class Qure {
     }
 
     private static void deleteRandomBintrees(int n, Config config) {
+        try {
+            Class.forName("org.postgresql.Driver");
+
+            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName + "?user=" +
+                                                  config.dbUsername + "&password=" + config.dbPWD);
+            statement = connect.createStatement();
+            String delQuery = "DELETE FROM " + config.btTableName + " WHERE " + config.uriColumn + " IN ";
+            delQuery += "(SELECT G." + config.uriColumn + " FROM " + config.geoTableName + " G, (SELECT * FROM " + config.geoTableName + " ORDER BY random() LIMIT 1) R ORDER BY st_distance(G.geom, R.geom) LIMIT " + n + ");";
+            int dels = statement.executeUpdate(delQuery);
+            System.out.println("Deleted randomly " + n + " bintrees (" + dels + " rows).");
+        } catch (Exception ex) {
+            System.err.println(ex.toString());
+            ex.printStackTrace();
+            System.exit(1);
+        } finally {
+            close();
+        }
+    }
+
+    private static void deleteRandomBintreesRand(int n, Config config) {
         try {
             Class.forName("org.postgresql.Driver");
 
