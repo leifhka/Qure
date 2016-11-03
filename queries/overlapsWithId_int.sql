@@ -1,6 +1,6 @@
-\set id_val 1200
+\set id_val 12301
 \set geo_name geo.dallas
-\set bt_name qure.dallas_d15_k3_bc30_gd
+\set bt_name qure.dallas_d15_k3_bc30_t
 \set len_s 6
 \set len_v 25
 \set len_b ((:len_s + :len_v)+1)
