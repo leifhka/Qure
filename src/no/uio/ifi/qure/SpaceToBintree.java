@@ -35,7 +35,7 @@ public class SpaceToBintree {
         if (config.verbose) prog.init();
 
         Block.setBlockSize(config.blockSize);
-        TreeNode root = new TreeNode(Block.TOPBLOCK, spaces, evenSplits, 0, config);
+        TreeNode root = new TreeNode(Block.getTopBlock(), spaces, evenSplits, 0, config);
         root.setReporter(prog.makeReporter());
         Representation representation = traverseTree(root);
        

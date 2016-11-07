@@ -35,30 +35,30 @@ public class Qure {
 
         ArrayList<Config> configs = new ArrayList<Config>();
 
-        configs.add(new Config("dallas", "t2", 15, 3, 30));
-        //configs.add(new Config("osm_no", "t2", 15, 3, 30));
-        //configs.add(new Config("osm_dk", "t2", 15, 3, 30));
+        configs.add(new Config("osm_no", "full", 15, 3, 30, 10));
+        configs.add(new Config("dallas", "full", 15, 3, 30, 10));
+        configs.add(new Config("osm_dk", "full", 15, 3, 30, 10));
+        configs.add(new Config("npd",    "full", 13, 3, 30, 10));
 
-        //configs.add(new Config("dallas", "t2", 13, 3, 30));
-        //configs.add(new Config("osm_no", "t2", 13, 3, 30));
-        //configs.add(new Config("osm_dk", "t2", 13, 3, 30));
+        configs.add(new Config("dallas", "full", 13, 3, 30, 10));
+        configs.add(new Config("osm_no", "full", 13, 3, 30, 10));
+        configs.add(new Config("osm_dk", "full", 13, 3, 30, 10));
+        configs.add(new Config("npd",    "full", 10, 3, 30, 10));
 
-        //configs.add(new Config("dallas", "t2", 15, 2, 30));
-        //configs.add(new Config("osm_no", "t2", 15, 2, 30));
-        //configs.add(new Config("osm_dk", "t2", 15, 2, 30));
+        configs.add(new Config("dallas", "full", 15, 2, 30, 10));
+        configs.add(new Config("osm_no", "full", 15, 2, 30, 10));
+        configs.add(new Config("osm_dk", "full", 15, 2, 30, 10));
+        configs.add(new Config("npd",    "full", 13, 2, 30, 10));
 
-        //configs.add(new Config("dallas", "t2", 15, 3, 20));
-        //configs.add(new Config("osm_no", "t2", 15, 3, 20));
-        //configs.add(new Config("osm_dk", "t2", 15, 3, 20));
+        configs.add(new Config("dallas", "full", 10, 3, 30, 10));
+        configs.add(new Config("osm_no", "full", 10, 3, 30, 10));
+        configs.add(new Config("osm_dk", "full", 10, 3, 30, 10));
+        configs.add(new Config("npd",    "full", 8, 3, 30, 10));
 
-        //configs.add(new Config("npd", "t2", 13, 3, 30));
-        //configs.add(new Config("npd", "t2", 10, 3, 30));
-        //configs.add(new Config("npd", "t2", 13, 3, 20));
-        //configs.add(new Config("npd", "t2", 13, 2, 30));
-
-        runAllInsertBM(configs, 1000, 20);
-        //runBulk(configs.get(0));
-        //runMany(configs);
+        runMany(configs);
+        runManyQueryBM(configs);
+        //runAllInsertBM(configs, 100, 20, false);
+        //runAllInsertBM(configs, 100, 20, true);
     }
 
     private static void runMany(Collection<Config> configs) {
@@ -72,11 +72,11 @@ public class Qure {
         }
     }
 
-    private static void runAllInsertBM(Collection<Config> configs, int n, int iterations) {
+    private static void runAllInsertBM(Collection<Config> configs, int n, int iterations, boolean loc) {
         for (Config config : configs) {
-            runManyInsertBM(config, n, iterations);
+            runManyInsertBM(config, n, iterations, loc);
             try {
-                Thread.sleep(1000*60*5);
+                Thread.sleep(1000*60*1);
             } catch (InterruptedException ex) {
                 continue;
             }
@@ -84,17 +84,25 @@ public class Qure {
     }
 
     public static void takeTime(long before, long after, String name,
-                                 String what, boolean print, boolean writeToFile) {
+                                 String what, boolean print, boolean writeToFile,
+                                 String filename, boolean ms) {
 
-        long totalSec = (long) Math.round(((after - before) / 1000.0));
 
-        String mapStr = name + " - " + what;
+        String timeStr, mapStr;
+        mapStr = name + " - " + what;
+        long totalSec;
+
+        if (!ms) {
+            totalSec = (long) Math.round(((after - before) / 1000.0));
+            long mins = (long) Math.floor(totalSec / 60.0);
+            long restSec = totalSec - (mins*60);
+            timeStr = what + ": " + totalSec + "s" + " = " + mins + "m" + restSec + "s";
+        } else {
+            totalSec = after-before;
+            timeStr = what + ": " + totalSec + "ms"; 
+        }
         if (!times.containsKey(mapStr)) times.put(mapStr, 0L);
         times.put(mapStr, times.get(mapStr)+totalSec);
-
-        long mins = (long) Math.floor(totalSec / 60.0);
-        long restSec = totalSec - (mins*60);
-        String timeStr = what + ": " + totalSec + "s" + " = " + mins + "m" + restSec + "s";
 
         if (print) {
             System.out.println(timeStr);
@@ -102,7 +110,7 @@ public class Qure {
 
         if (writeToFile) {
             try {
-                FileWriter fw = new FileWriter("output_ins.txt", true); //TODO: change back to output.txt
+                FileWriter fw = new FileWriter(filename, true);
                 fw.write(name + " - " + timeStr + "\n");
                 fw.flush();
                 fw.close();
@@ -112,14 +120,20 @@ public class Qure {
         }
     }
 
-    public static void finishTime() {
+    public static void finishTime(String filename, boolean ms) {
         for (String what : times.keySet()) {
             long total = times.get(what);
-            long mins = (long) Math.floor(total / 60.0);
-            long restSec = total - (mins*60);
+            String timeStr;
+            if (!ms) {
+                long mins = (long) Math.floor(total / 60.0);
+                long restSec = total - (mins*60);
+                timeStr = what + ": " + total + "s = " + mins + "m" + restSec + "s";
+            } else {
+                timeStr = what + ": " + total + "ms";
+            }
             try {
-                FileWriter fw = new FileWriter("output.txt", true);
-                fw.write("Finish:: " + what + ": " + total + "s = " + mins + "m" + restSec + "s\n");
+                FileWriter fw = new FileWriter(filename, true);
+                fw.write("Finish:: " + timeStr + "\n");
                 fw.flush();
                 fw.close();
             } catch (IOException ioe) {
@@ -169,22 +183,27 @@ public class Qure {
              System.out.println("Error occured, no solution found. Aborting...");
          }
         long after2 = System.currentTimeMillis();
-        takeTime(before, after, config.rawBTTableName, "Construction time", true, true);
-        takeTime(before, after2, config.rawBTTableName, "Total time", true, true);
+        takeTime(before, after, config.rawBTTableName, "Construction time", true, true, "output.txt", false);
+        takeTime(before, after2, config.rawBTTableName, "Total time", true, true, "output.txt", false);
     }
 
-    public static void runManyInsertBM(Config config, int n, int iterations) {
+    public static void runManyInsertBM(Config config, int n, int iterations, boolean loc) {
         for (int i = 1; i <= iterations; i++) {
             System.out.println("======================================");
             System.out.println("Iteration: " + i + " / " + iterations + " of " + config.rawBTTableName);
             System.out.println("--------------------------------------");
-            runInsertBM(config, n);
+            config.verbose = false;
+            runInsertBM(config, n, loc);
+            config.verbose = true;
         }
-        finishTime();
+        finishTime("output.txt", false);
     }
 
-    public static void runInsertBM(Config config, int n) {
-        deleteRandomBintrees(n, config);
+    public static void runInsertBM(Config config, int n, boolean loc) {
+        if (loc)
+            deleteRandomBintreesLoc(n, config);
+        else
+            deleteRandomBintreesRand(n, config);
         runInsert(config);
     }
 
@@ -220,8 +239,8 @@ public class Qure {
              System.out.println("Error occured, no solution found. Aborting...");
          }
         long afterAll = System.currentTimeMillis();
-        takeTime(before, after, config.rawBTTableName, "Construct time", true, false);
-        takeTime(beforeAll, afterAll, config.rawBTTableName, "Total insert time", true, false);
+        takeTime(before, after, config.rawBTTableName, "Construct time", true, false, null, false);
+        takeTime(beforeAll, afterAll, config.rawBTTableName, "Total insert time", true, false, null, false);
     }
 
     public static void writeBintreesToDB(Representation rep, Set<Block> oldSplits, Config config) throws Exception {
@@ -378,7 +397,7 @@ public class Qure {
         if (config.verbose) System.out.println(" Done.");
     }
 
-    private static void deleteRandomBintrees(int n, Config config) {
+    private static void deleteRandomBintreesLoc(int n, Config config) {
         try {
             Class.forName("org.postgresql.Driver");
 
@@ -504,7 +523,7 @@ public class Qure {
 
     public static Block getParentInSetOld(Block block, Set<Block> bs) {
 
-        Block smallest = Block.TOPBLOCK;
+        Block smallest = Block.getTopBlock();
 
         for (Block b : bs) {
             if (block.blockPartOf(b) && b.blockPartOf(smallest))
@@ -527,7 +546,7 @@ public class Qure {
             expr = "(((1::bigint << (63 - ((" + block + " & 127) >> 1))::int)) - 1) | " + block + ")";
         else
             expr = "(((1 << (31 - ((" + block + " & 63) >> 1))) - 1) | " + block + ")";
-        String c1 = block + " & -2 <= block";
+        String c1 = block + " & -2 < block"; // Should be strictly contained for deletion
         String c2 = expr + " >= block";
         return "(" + c1 + " AND " + c2 + ")";
     }
@@ -549,7 +568,7 @@ public class Qure {
                 System.out.println(sqlex.getMessage());
                 System.out.print("Try to add a new table name suffix (or just hit return twice to abort): ");
                 Scanner scan = new Scanner(System.in).useDelimiter("[ \n]"); // Table name is only one word
-                config = new Config(config.rawGeoTableName, scan.next(), config.maxIterDepth, config.overlapsArity, config.blockMemberCount);
+                config = new Config(config.rawGeoTableName, scan.next(), config.maxIterDepth, config.overlapsArity, config.blockMemberCount, config.maxSplits);
                 System.out.println("");
                 if (config.btTableName.equals("")) {
                     close();
@@ -573,6 +592,73 @@ public class Qure {
             }
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage()); 
+        }
+    }
+
+    public static void runManyQueryBM(Collection<Config> configs) {
+
+        for (Config config : configs) {
+            clearCache();
+            System.out.println("--------------------------------------");
+            System.out.println("Running query benchmark for " + config.rawBTTableName + "...");
+            runQueryBM(config);
+        }
+    }
+
+    public static void clearCache() {
+        try {
+            System.out.print("Clearing cache...");
+            Process p1 = Runtime.getRuntime().exec("sync");
+            p1.waitFor();
+            Process p2 = Runtime.getRuntime().exec("service postgresql stop");
+            p2.waitFor();
+            Process p3 = Runtime.getRuntime().exec("echo 1 > /proc/sys/vm/drop_caches");
+            p3.waitFor();
+            Process p4 = Runtime.getRuntime().exec("service postgresql start");
+            p4.waitFor();
+            System.out.println(" Done");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static void runQueryBM(Config config) {
+        try {
+            Class.forName("org.postgresql.Driver");
+
+            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName + "?user=" +
+                                                  config.dbUsername + "&password=" + config.dbPWD);
+            statement = connect.createStatement();
+
+            long before, after;
+
+            before = System.currentTimeMillis();
+            statement.execute("SELECT bmbt_ov_int('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
+            after = System.currentTimeMillis();
+            takeTime(before, after, config.rawBTTableName, "ov time", true, true, "query.txt", true);
+
+            if (!config.rawGeoTableName.equals("npd") && config.overlapsArity >= 3) {
+                before = System.currentTimeMillis();
+                statement.execute("SELECT bmbt_ov2_int('ins." + config.rawGeoTableName + "_500', '" + config.btTableName + "');");
+                after = System.currentTimeMillis();
+                takeTime(before, after, config.rawBTTableName, "ov2 time", true, true, "query.txt", true);
+            }
+
+            before = System.currentTimeMillis();
+            statement.execute("SELECT bmbt_po1_int('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
+            after = System.currentTimeMillis();
+            takeTime(before, after, config.rawBTTableName, "po1 time", true, true, "query.txt", true);
+
+            before = System.currentTimeMillis();
+            statement.execute("SELECT bmbt_po2_int('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
+            after = System.currentTimeMillis();
+            takeTime(before, after, config.rawBTTableName, "po2 time", true, true, "query.txt", true);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            close();
         }
     }
 }

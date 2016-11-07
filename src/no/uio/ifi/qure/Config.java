@@ -20,19 +20,22 @@ public class Config {
     public int numThreads = 8;
     public int dim = 2;
 
-    public int maxDiff = 25;
-    public int maxSplits = 10;
+    //public int maxDiff = 25;
+    public double minRatio = 0.9;
+    public int maxSplits = 7;
  
-    public Config(String table, String suff, int representationDepth, int overlapsArity, int blockMemberCount) {
+    public Config(String table, String suff, int representationDepth, int overlapsArity, 
+                  int blockMemberCount, int maxSplits) {
 
         this.overlapsArity = overlapsArity;
         this.maxIterDepth = representationDepth;
         this.blockMemberCount = blockMemberCount;
+        this.maxSplits = maxSplits;
 
         rawGeoTableName = table;
         geoTableName = "geo." + rawGeoTableName;
 
-        rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity + "_bc" + blockMemberCount + "_" + suff;
+        rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity + "_bc" + blockMemberCount + "_ms" + maxSplits + "_" + suff;
         schemaName = "qure";
         btTableName = schemaName + "." + rawBTTableName;
 

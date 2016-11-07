@@ -72,7 +72,7 @@ public class Bintree {
         if (bt.size() != 1) return false;
 
         Block b = getBlocks().iterator().next(); 
-	return b.equals(Block.TOPBLOCK);
+	return b.isTop();
     }
 
     public boolean isEmpty() {

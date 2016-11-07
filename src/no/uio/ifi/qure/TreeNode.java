@@ -60,6 +60,7 @@ public class TreeNode {
         }
 
         SpaceProvider[] sps = getSpaceProvider().splitProvider(split, evenSplit);
+
         return makeChildNodes(sps);
     }
 
@@ -86,9 +87,8 @@ public class TreeNode {
 
         for (int i = 0; i < sps.length; i++) {
             result[i] = new TreeNode(bs[i], sps[i], getSplitBlocks(bs[i]), (split+1) % config.dim, config);
-            if (!sps[i].isEmpty() && !result[i].hasEvenSplit()) {
+            if (!sps[i].isEmpty() && !result[i].hasEvenSplit())
                 sps[i].populateWithExternalOverlapping();
-            }
         }
 
         result[0].setReporter(reporter);

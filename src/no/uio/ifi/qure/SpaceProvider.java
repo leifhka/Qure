@@ -52,18 +52,19 @@ public interface SpaceProvider {
         int diff = Math.abs(intSpL.size() - intSpR.size());
         int bestDiff = diff;
 
-        Block splitBlock = Block.TOPBLOCK;
+        Block splitBlock = Block.getTopBlock();
+        Set<Integer> intAllL = intSpL, intAllR = intSpR;
         EvenSplit bestSplit = new EvenSplit(splitBlock, intSpL, intSpR);
 
         int i = 0;
 
-        while (i++ < config.maxSplits && diff > config.maxDiff) {
+        while (i++ < config.maxSplits && ((double) Math.min(intAllR.size(), intAllL.size())) / Math.max(intAllR.size(), intAllL.size()) < config.minRatio) {
 
-            if (intSpR.size() > intSpL.size()) {
+            if (intAllR.size() > intAllL.size()) {
 
                 spL = spL.union(splitL);
                 intL.addAll(intSpL);
-                undecided = intSpR;
+                undecided = new HashSet<Integer>(intSpR);
 
                 splitLR = splitR.split(split);
                 splitBlock = splitBlock.addOne();
@@ -72,7 +73,7 @@ public interface SpaceProvider {
 
                 spR = spR.union(splitR);
                 intR.addAll(intSpR);
-                undecided = intSpL;
+                undecided = new HashSet<Integer>(intSpL);
 
                 splitLR = splitL.split(split);
                 splitBlock = splitBlock.addZero();
@@ -83,9 +84,13 @@ public interface SpaceProvider {
 
             intSpL = Utils.getIntersecting(splitL, undecided, getSpaces(), config.numThreads);
             intSpR = Utils.getIntersecting(splitR, undecided, getSpaces(), config.numThreads);
-            diff = Math.abs(Utils.union(intL, intSpL).size() - Utils.union(intR, intSpR).size());
+            intAllL = Utils.union(intL, intSpL);
+            intAllR = Utils.union(intR, intSpR);
+            diff = Math.abs(intAllL.size() - intAllR.size());
             if (diff < bestDiff) {
-                bestSplit = new EvenSplit(splitBlock, Utils.union(intL, intSpL), Utils.union(intR, intSpR));
+                bestSplit = new EvenSplit(new Block(splitBlock.getRepresentation()), 
+                                          new HashSet<Integer>(intAllL), 
+                                          new HashSet<Integer>(intAllR));
                 bestDiff = diff;
             }
         }

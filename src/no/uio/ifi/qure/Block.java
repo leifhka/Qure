@@ -107,11 +107,11 @@ public class Block {
     }
 
     public static Block getTopBlock() {
-        return TOPBLOCK;
+        return new Block(TOPBLOCK.getRepresentation());
     }
 
     public static Block getEmptyBlock() {
-        return EMPTYBLOCK;
+        return new Block(EMPTYBLOCK.getRepresentation());
     }
 
     /**
@@ -178,7 +178,7 @@ public class Block {
 	else if (b.blockPartOf(this))
 	    return b;
 	else
-	    return Block.EMPTYBLOCK;
+	    return getEmptyBlock();
     }
 
     private int getTrailingBitsSize() {

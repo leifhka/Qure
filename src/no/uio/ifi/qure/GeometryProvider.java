@@ -191,8 +191,16 @@ public class GeometryProvider implements SpaceProvider {
         for (Integer uri : external.keySet())
             geometries.put(uri, universe.intersection(external.get(uri)));
     }
+
+   public String extGeo() {
+        GeometrySpace geo = (GeometrySpace) getUniverse();
+        String gs = geo.getGeometry().toString();
+        String whereClause = "ST_intersects(geom, ST_GeomFromText('" + gs + "')) AND ";
+        whereClause += "NOT ST_contains(geom, ST_GeomFromText('" + gs + "'))";
+        return whereClause;
+    }
    
-    private Map<Integer, GeometrySpace> getExternalOverlapping(Space s) {
+    public Map<Integer, GeometrySpace> getExternalOverlapping(Space s) {
 
         GeometrySpace geo = (GeometrySpace) s;
         String gs = geo.getGeometry().toString();
