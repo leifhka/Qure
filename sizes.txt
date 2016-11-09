@@ -1,0 +1,20 @@
+qure.dallas_d15_k3_bc30_ms10_fns - Table: 67 MB, Total: 160 MB
+
+
+qure.osm_no_d15_k3_bc30_ms10_fns - Table: 163 MB, Total: 406 MB
+qure.osm_dk_d15_k3_bc30_ms10_fns - Table: 156 MB, Total: 388 MB
+qure.npd_d13_k3_bc30_ms10_fns - Table: 53 MB, Total: 118 MB
+qure.dallas_d13_k3_bc30_ms10_fns - Table: 56 MB, Total: 136 MB
+qure.osm_no_d13_k3_bc30_ms10_fns - Table: 151 MB, Total: 379 MB
+qure.dallas_d15_k2_bc30_ms10_fns - Table: 70 MB, Total: 168 MB
+qure.osm_no_d15_k2_bc30_ms10_fns - Table: 172 MB, Total: 426 MB
+qure.dallas_d10_k3_bc30_ms10_fns - Table: 49 MB, Total: 121 MB
+qure.osm_no_d10_k3_bc30_ms10_fns - Table: 143 MB, Total: 362 MB
+qure.osm_no_d15_k4_bc30_ms10_full - Table: 160 MB, Total: 401 MB
+qure.dallas_d15_k4_bc30_ms10_full - Table: 63 MB, Total: 151 MB
+qure.dallas_d17_k3_bc30_ms10_full - Table: 67 MB, Total: 161 MB
+qure.osm_no_d17_k3_bc30_ms10_full - Table: 188 MB, Total: 462 MB
+qure.dallas_d15_k3_bc30_ms0_unbal - Table: 68 MB, Total: 147 MB
+qure.osm_no_d15_k3_bc30_ms0_unbal - Table: 174 MB, Total: 391 MB
+qure.osm_dk_d15_k3_bc30_ms0_unbal - Table: 161 MB, Total: 363 MB
+qure.npd_d13_k3_bc30_ms0_unbal - Table: 21 MB, Total: 46 MB

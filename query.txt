@@ -68,3 +68,25 @@ osm_dk_d10_k3_bc30_ms10_full - po2 time: 583ms
 npd_d8_k3_bc30_ms10_full - ov time: 64047ms
 npd_d8_k3_bc30_ms10_full - po1 time: 507ms
 npd_d8_k3_bc30_ms10_full - po2 time: 589ms
+
+------------------------------------------
+
+osm_no_d15_k4_bc30_ms10_full - ov time: 3309ms
+osm_no_d15_k4_bc30_ms10_full - ov2 time: 2369ms
+osm_no_d15_k4_bc30_ms10_full - po1 time: 582ms
+osm_no_d15_k4_bc30_ms10_full - po2 time: 552ms
+dallas_d15_k4_bc30_ms10_full - ov time: 3445ms
+dallas_d15_k4_bc30_ms10_full - ov2 time: 1615ms
+dallas_d15_k4_bc30_ms10_full - po1 time: 414ms
+dallas_d15_k4_bc30_ms10_full - po2 time: 540ms
+dallas_d17_k3_bc30_ms10_full - ov time: 3594ms
+dallas_d17_k3_bc30_ms10_full - ov2 time: 1762ms
+dallas_d17_k3_bc30_ms10_full - po1 time: 408ms
+dallas_d17_k3_bc30_ms10_full - po2 time: 536ms
+osm_no_d17_k3_bc30_ms10_full - ov time: 3583ms
+osm_no_d17_k3_bc30_ms10_full - ov2 time: 2749ms
+osm_no_d17_k3_bc30_ms10_full - po1 time: 601ms
+osm_no_d17_k3_bc30_ms10_full - po2 time: 559ms
+npd_d13_k3_bc30_ms0_unbal - ov time: 61258ms
+npd_d13_k3_bc30_ms0_unbal - po1 time: 597ms
+npd_d13_k3_bc30_ms0_unbal - po2 time: 629ms

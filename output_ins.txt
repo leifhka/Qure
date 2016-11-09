@@ -93,3 +93,23 @@ npd_d10_k3_bc30_ms7_lsp - Construction time: 312s = 5m12s
 npd_d10_k3_bc30_ms7_lsp - Total time: 319s = 5m19s
 npd_d10_k3_bc30_ms10_lsp - Construction time: 311s = 5m11s
 npd_d10_k3_bc30_ms10_lsp - Total time: 319s = 5m19s
+
+-------------------------------------------------------------
+Finish:: osm_no_d15_k4_bc30_ms10_full - Insert time: 287s = 4m47s
+Finish:: osm_no_d15_k4_bc30_ms10_full - Total insert time: 472s = 7m52s
+Finish:: dallas_d15_k4_bc30_ms10_full - Total insert time: 337s = 5m37s
+Finish:: dallas_d15_k4_bc30_ms10_full - Insert time: 279s = 4m39s
+Finish:: dallas_d17_k3_bc30_ms10_full - Insert time: 278s = 4m38s
+Finish:: dallas_d17_k3_bc30_ms10_full - Total insert time: 333s = 5m33s
+Finish:: osm_no_d17_k3_bc30_ms10_full - Total insert time: 403s = 6m43s
+Finish:: osm_no_d17_k3_bc30_ms10_full - Insert time: 268s = 4m28s
+Finish:: osm_no_d15_k4_bc30_ms10_full - Total insert time (loc): 163s = 2m43s
+Finish:: osm_no_d15_k4_bc30_ms10_full - Insert time (loc): 48s = 0m48s
+Finish:: dallas_d15_k4_bc30_ms10_full - Total insert time (loc): 68s = 1m8s
+Finish:: dallas_d15_k4_bc30_ms10_full - Insert time (loc): 31s = 0m31s
+Finish:: dallas_d17_k3_bc30_ms10_full - Insert time (loc): 33s = 0m33s
+Finish:: dallas_d17_k3_bc30_ms10_full - Total insert time (loc): 68s = 1m8s
+Finish:: osm_no_d17_k3_bc30_ms10_full - Total insert time (loc): 193s = 3m13s
+Finish:: osm_no_d17_k3_bc30_ms10_full - Insert time (loc): 95s = 1m35s
+Finish:: npd_d13_k3_bc30_ms10_full - Insert time (loc): 2973s = 49m33s
+Finish:: npd_d13_k3_bc30_ms10_full - Total insert time (loc): 3639s = 60m39s
