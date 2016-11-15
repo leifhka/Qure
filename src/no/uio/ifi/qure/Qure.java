@@ -33,52 +33,91 @@ public class Qure {
 
     public static void main(String[] args) {
 
-        ArrayList<Config> configs = new ArrayList<Config>();
+        ArrayList<Config> rfs = new ArrayList<Config>();
+        //rfs.add(new Config("osm_no", "fns", 15, 3, 30, 10));
+        //rfs.add(new Config("osm_dk", "fns", 15, 3, 30, 10));
+        rfs.add(new Config("npd",    "fns", 10, 3, 30, 10));
+        //rfs.add(new Config("dallas", "fns", 13, 3, 30, 10));
+        //rfs.add(new Config("osm_no", "fns", 13, 3, 30, 10));
+        //rfs.add(new Config("dallas", "fns", 15, 2, 30, 10));
+        //rfs.add(new Config("osm_no", "fns", 15, 2, 30, 10));
+        //rfs.add(new Config("dallas", "fns", 10, 3, 30, 10));
+        //rfs.add(new Config("osm_no", "fns", 10, 3, 30, 10));
 
-        configs.add(new Config("osm_no", "full", 15, 3, 30, 10));
-        configs.add(new Config("dallas", "full", 15, 3, 30, 10));
-        configs.add(new Config("osm_dk", "full", 15, 3, 30, 10));
-        configs.add(new Config("npd",    "full", 13, 3, 30, 10));
+        //runMany(rfs);
+        //writeDBSizes(rfs);
 
-        configs.add(new Config("dallas", "full", 13, 3, 30, 10));
-        configs.add(new Config("osm_no", "full", 13, 3, 30, 10));
-        configs.add(new Config("osm_dk", "full", 13, 3, 30, 10));
-        configs.add(new Config("npd",    "full", 10, 3, 30, 10));
+        //ArrayList<Config> configs = new ArrayList<Config>();
 
-        configs.add(new Config("dallas", "full", 15, 2, 30, 10));
-        configs.add(new Config("osm_no", "full", 15, 2, 30, 10));
-        configs.add(new Config("osm_dk", "full", 15, 2, 30, 10));
-        configs.add(new Config("npd",    "full", 13, 2, 30, 10));
+        //configs.add(new Config("osm_no", "full", 15, 4, 30, 10));
+        //configs.add(new Config("dallas", "full", 15, 4, 30, 10));
+        //configs.add(new Config("osm_dk", "full", 15, 3, 30, 10));
+        //configs.add(new Config("npd",    "full", 13, 3, 30, 10));
 
-        configs.add(new Config("dallas", "full", 10, 3, 30, 10));
-        configs.add(new Config("osm_no", "full", 10, 3, 30, 10));
-        configs.add(new Config("osm_dk", "full", 10, 3, 30, 10));
-        configs.add(new Config("npd",    "full", 8, 3, 30, 10));
+        //configs.add(new Config("dallas", "full", 17, 3, 30, 10));
+        //configs.add(new Config("osm_no", "full", 17, 3, 30, 10));
+        //configs.add(new Config("osm_dk", "full", 13, 3, 30, 10));
+        //configs.add(new Config("npd",    "full", 10, 3, 30, 10));
 
-        runMany(configs);
-        runManyQueryBM(configs);
+        //Config o1 = new Config("dallas", "unbal", 13, 3, 30, 0);
+        //o1.blockSize = 63;
+        //configs.add(o1);
+        //Config o2 = new Config("osm_no", "unbal", 15, 3, 30, 0);
+        //o2.blockSize = 63;
+        //configs.add(o2);
+        //Config o3 = new Config("osm_dk", "unbal", 15, 3, 30, 0);
+        //o3.blockSize = 63;
+        //configs.add(o3);
+
+        //configs2.add(new Config("npd",   "unbal", 10, 3, 30, 0));
+
+        //configs.add(new Config("dallas", "full", 10, 3, 30, 10));
+        //configs.add(new Config("osm_no", "full", 10, 3, 30, 10));
+        //configs.add(new Config("osm_dk", "full", 10, 3, 30, 10));
+        //configs.add(new Config("npd",    "full", 8, 3, 30, 10));
+
+        
+        runMany(rfs);
+        writeDBSizes(rfs);
+        //runManyQueryBM(configs);
+        //times = new HashMap<String, Long>();
         //runAllInsertBM(configs, 100, 20, false);
-        //runAllInsertBM(configs, 100, 20, true);
+        times = new HashMap<String, Long>();
+        runAllInsertBM(rfs, 100, 20, true);
     }
 
     private static void runMany(Collection<Config> configs) {
         for (Config config : configs) {
-            runBulk(config);
             try {
-                Thread.sleep(1000*60*1);
-            } catch (InterruptedException ex) {
-                continue;
+                runBulk(config);
+                Thread.sleep(1000*60*3);
+            } catch (Exception ex) {
+                try {
+                    FileWriter fw = new FileWriter("errs.txt", true);
+                    fw.write(ex.toString() + "\n\n");
+                    fw.flush();
+                    fw.close();
+                } catch (IOException ioe) {
+                    System.err.println(ioe.toString());
+                }
             }
         }
     }
 
     private static void runAllInsertBM(Collection<Config> configs, int n, int iterations, boolean loc) {
         for (Config config : configs) {
-            runManyInsertBM(config, n, iterations, loc);
             try {
-                Thread.sleep(1000*60*1);
-            } catch (InterruptedException ex) {
-                continue;
+                runManyInsertBM(config, n, iterations, loc);
+                Thread.sleep(1000*30*3);
+            } catch (Exception ex) {
+                try {
+                    FileWriter fw = new FileWriter("errs.txt", true);
+                    fw.write(ex.toString() + "\n\n");
+                    fw.flush();
+                    fw.close();
+                } catch (IOException ioe) {
+                    System.err.println(ioe.toString());
+                }
             }
         }
     }
@@ -184,7 +223,7 @@ public class Qure {
          }
         long after2 = System.currentTimeMillis();
         takeTime(before, after, config.rawBTTableName, "Construction time", true, true, "output.txt", false);
-        takeTime(before, after2, config.rawBTTableName, "Total time", true, true, "output.txt", false);
+        takeTime(before, after2, config.rawBTTableName, "Total construction time", true, true, "output.txt", false);
     }
 
     public static void runManyInsertBM(Config config, int n, int iterations, boolean loc) {
@@ -196,7 +235,7 @@ public class Qure {
             runInsertBM(config, n, loc);
             config.verbose = true;
         }
-        finishTime("output.txt", false);
+        finishTime("output_ins.txt", false);
     }
 
     public static void runInsertBM(Config config, int n, boolean loc) {
@@ -204,10 +243,10 @@ public class Qure {
             deleteRandomBintreesLoc(n, config);
         else
             deleteRandomBintreesRand(n, config);
-        runInsert(config);
+        runInsert(config, loc);
     }
 
-    public static void runInsert(Config config) {
+    public static void runInsert(Config config, boolean loc) {
 
         long beforeAll = System.currentTimeMillis();
 
@@ -239,8 +278,9 @@ public class Qure {
              System.out.println("Error occured, no solution found. Aborting...");
          }
         long afterAll = System.currentTimeMillis();
-        takeTime(before, after, config.rawBTTableName, "Construct time", true, false, null, false);
-        takeTime(beforeAll, afterAll, config.rawBTTableName, "Total insert time", true, false, null, false);
+        String add = (loc) ? " (loc)" : "";
+        takeTime(before, after, config.rawBTTableName, "Insert time"+add, true, false, null, false);
+        takeTime(beforeAll, afterAll, config.rawBTTableName, "Total insert time"+add, true, false, null, false);
     }
 
     public static void writeBintreesToDB(Representation rep, Set<Block> oldSplits, Config config) throws Exception {
@@ -543,7 +583,7 @@ public class Qure {
     public static String makePrefixQuery(String block, int blockSize) {
         String expr;
         if (blockSize > 31)
-            expr = "(((1::bigint << (63 - ((" + block + " & 127) >> 1))::int)) - 1) | " + block + ")";
+            expr = "((((1::bigint << (63 - ((" + block + " & 127) >> 1))::int)) - 1) | " + block + ")";
         else
             expr = "(((1 << (31 - ((" + block + " & 63) >> 1))) - 1) | " + block + ")";
         String c1 = block + " & -2 < block"; // Should be strictly contained for deletion
@@ -598,10 +638,21 @@ public class Qure {
     public static void runManyQueryBM(Collection<Config> configs) {
 
         for (Config config : configs) {
-            clearCache();
-            System.out.println("--------------------------------------");
-            System.out.println("Running query benchmark for " + config.rawBTTableName + "...");
-            runQueryBM(config);
+            try {
+                clearCache();
+                System.out.println("--------------------------------------");
+                System.out.println("Running query benchmark for " + config.rawBTTableName + "...");
+                runQueryBM(config);
+            } catch (Exception ex) {
+                try {
+                    FileWriter fw = new FileWriter("errs.txt", true);
+                    fw.write(ex.toString() + "\n\n");
+                    fw.flush();
+                    fw.close();
+                } catch (IOException ioe) {
+                    System.err.println(ioe.toString());
+                }
+            }
         }
     }
 
@@ -655,6 +706,54 @@ public class Qure {
             statement.execute("SELECT bmbt_po2_int('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
             after = System.currentTimeMillis();
             takeTime(before, after, config.rawBTTableName, "po2 time", true, true, "query.txt", true);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            close();
+        }
+    }
+
+    public static void writeDBSizes(Collection<Config> configs) {
+        for (Config config : configs) {
+            try {
+                writeDBSize(config);
+            } catch (Exception ex) {
+                try {
+                    FileWriter fw = new FileWriter("errs.txt", true);
+                    fw.write(ex.toString() + "\n\n");
+                    fw.flush();
+                    fw.close();
+                } catch (IOException ioe) {
+                    System.err.println(ioe.toString());
+                }
+            }
+        }
+    }
+
+    public static void writeDBSize(Config config) {
+        try {
+            Class.forName("org.postgresql.Driver");
+
+            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName + "?user=" +
+                                                  config.dbUsername + "&password=" + config.dbPWD);
+            statement = connect.createStatement();
+            
+            statement.execute("select pg_size_pretty(pg_relation_size('" + config.btTableName + "'));");
+            ResultSet res1 = statement.getResultSet();
+            res1.next();
+            String table = res1.getString(1);
+            statement.execute("select pg_size_pretty(pg_total_relation_size('" + config.btTableName + "'));");
+            ResultSet res2 = statement.getResultSet();
+            res2.next();
+            String out = config.btTableName + " - Table: " + table + ", Total: " + res2.getString(1);
+            try {
+                FileWriter fw = new FileWriter("sizes.txt", true);
+                fw.write(out + "\n");
+                fw.flush();
+                fw.close();
+            } catch (IOException ioe) {
+                System.err.println(ioe.toString());
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         } finally {
