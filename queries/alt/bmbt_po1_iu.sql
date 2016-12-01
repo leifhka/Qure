@@ -14,17 +14,15 @@ BEGIN
            T1.block & -2 <= T2.block AND
            T2.block <= (((1 << (31 - ((T1.block & 63) >> 1))) - 1) | T1.block)
        ),
-       pbs AS (
-         SELECT P.gid, T.block
-         FROM possible P, ' || bt_name || ' T
-         WHERE P.gid = T.gid AND T.block % 2 != 0
-       ),
        rem AS (
          SELECT P.gid
-         FROM pbs AS P LEFT OUTER JOIN possible B ON (P.gid = B.gid AND P.block = B.block)
+         FROM (SELECT P.gid, T.block 
+               FROM ' || bt_name || ' AS T, (select distinct gid from possible) AS P
+               WHERE T.block % 2 != 0 AND P.gid = T.gid) AS P
+         LEFT OUTER JOIN possible B ON (P.gid = B.gid AND P.block = B.block)
          WHERE B.block IS NULL
        )
-     SELECT count(DISTINCT P.gid)
+     SELECT DISTINCT P.gid
      FROM possible AS P LEFT OUTER JOIN rem R ON (P.gid = R.gid)
      WHERE R.gid IS NULL;';
   END LOOP;
