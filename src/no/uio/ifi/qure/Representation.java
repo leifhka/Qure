@@ -51,6 +51,6 @@ public class Representation {
 
     public void addCovering(Set<Integer> covering, Block block) {
         for (Integer uri : covering)
-            representation.put(uri, Bintree.fromBlock(block));
+            representation.put(uri, Bintree.fromBlock(block.setUniquePart(true)));
     }
 }

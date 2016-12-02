@@ -34,10 +34,10 @@ public class Qure {
     public static void main(String[] args) {
 
         ArrayList<Config> rfs = new ArrayList<Config>();
-        //rfs.add(new Config("osm_no", "fns", 15, 3, 30, 10));
-        //rfs.add(new Config("osm_dk", "fns", 15, 3, 30, 10));
-        rfs.add(new Config("npd",    "fns", 10, 3, 30, 10));
-        //rfs.add(new Config("dallas", "fns", 13, 3, 30, 10));
+        rfs.add(new Config("osm_no", "upsa", 15, 3, 30, 10));
+        rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
+        rfs.add(new Config("npd",    "upsa", 10, 3, 30, 10));
+        rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
         //rfs.add(new Config("osm_no", "fns", 13, 3, 30, 10));
         //rfs.add(new Config("dallas", "fns", 15, 2, 30, 10));
         //rfs.add(new Config("osm_no", "fns", 15, 2, 30, 10));
@@ -77,20 +77,20 @@ public class Qure {
         //configs.add(new Config("npd",    "full", 8, 3, 30, 10));
 
         
-        runMany(rfs);
-        writeDBSizes(rfs);
-        //runManyQueryBM(configs);
+        //runMany(rfs);
+        //writeDBSizes(rfs);
+        //times = new HashMap<String, Long>();
+        runManyQueryBM(rfs);
         //times = new HashMap<String, Long>();
         //runAllInsertBM(configs, 100, 20, false);
-        times = new HashMap<String, Long>();
-        runAllInsertBM(rfs, 100, 20, true);
+        //runAllInsertBM(rfs, 100, 20, true);
     }
 
     private static void runMany(Collection<Config> configs) {
         for (Config config : configs) {
             try {
                 runBulk(config);
-                Thread.sleep(1000*60*3);
+                //Thread.sleep(1000*60*3);
             } catch (Exception ex) {
                 try {
                     FileWriter fw = new FileWriter("errs.txt", true);
@@ -312,8 +312,7 @@ public class Qure {
             else
                 createTable(statement, config);
             
-            Set<Integer> notNeedingUP = (insert) ? getURIsNotNeedingUniquePart(config, bintrees.keySet()) : new HashSet<Integer>();            
-            insertBintrees(bintrees, config, notNeedingUP);
+            insertBintrees(bintrees, config);
 
             if (!insert) {
                 insertUniverse(universe, config);
@@ -330,28 +329,7 @@ public class Qure {
         }
     }
 
-    private static Set<Integer> getURIsNotNeedingUniquePart(Config config, Set<Integer> elems) {
-
-        Set<Integer> result = new HashSet<Integer>();
-        
-        try {
-
-            statement.execute("SELECT gid FROM " + config.btTableName + " WHERE block % 2 != 0;");
-            ResultSet hasUniquePart = statement.getResultSet();
-            
-            while (hasUniquePart.next()) {
-                Integer uri = hasUniquePart.getInt(1);
-                if (elems.contains(uri)) result.add(uri);
-            }
-        } catch (Exception e) {
-            System.out.println("Error in getURIsNotNeedingUniquePart(): " + e.toString());
-            e.printStackTrace();
-            System.exit(1);
-        }
-        return result;
-    }
-
-    public static void insertBintrees(Map<Integer, Bintree> bintrees, Config config, Set<Integer> notNeedingUP) 
+    public static void insertBintrees(Map<Integer, Bintree> bintrees, Config config) 
         throws SQLException {
 
         Progress prog = new Progress("Making query...", bintrees.size(), 1, "##0");
@@ -366,7 +344,7 @@ public class Qure {
             Block[] blocks = blocksArr.toArray(new Block[blocksArr.size()]);
 
             for (int i = 0; i < blocks.length; i++) {
-                long b = blocks[i].getRepresentation() & ((notNeedingUP.contains(uri)) ? -2L : -1L);
+                long b = blocks[i].getRepresentation();
                 query += "('" + uri + "', " + b + ")" + ((i == blocks.length-1) ? ";" : ", ");
             }
 
@@ -432,7 +410,7 @@ public class Qure {
         statement.executeUpdate("CREATE INDEX " + config.rawBTTableName 
                                 + "_block_index ON " + config.btTableName + "(block);");
         statement.executeUpdate("CREATE INDEX " + config.rawBTTableName
-                                + "_wit_index ON " + config.btTableName + "(block) WHERE block % 2 != 0;");
+                                + "_wit_index ON " + config.btTableName + "(gid,block) WHERE block % 2 != 0;");
 
         if (config.verbose) System.out.println(" Done.");
     }
@@ -685,25 +663,25 @@ public class Qure {
 
             long before, after;
 
-            before = System.currentTimeMillis();
-            statement.execute("SELECT bmbt_ov_int('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
-            after = System.currentTimeMillis();
-            takeTime(before, after, config.rawBTTableName, "ov time", true, true, "query.txt", true);
+            // before = System.currentTimeMillis();
+            // statement.execute("SELECT bmbt_ov_int('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
+            // after = System.currentTimeMillis();
+            // takeTime(before, after, config.rawBTTableName, "ov time", true, true, "query.txt", true);
 
-            if (!config.rawGeoTableName.equals("npd") && config.overlapsArity >= 3) {
-                before = System.currentTimeMillis();
-                statement.execute("SELECT bmbt_ov2_int('ins." + config.rawGeoTableName + "_500', '" + config.btTableName + "');");
-                after = System.currentTimeMillis();
-                takeTime(before, after, config.rawBTTableName, "ov2 time", true, true, "query.txt", true);
-            }
+            // if (!config.rawGeoTableName.equals("npd") && config.overlapsArity >= 3) {
+            //     before = System.currentTimeMillis();
+            //     statement.execute("SELECT bmbt_ov2_int('ins." + config.rawGeoTableName + "_500', '" + config.btTableName + "');");
+            //     after = System.currentTimeMillis();
+            //     takeTime(before, after, config.rawBTTableName, "ov2 time", true, true, "query.txt", true);
+            // }
 
             before = System.currentTimeMillis();
-            statement.execute("SELECT bmbt_po1_int('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
+            statement.execute("SELECT bmbt_po1_iu('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
             after = System.currentTimeMillis();
             takeTime(before, after, config.rawBTTableName, "po1 time", true, true, "query.txt", true);
 
             before = System.currentTimeMillis();
-            statement.execute("SELECT bmbt_po2_int('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
+            statement.execute("SELECT bmbt_po2_iu('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
             after = System.currentTimeMillis();
             takeTime(before, after, config.rawBTTableName, "po2 time", true, true, "query.txt", true);
         } catch (Exception ex) {
