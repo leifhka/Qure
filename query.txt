@@ -90,3 +90,13 @@ osm_no_d17_k3_bc30_ms10_full - po2 time: 559ms
 npd_d13_k3_bc30_ms0_unbal - ov time: 61258ms
 npd_d13_k3_bc30_ms0_unbal - po1 time: 597ms
 npd_d13_k3_bc30_ms0_unbal - po2 time: 629ms
+------------------------------------------
+
+osm_no_d15_k3_bc30_ms10_upsf - po1 time: 864ms = 0.43
+osm_no_d15_k3_bc30_ms10_upsf - po2 time: 1392ms = 0.70
+osm_dk_d15_k3_bc30_ms10_upsf - po1 time: 903ms = 0.45
+osm_dk_d15_k3_bc30_ms10_upsf - po2 time: 1418ms = 0.71
+npd_d10_k3_bc30_ms10_upsf - po1 time: 2567ms = 1.28
+npd_d10_k3_bc30_ms10_upsf - po2 time: 1703ms = 0.85
+dallas_d13_k3_bc30_ms10_upsf - po1 time: 899ms = 0.45
+dallas_d13_k3_bc30_ms10_upsf - po2 time: 1364ms = 0.68

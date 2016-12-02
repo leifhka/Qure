@@ -15,7 +15,7 @@ public class Bintree {
     private boolean hashCodeSet;
 
     public Bintree(Set<Block> bt) {
-	this.bt = removeRedundantUniqueParts(bt);
+	this.bt = bt; //removeRedundantUniqueParts(bt);
         normalized = false;
     }
 
