@@ -1,6 +1,8 @@
 #Qure
 
-Welcome to Qure, a program that constructs qualitatively
+## Introduction
+
+Qure is a program that constructs qualitatively
 correct bintree representations of spatial objects
 (geometries, time intervals, etc.). The bintrees
 constructed are correct with respect to
@@ -11,6 +13,8 @@ To use the program, make a Config-object with
 the desired parameters. To query the
 resulting bintrees, use the SQL-queries
 in the queries-directory.
+
+## Usage
 
 To compile, simply run
 
