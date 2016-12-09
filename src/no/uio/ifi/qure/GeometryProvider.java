@@ -1,5 +1,6 @@
 package no.uio.ifi.qure;
 
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
@@ -49,7 +50,7 @@ public class GeometryProvider implements SpaceProvider {
     public void populateBulk() {
 
         updating = false;
-        Map<Integer, String> wkbs = dataProvider.getSpaces();
+        Map<Integer, List<String>> wkbs = dataProvider.getSpaces();
         geometries = parseGeometries(wkbs, config.verbose);
         makeAndSetUniverse();
     }
@@ -58,7 +59,7 @@ public class GeometryProvider implements SpaceProvider {
 
         updating = true;
         Set<Integer> urisToInsert = dataProvider.getInsertURIs();
-        Map<Integer, String> wkbs = dataProvider.getSpaces(urisToInsert);
+        Map<Integer, List<String>> wkbs = dataProvider.getSpaces(urisToInsert);
         geometries = parseGeometries(wkbs, config.verbose);
         obtainUniverse();
     }
@@ -81,8 +82,8 @@ public class GeometryProvider implements SpaceProvider {
 
     private void obtainUniverse() {
 
-        String universeWKB = dataProvider.getUniverse();
-        Map<Integer, String> uwm = new HashMap<Integer, String>();
+        List<String> universeWKB = dataProvider.getUniverse();
+        Map<Integer, List<String>> uwm = new HashMap<Integer, List<String>>();
         uwm.put(0, universeWKB);
         Map<Integer, GeometrySpace> ugm = parseGeometries(uwm, false);
         universe = ugm.get(0);
@@ -117,7 +118,7 @@ public class GeometryProvider implements SpaceProvider {
         } else {
             Set<Integer> s = new HashSet<Integer>();
             s.add(uri);
-            Map<Integer, String> m = dataProvider.getSpaces(s);
+            Map<Integer, List<String>> m = dataProvider.getSpaces(s);
             Map<Integer, GeometrySpace> g = parseGeometries(m, false);
             return g.get(uri);
         }
@@ -206,12 +207,12 @@ public class GeometryProvider implements SpaceProvider {
         String gs = geo.getGeometry().toString();
         String whereClause = "ST_intersects(geom, ST_GeomFromText('" + gs + "')) AND ";
         whereClause += "NOT ST_contains(geom, ST_GeomFromText('" + gs + "'))";
-        Map<Integer, String> wkbs = dataProvider.getExternalOverlapping(whereClause);
+        Map<Integer, List<String>> wkbs = dataProvider.getExternalOverlapping(whereClause);
         Map<Integer, GeometrySpace> res = parseGeometries(wkbs, false);
         return res;
     }
 
-    private Map<Integer, GeometrySpace> parseGeometries(Map<Integer,String> wkbs, boolean verbose) {
+    private Map<Integer, GeometrySpace> parseGeometries(Map<Integer, List<String>> wkbs, boolean verbose) {
 
         Progress prog = new Progress("Parsing geometries...", wkbs.keySet().size(), 1, "##0");  
         prog.setConvertToLong(true);
@@ -225,7 +226,7 @@ public class GeometryProvider implements SpaceProvider {
 
         for (Integer uri : wkbs.keySet()) {
 
-            String wkb = wkbs.get(uri);
+            String wkb = wkbs.get(uri).get(0);
             Geometry geo;
 
             try {

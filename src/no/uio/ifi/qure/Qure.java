@@ -371,7 +371,7 @@ public class Qure {
         if (config.verbose) System.out.print("Inserting universe into " + config.universeTable + "...");
         String universeStr = universe.toDBString();
         statement.executeUpdate("INSERT INTO " + config.universeTable + " VALUES ('" +
-                                config.btTableName + "', '" + universeStr + "');"); // Enable multicolumn strings (Remove the 's)
+                                config.btTableName + "', " + universeStr + ");"); 
         if (config.verbose) System.out.println(" Done.");
     }
 

@@ -99,6 +99,6 @@ public class TimeSpace implements Space {
         };
     }
 
-    public String toDBString() { return ""; } //TODO
+    public String toDBString() { return "'" + getStart().toString() + "', '" + getEnd().toString() + "'"; }
 
 }

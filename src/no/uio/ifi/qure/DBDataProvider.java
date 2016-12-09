@@ -2,6 +2,8 @@ package no.uio.ifi.qure;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -9,6 +11,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet; 
+import java.sql.ResultSetMetaData; 
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -66,10 +69,9 @@ public class DBDataProvider implements RawDataProvider {
         return insertUris;
     }
 
-    // TODO: Return Map<Integer, List<String>>
-    public Map<Integer, String> getExternalOverlapping(String whereClause) {
+    public Map<Integer, List<String>> getExternalOverlapping(String whereClause) {
 
-        Map<Integer, String> wkbs = new HashMap<Integer, String>();
+        Map<Integer, List<String>> spaceMap = new HashMap<Integer, List<String>>();
 
         try {
             Class.forName("org.postgresql.Driver");
@@ -81,11 +83,14 @@ public class DBDataProvider implements RawDataProvider {
             query += " WHERE " + whereClause + ";";
             statement.execute(query);
             resultSet = statement.getResultSet();
+            int numCol = resultSet.getMetaData().getColumnCount();
  
             while (resultSet.next()) {
                 Integer uri = Integer.parseInt(resultSet.getString(1));
-                String wkb = resultSet.getString(2);
-                wkbs.put(uri,wkb);
+                List<String> spaceStrs = new ArrayList<String>();
+                for (int i = 2; i <= numCol; i++)
+                    spaceStrs.add(resultSet.getString(i));
+                spaceMap.put(uri,spaceStrs);
             }
         } catch (Exception e) {
             System.err.println("Error in query process: " + e.toString());
@@ -95,13 +100,12 @@ public class DBDataProvider implements RawDataProvider {
     	    close();
         }
 
-        return wkbs;
+        return spaceMap;
     }
 
-    // TODO: Return List<String>
-    public String getUniverse() {
+    public List<String> getUniverse() {
 
-        String universeStr = null;
+        List<String> universeStrs = null;
 
         try {
             Class.forName("org.postgresql.Driver");
@@ -114,7 +118,9 @@ public class DBDataProvider implements RawDataProvider {
             statement.execute(query);
             resultSet = statement.getResultSet();
             resultSet.next(); 
-            universeStr = resultSet.getString(1);
+            int numCol = resultSet.getMetaData().getColumnCount();
+            for (int i = 1; i <= numCol; i++)
+                universeStrs.add(resultSet.getString(i));
         } catch (Exception e) {
             System.err.println("Error querying for universe: " + e.toString());
             e.printStackTrace();
@@ -123,13 +129,12 @@ public class DBDataProvider implements RawDataProvider {
     	    close();
         }
 
-        return universeStr;
+        return universeStrs;
     }
 
-    // TODO: Return Map<Integer, List<String>>
-    public Map<Integer,String> getSpaces() {
+    public Map<Integer, List<String>> getSpaces() {
 
-        Map<Integer, String> res = new HashMap<Integer,String>();
+        Map<Integer, List<String>> spaceMap = new HashMap<Integer, List<String>>();
 
         try {
             Class.forName("org.postgresql.Driver");
@@ -149,11 +154,14 @@ public class DBDataProvider implements RawDataProvider {
             statement = connect.createStatement();
             statement.execute(config.geoQueryStr);
             resultSet = statement.getResultSet();
+            int numCol = resultSet.getMetaData().getColumnCount();
  
             while (resultSet.next()) {
                 Integer uri = Integer.parseInt(resultSet.getString(1));
-                String wkb = resultSet.getString(2);
-                res.put(uri,wkb);
+                List<String> spaceStrs = new ArrayList<String>();
+                for (int i = 2; i <= numCol; i++)
+                    spaceStrs.add(resultSet.getString(i));
+                spaceMap.put(uri,spaceStrs);
             }
             if (config.verbose) System.out.println(" Done");
         } catch (Exception e) {
@@ -164,15 +172,14 @@ public class DBDataProvider implements RawDataProvider {
     	    close();
         }
 
-        return res;
+        return spaceMap;
     }
 
-    // TODO: Return Map<Integer, List<String>>
-    public Map<Integer,String> getSpaces(Set<Integer> uris) {
+    public Map<Integer, List<String>> getSpaces(Set<Integer> uris) {
 
-        if (uris.isEmpty()) return new HashMap<Integer, String>();
+        if (uris.isEmpty()) return new HashMap<Integer, List<String>>();
 
-        Map<Integer, String> res = new HashMap<Integer,String>();
+        Map<Integer, List<String>> spaceMap = new HashMap<Integer, List<String>>();
 
         try {
             Class.forName("org.postgresql.Driver");
@@ -192,11 +199,14 @@ public class DBDataProvider implements RawDataProvider {
             statement = connect.createStatement();
             statement.execute(makeValuesQuery(uris));
             resultSet = statement.getResultSet();
+            int numCol = resultSet.getMetaData().getColumnCount();
  
             while (resultSet.next()) {
                 Integer uri = Integer.parseInt(resultSet.getString(1));
-                String wkb = resultSet.getString(2);
-                res.put(uri, wkb);
+                List<String> spaceStrs = new ArrayList<String>();
+                for (int i = 2; i <= numCol; i++)
+                    spaceStrs.add(resultSet.getString(i));
+                spaceMap.put(uri,spaceStrs);
             }
             if (config.verbose) System.out.println(" Done");
         } catch (Exception e) {
@@ -207,7 +217,7 @@ public class DBDataProvider implements RawDataProvider {
     	    close();
         }
 
-        return res;
+        return spaceMap;
     }
 
     private String makeValuesQuery(Set<Integer> uris) {

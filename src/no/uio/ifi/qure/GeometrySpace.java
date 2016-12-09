@@ -84,7 +84,7 @@ public class GeometrySpace implements Space {
     public String toDBString() {
         WKBWriter writer = new WKBWriter();
         String str = WKBWriter.toHex(writer.write(geo));
-        return str;
+        return "'" + str + "'";
     }
 
     public String toString() {
