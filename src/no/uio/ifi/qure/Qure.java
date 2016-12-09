@@ -371,7 +371,7 @@ public class Qure {
         if (config.verbose) System.out.print("Inserting universe into " + config.universeTable + "...");
         String universeStr = universe.toDBString();
         statement.executeUpdate("INSERT INTO " + config.universeTable + " VALUES ('" +
-                                config.btTableName + "', '" + universeStr + "');");
+                                config.btTableName + "', '" + universeStr + "');"); // Enable multicolumn strings (Remove the 's)
         if (config.verbose) System.out.println(" Done.");
     }
 
@@ -410,7 +410,7 @@ public class Qure {
         statement.executeUpdate("CREATE INDEX " + config.rawBTTableName 
                                 + "_block_index ON " + config.btTableName + "(block);");
         statement.executeUpdate("CREATE INDEX " + config.rawBTTableName
-                                + "_wit_index ON " + config.btTableName + "(gid,block) WHERE block % 2 != 0;");
+                                + "_wit_index ON " + config.btTableName + "(block,gid) WHERE block % 2 != 0;");
 
         if (config.verbose) System.out.println(" Done.");
     }
