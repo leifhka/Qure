@@ -1,0 +1,104 @@
+package no.uio.ifi.qure;
+
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+
+public class TimeSpace implements Space {
+
+    private final LocalDateTime start; 
+    private final LocalDateTime end;
+
+    public TimeSpace(LocalDateTime start, LocalDateTime end) {
+        this.start = start;
+        this.end = end;
+    }
+
+    public LocalDateTime getStart() { return start; }
+
+    public LocalDateTime getEnd() { return end; }
+
+    public static TimeSpace makeEmpty() { return new TimeSpace(null, null); }
+
+    public Space intersection(Space o) {
+        
+        if (!(o instanceof TimeSpace)) return null;
+
+        TimeSpace ots = (TimeSpace) o;
+        
+        if (ots.isEmpty() || isEmpty()) return makeEmpty();
+
+        LocalDateTime newStart = (ots.getStart().isBefore(getStart())) ? getStart() : ots.getStart();
+        LocalDateTime newEnd = (ots.getEnd().isBefore(getEnd())) ? ots.getEnd() : getEnd();
+
+        if (newStart.isBefore(newEnd))
+            return new TimeSpace(newStart, newEnd);
+        else
+            return makeEmpty();
+    }
+
+    public Space union(Space o) {
+
+        if (!(o instanceof TimeSpace)) return null;
+
+        TimeSpace ots = (TimeSpace) o;
+        
+        if (ots.isEmpty())
+            return this;
+        else if (isEmpty())
+            return ots;
+
+        LocalDateTime newStart = (ots.getStart().isBefore(getStart())) ? ots.getStart() : getStart();
+        LocalDateTime newEnd = (ots.getEnd().isBefore(getEnd())) ? getEnd() : ots.getEnd();
+
+        return new TimeSpace(newStart, newEnd);
+    }
+
+    public boolean isEmpty() { return start == null || end == null; }
+
+    public boolean equals(Object o) {
+
+        if (!(o instanceof TimeSpace)) return false;
+
+        TimeSpace ots = (TimeSpace) o;
+
+        if (ots.isEmpty())
+            return isEmpty();
+        else if (isEmpty())
+            return ots.isEmpty();
+        else
+            return ots.getStart().equals(getStart()) && ots.getEnd().equals(getEnd());
+    }
+
+    public Space[] split(int dim) {
+        
+        long halfDiffInSec = Math.round( ((double) start.until(end, ChronoUnit.SECONDS))/2.0 );
+        LocalDateTime mid = getStart().plusSeconds(halfDiffInSec);
+
+        TimeSpace ts1 = new TimeSpace(getStart(), mid);
+        TimeSpace ts2 = new TimeSpace(mid, getEnd());
+        
+        return new Space[]{ts1, ts2};
+    }
+
+    public Relation relate(Space o) {
+
+        if (!(o instanceof TimeSpace)) return null;
+
+        TimeSpace ots = (TimeSpace) o;
+
+        TimeSpace intersection = (TimeSpace) this.intersection(ots);
+
+        boolean intersects = intersection.isEmpty();
+        boolean isCovers = intersection.equals(ots);
+        boolean isCoveredBy = intersection.equals(this);
+
+        return new Relation() {
+            public boolean isIntersects() { return intersects; }
+            public boolean isCovers() { return isCovers; }
+            public boolean isCoveredBy() { return isCoveredBy; }
+        };
+    }
+
+    public String toDBString() { return ""; } //TODO
+
+}

@@ -35,9 +35,9 @@ public class Qure {
 
         ArrayList<Config> rfs = new ArrayList<Config>();
         rfs.add(new Config("osm_no", "upsa", 15, 3, 30, 10));
-        rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
-        rfs.add(new Config("npd",    "upsa", 10, 3, 30, 10));
-        rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
+        //rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
+        //rfs.add(new Config("npd",    "upsa", 10, 3, 30, 10));
+        //rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
         //rfs.add(new Config("osm_no", "fns", 13, 3, 30, 10));
         //rfs.add(new Config("dallas", "fns", 15, 2, 30, 10));
         //rfs.add(new Config("osm_no", "fns", 15, 2, 30, 10));
@@ -77,10 +77,10 @@ public class Qure {
         //configs.add(new Config("npd",    "full", 8, 3, 30, 10));
 
         
-        //runMany(rfs);
+        runMany(rfs);
         //writeDBSizes(rfs);
         //times = new HashMap<String, Long>();
-        runManyQueryBM(rfs);
+        //runManyQueryBM(rfs);
         //times = new HashMap<String, Long>();
         //runAllInsertBM(configs, 100, 20, false);
         //runAllInsertBM(rfs, 100, 20, true);

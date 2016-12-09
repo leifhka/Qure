@@ -33,15 +33,9 @@ public class GeometrySpace implements Space {
         return gc.getFactory().buildGeometry(gs);
     }
 
-    public GeometrySpace clone() { return new GeometrySpace((Geometry)(Geometry)  getGeometry().clone()); }
-
     public Geometry getGeometry() { return geo; }
 
     public boolean isEmpty() { return geo.isEmpty(); }
-
-    public boolean isPoint() { return geo.getDimension() == 0; }
-
-    public int getComplexityMeasure() { return geo.getNumPoints(); }
 
     public GeometrySpace union(Space o) {
         Geometry go = ((GeometrySpace) o).getGeometry();

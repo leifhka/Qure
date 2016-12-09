@@ -2,8 +2,6 @@ package no.uio.ifi.qure;
 
 public interface Space {
 
-    public Space clone();
-
     public Space intersection(Space o);
 
     public Space union(Space o);
@@ -15,10 +13,6 @@ public interface Space {
     public Relation relate(Space o);
 
     public String toDBString();
-
-    public boolean isPoint();
-
-    public int getComplexityMeasure();
 
     public default boolean intersects(Space o) {
         Relation rel = relate(o);
