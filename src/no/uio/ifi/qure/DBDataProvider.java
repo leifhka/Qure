@@ -66,6 +66,7 @@ public class DBDataProvider implements RawDataProvider {
         return insertUris;
     }
 
+    // TODO: Return Map<Integer, List<String>>
     public Map<Integer, String> getExternalOverlapping(String whereClause) {
 
         Map<Integer, String> wkbs = new HashMap<Integer, String>();
@@ -97,6 +98,7 @@ public class DBDataProvider implements RawDataProvider {
         return wkbs;
     }
 
+    // TODO: Return List<String>
     public String getUniverse() {
 
         String universeStr = null;
@@ -124,6 +126,7 @@ public class DBDataProvider implements RawDataProvider {
         return universeStr;
     }
 
+    // TODO: Return Map<Integer, List<String>>
     public Map<Integer,String> getSpaces() {
 
         Map<Integer, String> res = new HashMap<Integer,String>();
@@ -164,6 +167,7 @@ public class DBDataProvider implements RawDataProvider {
         return res;
     }
 
+    // TODO: Return Map<Integer, List<String>>
     public Map<Integer,String> getSpaces(Set<Integer> uris) {
 
         if (uris.isEmpty()) return new HashMap<Integer, String>();
