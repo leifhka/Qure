@@ -9,8 +9,13 @@ public class TimeSpace implements Space {
     private final LocalDateTime end;
 
     public TimeSpace(LocalDateTime start, LocalDateTime end) {
-        this.start = start;
-        this.end = end;
+        if (start != null && end != null && (start.isBefore(end) || start.equals(end))) {
+            this.start = start;
+            this.end = end;
+        } else {
+            this.start = null;
+            this.end = null;
+        }
     }
 
     public LocalDateTime getStart() { return start; }
@@ -19,7 +24,7 @@ public class TimeSpace implements Space {
 
     public static TimeSpace makeEmpty() { return new TimeSpace(null, null); }
 
-    public Space intersection(Space o) {
+    public TimeSpace intersection(Space o) {
         
         if (!(o instanceof TimeSpace)) return null;
 
@@ -30,13 +35,10 @@ public class TimeSpace implements Space {
         LocalDateTime newStart = (ots.getStart().isBefore(getStart())) ? getStart() : ots.getStart();
         LocalDateTime newEnd = (ots.getEnd().isBefore(getEnd())) ? ots.getEnd() : getEnd();
 
-        if (newStart.isBefore(newEnd))
-            return new TimeSpace(newStart, newEnd);
-        else
-            return makeEmpty();
+        return new TimeSpace(newStart, newEnd);
     }
 
-    public Space union(Space o) {
+    public TimeSpace union(Space o) {
 
         if (!(o instanceof TimeSpace)) return null;
 
@@ -69,15 +71,15 @@ public class TimeSpace implements Space {
             return ots.getStart().equals(getStart()) && ots.getEnd().equals(getEnd());
     }
 
-    public Space[] split(int dim) {
+    public TimeSpace[] split(int dim) {
         
         long halfDiffInSec = Math.round( ((double) start.until(end, ChronoUnit.SECONDS))/2.0 );
         LocalDateTime mid = getStart().plusSeconds(halfDiffInSec);
 
         TimeSpace ts1 = new TimeSpace(getStart(), mid);
         TimeSpace ts2 = new TimeSpace(mid, getEnd());
-        
-        return new Space[]{ts1, ts2};
+
+        return new TimeSpace[]{ts1, ts2};
     }
 
     public Relation relate(Space o) {
@@ -98,6 +100,8 @@ public class TimeSpace implements Space {
             public boolean isCoveredBy() { return isCoveredBy; }
         };
     }
+
+    public String toString() { return "[" + getStart().toString() + ", " + getEnd().toString() + "]"; }
 
     public String toDBString() { return "'" + getStart().toString() + "', '" + getEnd().toString() + "'"; }
 
