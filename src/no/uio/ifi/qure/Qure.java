@@ -34,7 +34,7 @@ public class Qure {
     public static void main(String[] args) {
 
         ArrayList<Config> rfs = new ArrayList<Config>();
-        rfs.add(new Config("divvy", "f", 10, 3, 30, 10));
+        rfs.add(new Config("divvy", "f", 15, 3, 30, 10));
         //rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
         //rfs.add(new Config("npd",    "upsa", 10, 3, 30, 10));
         //rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));

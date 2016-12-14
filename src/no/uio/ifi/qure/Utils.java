@@ -87,6 +87,7 @@ public class Utils {
 
         for (Map<Integer, Space> res : intersectionMaps)
             intersections.putAll(res);
+
         for (Set<Integer> res : coversSets)
             covering.addAll(res);
 

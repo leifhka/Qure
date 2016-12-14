@@ -84,6 +84,7 @@ public interface SpaceProvider {
 
             intSpL = Utils.getIntersecting(splitL, undecided, getSpaces(), config.numThreads);
             intSpR = Utils.getIntersecting(splitR, undecided, getSpaces(), config.numThreads);
+
             intAllL = Utils.union(intL, intSpL);
             intAllR = Utils.union(intR, intSpR);
             diff = Math.abs(intAllL.size() - intAllR.size());

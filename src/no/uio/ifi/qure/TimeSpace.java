@@ -90,7 +90,7 @@ public class TimeSpace implements Space {
 
         TimeSpace intersection = (TimeSpace) this.intersection(ots);
 
-        boolean intersects = intersection.isEmpty();
+        boolean intersects = !intersection.isEmpty();
         boolean isCovers = intersection.equals(ots);
         boolean isCoveredBy = intersection.equals(this);
 
@@ -101,8 +101,18 @@ public class TimeSpace implements Space {
         };
     }
 
-    public String toString() { return "[" + getStart().toString() + ", " + getEnd().toString() + "]"; }
+    public String toString() {
+        if (isEmpty())
+            return "[]";
+        else
+            return "[" + getStart().toString() + ", " + getEnd().toString() + "]";
+    }
 
-    public String toDBString() { return "'" + getStart().toString() + "', '" + getEnd().toString() + "'"; }
+    public String toDBString() {
+        if (isEmpty())
+            return "NULL, NULL";
+        else
+            return "'" + getStart().toString() + "', '" + getEnd().toString() + "'";
+    }
 
 }

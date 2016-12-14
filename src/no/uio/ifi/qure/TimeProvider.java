@@ -200,7 +200,7 @@ public class TimeProvider implements SpaceProvider {
             try {
                 newTime = new TimeSpace(LocalDateTime.parse(start,format), LocalDateTime.parse(stop,format));
             } catch (DateTimeParseException e) {
-                System.out.println(e.toString());
+                System.err.println(e.toString());
                 System.exit(1);
                 continue;
             }

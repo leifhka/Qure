@@ -59,7 +59,7 @@ public class DBDataProvider implements RawDataProvider {
             System.err.println("SQLError: " + e.toString());
             System.err.println(e.getNextException());
         } catch (Exception e) {
-            System.out.println("Error in queryForInsert(): " + e.toString());
+            System.err.println("Error in queryForInsert(): " + e.toString());
             e.printStackTrace();
             System.exit(1);
         } finally {
