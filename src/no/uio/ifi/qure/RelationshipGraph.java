@@ -103,6 +103,11 @@ public class RelationshipGraph {
             addCoveredBy(child, parent);
     }
 
+    private void addBefore(Integer u1, Integer u2) {
+        Node n1 = nodes.get(u1);
+        n1.before.add(u2);
+    }
+
     private Integer addOverlapsWithoutRedundancyCheck(Set<Integer> parents) {
 
         Integer child = newOverlapsNode();
@@ -196,6 +201,18 @@ public class RelationshipGraph {
             removeOverlapsNode(uri);
     }
 
+    private void addOverlaps(Integer ui, Integer uj, Space s, Set<Intersection> intersections,
+                             Map<Integer, Set<Integer>> intMap) {
+        Set<Integer> elems = new HashSet<Integer>(2);
+        elems.add(ui);
+        elems.add(uj);
+        Intersection nin = new Intersection(s, elems);
+        intersections.add(nin);
+        intMap.get(ui).add(uj);
+        intMap.get(uj).add(ui);
+        //addOverlapsWithoutRedundancyCheck(elems);
+    }
+
     /**
      * Constructs a relaionship graph based on the relationships between the spaces in spaceNode with
      * overlaps-arity up to overlapsArity.
@@ -207,11 +224,19 @@ public class RelationshipGraph {
 
         Map<Integer, Set<Integer>> intMap = new HashMap<Integer, Set<Integer>>();
         for (Integer uri : uris) intMap.put(uri, new HashSet<Integer>());
-        RelationshipGraph newNode = new RelationshipGraph(spaceNode.getBlock(), uris, overlapsArity);
+        RelationshipGraph graph = new RelationshipGraph(spaceNode.getBlock(), uris, overlapsArity);
 
         Integer[] urisArr = uris.toArray(new Integer[uris.size()]);
-
         Set<Intersection> intersections = new HashSet<Intersection>();
+
+        graph.computeBinaryRelations(urisArr, spaces, intersections, intMap);
+        graph.computeKIntersections(intersections, uris, spaces, intMap);
+
+        return graph;
+    }
+
+    private void computeBinaryRelations(Integer[] urisArr, SpaceProvider spaces, 
+                                        Set<Intersection> intersections, Map<Integer, Set<Integer>> intMap) {
 
         for (int i = 0; i < urisArr.length; i++) { 
 
@@ -228,28 +253,20 @@ public class RelationshipGraph {
                 if (rel.isIntersects()) {
 
                     if (rel.isCovers())
-                        newNode.addCoveredBy(uj, ui);
+                        addCoveredBy(uj, ui);
 
                     if (rel.isCoveredBy())
-                        newNode.addCoveredBy(ui, uj);
+                        addCoveredBy(ui, uj);
                     
                     if (!rel.isCovers() && !rel.isCoveredBy()) { // Overlaps already represented by containment
-                        Set<Integer> elems = new HashSet<Integer>(2);
-                        elems.add(ui);
-                        elems.add(uj);
                         Space s = si.intersection(sj);
-                        Intersection nin = new Intersection(s, elems);
-                        intersections.add(nin);
-                        intMap.get(ui).add(uj);
-                        intMap.get(uj).add(ui);
-                        newNode.addOverlapsWithoutRedundancyCheck(elems);
+                        addOverlaps(ui, uj, s, intersections, intMap);
                     }
+                } else if (rel.isBefore()) {
+                    addBefore(ui,uj);
                 }
             }
         }
-        newNode.computeKIntersections(intersections, uris, spaces, intMap);
-
-        return newNode;
     }
 
     /**
@@ -330,18 +347,41 @@ public class RelationshipGraph {
         if (n.visited) return i;
         else n.visited = true;
 
-        for (Integer preds : imidiatePreds(n))
+        for (Integer preds : sortAccToBefore(imidiatePreds(n)))
             i = orderNodes(order, i, preds);
 
         order[i++] = uri;
         return i;
     }
 
+    private Integer[] sortAccToBefore(Set<Integer> uris) {
+
+        Integer[] order = new Integer[uris.size()];
+        Set<Integer> visited = new HashSet<Integer>();
+        int i = order.length - 1;
+
+        for (Integer u : uris) {
+
+            if (visited.contains(u)) continue;
+            Node n = nodes.get(u);
+
+            for (Integer aftr : n.before) {
+                if (visited.contains(aftr) || !uris.contains(aftr)) continue;
+                order[i--] = aftr;
+                visited.add(aftr);
+            }
+            order[i--] = u;
+            visited.add(u);
+        }
+
+        return order;
+    }
+
     private Integer[] getNodesOrder() {
 
         Integer[] order = new Integer[nodes.keySet().size()];
         int k = 0;
-        for (Integer tm : topMostNodes)
+        for (Integer tm : sortAccToBefore(topMostNodes))
             k = orderNodes(order, k, tm);
 
         if (k == order.length) return order;
@@ -410,12 +450,14 @@ public class RelationshipGraph {
         boolean visited; // Used for post-fix ordering of nodes
         Set<Integer> preds;
         Set<Integer> succs;
+        Set<Integer> before;
 
         public Node(Integer uri) {
             this.uri = uri;
             visited = false;
             preds = new HashSet<Integer>();
             succs = new HashSet<Integer>();
+            before = new HashSet<Integer>();
         }
     }
 }

@@ -34,7 +34,7 @@ public class Qure {
     public static void main(String[] args) {
 
         ArrayList<Config> rfs = new ArrayList<Config>();
-        rfs.add(new Config("divvy", "f", 15, 3, 30, 10));
+        rfs.add(new Config("dallas", "f3", 13, 3, 30, 10));
         //rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
         //rfs.add(new Config("npd",    "upsa", 10, 3, 30, 10));
         //rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
@@ -90,8 +90,8 @@ public class Qure {
         for (Config config : configs) {
             try {
                 runBulk(config);
-                //Thread.sleep(1000*60*3);
-            } catch (Exception ex) {
+                Thread.sleep(1000*60*0);
+            } catch (InterruptedException ex) {
                 try {
                     FileWriter fw = new FileWriter("errs.txt", true);
                     fw.write(ex.toString() + "\n\n");
@@ -109,7 +109,7 @@ public class Qure {
             try {
                 runManyInsertBM(config, n, iterations, loc);
                 Thread.sleep(1000*30*3);
-            } catch (Exception ex) {
+            } catch (InterruptedException ex) {
                 try {
                     FileWriter fw = new FileWriter("errs.txt", true);
                     fw.write(ex.toString() + "\n\n");
@@ -197,7 +197,7 @@ public class Qure {
 
         if (config.verbose) printConfig(config);
 
-        SpaceProvider geometries = new TimeProvider(config, new DBDataProvider(config));
+        SpaceProvider geometries = new GeometryProvider(config, new DBDataProvider(config));
         geometries.populateBulk();
         SpaceToBintree gtb = new SpaceToBintree(config);
 
@@ -315,8 +315,8 @@ public class Qure {
             insertBintrees(bintrees, config);
 
             if (!insert) {
-                insertUniverse(universe, config);
                 createIndexStructures(config);
+                insertUniverse(universe, config);
             }
             if (!splits.isEmpty()) insertSplits(splits, config);
 
@@ -616,11 +616,11 @@ public class Qure {
     public static void runManyQueryBM(Collection<Config> configs) {
 
         for (Config config : configs) {
+            runQueryBM(config);
             try {
                 clearCache();
                 System.out.println("--------------------------------------");
                 System.out.println("Running query benchmark for " + config.rawBTTableName + "...");
-                runQueryBM(config);
             } catch (Exception ex) {
                 try {
                     FileWriter fw = new FileWriter("errs.txt", true);

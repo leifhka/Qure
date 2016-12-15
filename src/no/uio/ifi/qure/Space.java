@@ -28,4 +28,9 @@ public interface Space {
         Relation rel = relate(o);
         return rel.isCoveredBy();
     }
+
+    public default boolean before(Space o) {
+        Relation rel = relate(o);
+        return rel.isBefore();
+    }
 }

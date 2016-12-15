@@ -21,5 +21,9 @@ public class GeometryRelation implements Relation {
     public boolean isIntersects() {
         return im.isIntersects();
     }
+
+    public boolean isBefore() {
+        return false;
+    }
 }
 

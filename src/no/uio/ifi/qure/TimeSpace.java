@@ -82,6 +82,14 @@ public class TimeSpace implements Space {
         return new TimeSpace[]{ts1, ts2};
     }
 
+    public boolean isBefore(Space o) {
+
+        if (!(o instanceof TimeSpace) || isEmpty() || o.isEmpty()) return false;
+
+        TimeSpace ots = (TimeSpace) o;
+        return getEnd().isBefore(ots.getStart());
+    }
+
     public Relation relate(Space o) {
 
         if (!(o instanceof TimeSpace)) return null;
@@ -93,11 +101,13 @@ public class TimeSpace implements Space {
         boolean intersects = !intersection.isEmpty();
         boolean isCovers = intersection.equals(ots);
         boolean isCoveredBy = intersection.equals(this);
+        boolean isBefore = intersection.isEmpty() && this.isBefore(ots);
 
         return new Relation() {
             public boolean isIntersects() { return intersects; }
             public boolean isCovers() { return isCovers; }
             public boolean isCoveredBy() { return isCoveredBy; }
+            public boolean isBefore() { return isBefore; }
         };
     }
 

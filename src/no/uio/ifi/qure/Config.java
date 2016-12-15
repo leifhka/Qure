@@ -33,8 +33,8 @@ public class Config {
         this.maxSplits = maxSplits;
 
         rawGeoTableName = table;
-        //geoTableName = "geo." + rawGeoTableName;
-        geoTableName = rawGeoTableName;
+        geoTableName = "geo." + rawGeoTableName;
+        //geoTableName = rawGeoTableName;
 
         rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity + "_bc" + blockMemberCount + "_ms" + maxSplits + "_" + suff;
         schemaName = "qure";
@@ -56,15 +56,15 @@ public class Config {
         }
     };
 
-    public int blockSize = 31;
+    public int blockSize = 63;
     public String dbName = "test";
     public String dbPWD = "test";
     public String dbUsername = "leifhka";
-    //public String uriColumn = "gid";
-    public String uriColumn = "trip_id";
+    public String uriColumn = "gid";
+    //public String uriColumn = "trip_id";
     public String blockColumn = "block";
-    //public String geoColumn = "geom";
-    public String geoColumn = "starttime, stoptime";
+    public String geoColumn = "geom";
+    //public String geoColumn = "starttime, stoptime";
     public String universeTable = "qure.universes";
     public boolean convertUriToInt = true;
 
