@@ -102,9 +102,9 @@ public class GeometrySpace implements Space {
         return geo.hashCode();
     }
 
-    public GeometryRelation relate(Space o) {
+    public GeometryRelationship relate(Space o) {
 
         Geometry go = ((GeometrySpace) o).getGeometry();
-        return new GeometryRelation(geo.relate(go));
+        return new GeometryRelationship(geo.relate(go));
     }
 }

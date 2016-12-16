@@ -248,7 +248,7 @@ public class RelationshipGraph {
                 Integer uj = urisArr[j];
                 Space sj = spaces.get(uj);
 
-                Relation rel = si.relate(sj);
+                Relationship rel = si.relate(sj);
 
                 if (rel.isIntersects()) {
 

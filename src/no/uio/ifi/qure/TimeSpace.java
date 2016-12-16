@@ -90,7 +90,7 @@ public class TimeSpace implements Space {
         return getEnd().isBefore(ots.getStart());
     }
 
-    public Relation relate(Space o) {
+    public Relationship relate(Space o) {
 
         if (!(o instanceof TimeSpace)) return null;
 
@@ -103,7 +103,7 @@ public class TimeSpace implements Space {
         boolean isCoveredBy = intersection.equals(this);
         boolean isBefore = intersection.isEmpty() && this.isBefore(ots);
 
-        return new Relation() {
+        return new Relationship() {
             public boolean isIntersects() { return intersects; }
             public boolean isCovers() { return isCovers; }
             public boolean isCoveredBy() { return isCoveredBy; }

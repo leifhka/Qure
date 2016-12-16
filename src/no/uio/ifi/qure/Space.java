@@ -10,27 +10,27 @@ public interface Space {
 
     public Space[] split(int dim);
 
-    public Relation relate(Space o);
+    public Relationship relate(Space o);
 
     public String toDBString();
 
     public default boolean intersects(Space o) {
-        Relation rel = relate(o);
+        Relationship rel = relate(o);
         return rel.isIntersects();
     }
 
     public default boolean covers(Space o) {
-        Relation rel = relate(o);
+        Relationship rel = relate(o);
         return rel.isCovers();
     }
 
     public default boolean coveredBy(Space o) {
-        Relation rel = relate(o);
+        Relationship rel = relate(o);
         return rel.isCoveredBy();
     }
 
     public default boolean before(Space o) {
-        Relation rel = relate(o);
+        Relationship rel = relate(o);
         return rel.isBefore();
     }
 }

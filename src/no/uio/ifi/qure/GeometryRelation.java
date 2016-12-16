@@ -2,11 +2,11 @@ package no.uio.ifi.qure;
 
 import com.vividsolutions.jts.geom.IntersectionMatrix;
 
-public class GeometryRelation implements Relation {
+public class GeometryRelationship implements Relationship {
 
     IntersectionMatrix im;
 
-    public GeometryRelation(IntersectionMatrix im) {
+    public GeometryRelationship(IntersectionMatrix im) {
         this.im = im;
     }
 

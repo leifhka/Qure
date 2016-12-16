@@ -1,6 +1,6 @@
 package no.uio.ifi.qure;
 
-public interface Relation {
+public interface Relationship {
 
     public boolean isCovers();
 
