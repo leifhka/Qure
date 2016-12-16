@@ -1,5 +1,14 @@
 package no.uio.ifi.qure;
 
+/* Example relations:
+ *   new And(Not(PartOf(1,2)),
+ *           Overlaps(1,2))
+ *
+ *   new And(PartOf(1,2),
+ *           And(Overlaps(2,3),
+ *               Not(PartOf(1,3))))
+ */
+
 public interface Relation {
 
     public String toSQL();
@@ -10,11 +19,11 @@ public interface Relation {
         return eval(new Space[]{s1,s2});
     }
 
-    class Conjunction implements Relation {
+    class And implements Relation {
     
         private Relation conj1, conj2;
     
-        public Conjunction(Relation conj1, Relation conj2) {
+        public And(Relation conj1, Relation conj2) {
             this.conj1 = conj1;
             this.conj2 = conj2;
         }
@@ -28,11 +37,11 @@ public interface Relation {
         }
     }
     
-    class Negation implements Relation {
+    class Not implements Relation {
     
         private Relation rel;
     
-        public Negation(Relation rel) {
+        public Not(Relation rel) {
             this.rel = rel;
         }
     
@@ -43,17 +52,17 @@ public interface Relation {
         public boolean eval(Space[] args) {
             return !rel.eval(args);
         }
-    
-        public Conjunction and(Relation o) {
-            return new Conjunction(rel, o);
-        }
     }
     
-    class KaryOverlaps implements Relation {
+    class Overlaps implements Relation {
 
-        private final Integer[] args;
+        private final int[] args;
+
+        public Overlaps(int a1, int a2) {
+            this.args = new int[]{a1, a2};
+        }
     
-        public KaryOverlaps(Integer[] args) {
+        public Overlaps(int[] args) {
             if (args.length < 2) {
                 System.err.println("ERROR: Overlaps needs at least 2 arguments!");
                 System.exit(1);
@@ -77,24 +86,13 @@ public interface Relation {
             return !s.isEmpty();
         }
     }
-
-    class Overlaps extends KaryOverlaps {
-
-        public Overlaps(Integer[] args) {
-            super(args);
-        }
-
-        public Overlaps(Integer a1, Integer a2) {
-            super(new Integer[]{a1, a2});
-        }
-    }
-    
+   
     class PartOf implements Relation {
 
-        private final Integer[] args;
+        private final int[] args;
     
-        public PartOf(Integer a1, Integer a2) {
-            this.args = new Integer[]{a1, a2};
+        public PartOf(int a1, int a2) {
+            this.args = new int[]{a1, a2};
         }
     
         public String toSQL() {
