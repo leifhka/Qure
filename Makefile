@@ -13,18 +13,26 @@ CLASSES = \
         Bintree.java \
         Block.java \
         Config.java \
+        DBDataProvider.java \
+        EvenSplit.java \
         GeometryProvider.java \
-        GeometryRelation.java \
+        GeometryRelationship.java \
         GeometrySpace.java \
         Intersection.java \
         Progress.java \
         Qure.java \
+        RawDataProvider.java \
         Relation.java \
+        Relationship.java \
         RelationshipGraph.java \
         Representation.java \
         Space.java \
         SpaceProvider.java \
-        SpaceToBintree.java
+        SpaceToBintree.java \
+        TimeProvider.java \
+        TimeSpace.java  \
+        TreeNode.java \
+        Utils.java
 
 source_files = $(addprefix $(src_prefix), $(addprefix $(package_name), $(CLASSES)))
 
