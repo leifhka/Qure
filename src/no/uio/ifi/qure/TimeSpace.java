@@ -8,6 +8,10 @@ public class TimeSpace implements Space {
     private final LocalDateTime start; 
     private final LocalDateTime end;
 
+    public static int interior = 1;
+    public static int boundary = 2;
+    public static int unique = 4;
+
     public TimeSpace(LocalDateTime start, LocalDateTime end) {
         if (start != null && end != null && (start.isBefore(end) || start.equals(end))) {
             this.start = start;
@@ -80,6 +84,19 @@ public class TimeSpace implements Space {
         TimeSpace ts2 = new TimeSpace(mid, getEnd());
 
         return new TimeSpace[]{ts1, ts2};
+    }
+
+    // TODO: Alternate solution: Define each relation for roles, not the general relate (as it is not needed(?)
+    // General relate only needed in initial part of constructGraph, but after this we will only use
+    // Relation's eval on the actual relations needed.
+    public Relationship relate(int tRole, int oRole, Space o) {
+
+        if (!(o instanceof TimeSpace))
+            return null;
+
+        if ((tRole & unique) != 0) return null; //TODO
+        else if ((oRole & unique) != 0) return null; //TODO
+        else return null; //TODO
     }
 
     public boolean isBefore(Space o) {

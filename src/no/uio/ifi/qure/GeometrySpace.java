@@ -16,9 +16,11 @@ import com.vividsolutions.jts.geom.IntersectionMatrix;
 public class GeometrySpace implements Space {
 
     private Geometry geo;
+    public static int interior = 1;
+    public static int boundary = 2;
+    public static int unique = 4;
 
     public GeometrySpace(Geometry geo) {
-
         this.geo = flatten(geo);
     }
 
@@ -100,6 +102,16 @@ public class GeometrySpace implements Space {
 
     public int hashCode() {
         return geo.hashCode();
+    }
+
+    public GeometryRelationship relate(int tRole, int oRole, Space o) {
+
+        if (!(o instanceof GeometrySpace))
+            return null;
+
+        if ((tRole & unique) != 0) return null; //TODO
+        else if ((oRole & unique) != 0) return null; //TODO
+        else return null; //TODO
     }
 
     public GeometryRelationship relate(Space o) {
