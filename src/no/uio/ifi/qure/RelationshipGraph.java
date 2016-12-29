@@ -15,7 +15,7 @@ import java.util.Arrays;
 public class RelationshipGraph {
 
     private final Map<Integer, Node> nodes;
-    private final Set<Integer> topMostNodes;
+    private final Set<Integer> topmostNodes;
     private int overlapsNodeId; // Always negative, and decreasing
     private final Block block;
     private final Set<Integer> uris;
@@ -26,7 +26,7 @@ public class RelationshipGraph {
         this.uris = new HashSet<Integer>(uris);
         this.overlapsArity = overlapsArity;
 
-        topMostNodes = new HashSet<Integer>(uris); // Init all uris as roots, and remove if set parent of some node
+        topmostNodes = new HashSet<Integer>(uris); // Init all uris as roots, and remove if set parent of some node
         nodes = new HashMap<Integer, Node>();
 
         for (Integer uri : uris)
@@ -39,7 +39,7 @@ public class RelationshipGraph {
         for (Integer uri : newUris) {
             if (!nodes.containsKey(uri)) {
                 uris.add(uri);
-                topMostNodes.add(uri);
+                topmostNodes.add(uri);
                 nodes.put(uri, new Node(uri));
             }
         }
@@ -72,7 +72,7 @@ public class RelationshipGraph {
         
         // Locally update coveredBy
         cn.succs.add(parent);
-        topMostNodes.remove(child);
+        topmostNodes.remove(child);
 
         // Locally update covers
         pn.preds.add(child);
@@ -235,6 +235,9 @@ public class RelationshipGraph {
         return graph;
     }
 
+    // TODO: Let method take extra argument, a set of positive base relations extracted from
+    // the relation definitions, and compute these relationships for the spaces, and update the graph
+    // accordingly.
     private void computeBinaryRelations(Integer[] urisArr, SpaceProvider spaces, 
                                         Set<Intersection> intersections, Map<Integer, Set<Integer>> intMap) {
 
@@ -381,7 +384,7 @@ public class RelationshipGraph {
 
         Integer[] order = new Integer[nodes.keySet().size()];
         int k = 0;
-        for (Integer tm : sortAccToBefore(topMostNodes))
+        for (Integer tm : sortAccToBefore(topmostNodes))
             k = orderNodes(order, k, tm);
 
         if (k == order.length) return order;

@@ -104,19 +104,43 @@ public class GeometrySpace implements Space {
         return geo.hashCode();
     }
 
-    public GeometryRelationship relate(int tRole, int oRole, Space o) {
+    public boolean overlaps(Space o) {
+        if (!(o instanceof GeometrySpace)) return false;
 
-        if (!(o instanceof GeometrySpace))
-            return null;
-
-        if ((tRole & unique) != 0) return null; //TODO
-        else if ((oRole & unique) != 0) return null; //TODO
-        else return null; //TODO
+        GeometrySpace ogs = (GeometrySpace) o;
+        return geo.intersects(ogs.getGeometry());
     }
+
+    public boolean partOf(Space o) {
+        if (!(o instanceof GeometrySpace)) return false;
+
+        GeometrySpace ogs = (GeometrySpace) o;
+        return geo.coveredBy(ogs.getGeometry());
+    }
+
+    public boolean before(Space o) { return false; }
+
+    public boolean overlaps(int tRole, int oRole, Space o) { //TODO
+        if (!(o instanceof GeometrySpace)) return false;
+
+        GeometrySpace ogs = (GeometrySpace) o;
+        return false;
+    }
+
+    public boolean partOf(int tRole, int oRole, Space o) { //TODO
+        if (!(o instanceof GeometrySpace)) return false;
+
+        GeometrySpace ogs = (GeometrySpace) o;
+        return false;
+    }
+
+    public boolean before(int tRole, int oRole, Space o) { return false; }
 
     public GeometryRelationship relate(Space o) {
 
         Geometry go = ((GeometrySpace) o).getGeometry();
         return new GeometryRelationship(geo.relate(go));
     }
+
+    public Relationship relate(int tRole, int oRole, Space o) { return null; } //TODO
 }

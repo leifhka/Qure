@@ -10,9 +10,20 @@ public interface Space {
 
     public Space[] split(int dim);
 
-    public Relationship relate(Space o);
-
     public String toDBString();
+
+    public Relationship relate(Space o);
+    
+    public boolean overlaps(Space o);
+
+    public boolean before(Space o);
+
+    public boolean partOf(Space o);
+
+    public default boolean hasPart(Space o) {
+        return o.partOf(this);
+    }
+
 
     /**
      *  Returns the relationship between the tRole of this and the oRole of o,
@@ -20,42 +31,13 @@ public interface Space {
      */
     public Relationship relate(int tRole, int oRole, Space o);
 
-    public default boolean intersects(int tRole, int oRole, Space o) {
-        Relationship rel = relate(tRole, oRole, o);
-        return rel.isIntersects();
+    public boolean overlaps(int tRole, int oRole, Space o);
+
+    public boolean partOf(int tRole, int oRole, Space o);
+
+    public default boolean hasPart(int tRole, int oRole, Space o) {
+        return o.partOf(oRole, tRole, this);
     }
 
-    public default boolean covers(int tRole, int oRole, Space o) {
-        Relationship rel = relate(tRole, oRole, o);
-        return rel.isCovers();
-    }
-
-    public default boolean coveredBy(int tRole, int oRole, Space o) {
-        Relationship rel = relate(tRole, oRole, o);
-        return rel.isCoveredBy();
-    }
-
-    public default boolean before(int tRole, int oRole, Space o) {
-        Relationship rel = relate(tRole, oRole, o);
-        return rel.isBefore();
-    }
-    public default boolean intersects(Space o) {
-        Relationship rel = relate(o);
-        return rel.isIntersects();
-    }
-
-    public default boolean covers(Space o) {
-        Relationship rel = relate(o);
-        return rel.isCovers();
-    }
-
-    public default boolean coveredBy(Space o) {
-        Relationship rel = relate(o);
-        return rel.isCoveredBy();
-    }
-
-    public default boolean before(Space o) {
-        Relationship rel = relate(o);
-        return rel.isBefore();
-    }
+    public boolean before(int tRole, int oRole, Space o);
 }

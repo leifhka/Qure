@@ -86,9 +86,6 @@ public class TimeSpace implements Space {
         return new TimeSpace[]{ts1, ts2};
     }
 
-    // TODO: Alternate solution: Define each relation for roles, not the general relate (as it is not needed(?)
-    // General relate only needed in initial part of constructGraph, but after this we will only use
-    // Relation's eval on the actual relations needed.
     public Relationship relate(int tRole, int oRole, Space o) {
 
         if (!(o instanceof TimeSpace))
@@ -99,12 +96,48 @@ public class TimeSpace implements Space {
         else return null; //TODO
     }
 
-    public boolean isBefore(Space o) {
+    public boolean before(Space o) {
 
         if (!(o instanceof TimeSpace) || isEmpty() || o.isEmpty()) return false;
 
         TimeSpace ots = (TimeSpace) o;
         return getEnd().isBefore(ots.getStart());
+    }
+
+    public boolean overlaps(Space o) {
+        if (!(o instanceof TimeSpace)) return false;
+
+        TimeSpace ots = (TimeSpace) o;
+        return !intersection(ots).isEmpty();
+    }
+
+    public boolean partOf(Space o) {
+        if (!(o instanceof TimeSpace)) return false;
+
+        TimeSpace ots = (TimeSpace) o;
+        return !intersection(ots).equals(this);
+    }
+
+    public boolean before(int tRole, int oRole, Space o) { //TODO
+
+        if (!(o instanceof TimeSpace) || isEmpty() || o.isEmpty()) return false;
+
+        TimeSpace ots = (TimeSpace) o;
+        return getEnd().isBefore(ots.getStart());
+    }
+
+    public boolean overlaps(int tRole, int oRole, Space o) { //TODO
+        if (!(o instanceof TimeSpace)) return false;
+
+        TimeSpace ots = (TimeSpace) o;
+        return !intersection(ots).isEmpty();
+    }
+
+    public boolean partOf(int tRole, int oRole, Space o) { //TODO
+        if (!(o instanceof TimeSpace)) return false;
+
+        TimeSpace ots = (TimeSpace) o;
+        return !intersection(ots).equals(this);
     }
 
     public Relationship relate(Space o) {
@@ -118,7 +151,7 @@ public class TimeSpace implements Space {
         boolean intersects = !intersection.isEmpty();
         boolean isCovers = intersection.equals(ots);
         boolean isCoveredBy = intersection.equals(this);
-        boolean isBefore = intersection.isEmpty() && this.isBefore(ots);
+        boolean isBefore = intersection.isEmpty() && this.before(ots);
 
         return new Relationship() {
             public boolean isIntersects() { return intersects; }

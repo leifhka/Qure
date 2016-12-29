@@ -19,7 +19,7 @@ public class Utils {
             Space ngs = gs.intersection(uni);
 
             if (!ngs.isEmpty())  {
-                if (ngs.covers(uni))
+                if (ngs.hasPart(uni))
                     covering.add(uri);
                 else
                     intersections.put(uri, ngs);
@@ -62,7 +62,7 @@ public class Utils {
                         Space ngs = gs.intersection(uni);
 
                         if (!ngs.isEmpty())  {
-                            if (ngs.covers(uni))
+                            if (ngs.hasPart(uni))
                                 covSet.add(uri);
                             else
                                 intMap.put(uri, ngs);
@@ -117,7 +117,7 @@ public class Utils {
                     Set<Integer> intersecting = new HashSet<Integer>();
                     for (int j = minInd; j < maxInd; j++) {
                         Integer uri = elemsArr[j];
-                        if (map.get(uri).intersects(space))
+                        if (map.get(uri).overlaps(space))
                             res.add(uri);
                     }
                 }
@@ -149,33 +149,33 @@ public class Utils {
         Set<Integer> intersecting = new HashSet<Integer>();
 
         for (Integer uri : elems) {
-            if (map.get(uri).intersects(space))
+            if (map.get(uri).overlaps(space))
                 intersecting.add(uri);
         }
 
         return intersecting;
     }
 
-    public static Set<Integer> intersection(Set<Integer> s1, Set<Integer> s2) {
-        Set<Integer> u = new HashSet<Integer>(s1);
+    public static <T> Set<T> intersection(Set<T> s1, Set<T> s2) {
+        Set<T> u = new HashSet<T>(s1);
         u.retainAll(s2);
         return u;
     }
 
-    public static Set<Integer> difference(Set<Integer> s1, Set<Integer> s2) {
-        Set<Integer> u = new HashSet<Integer>(s1);
+    public static <T> Set<T> difference(Set<T> s1, Set<T> s2) {
+        Set<T> u = new HashSet<T>(s1);
         u.removeAll(s2);
         return u;
     }
 
-    public static Set<Integer> union(Set<Integer> s1, Set<Integer> s2) {
-        Set<Integer> u = new HashSet<Integer>(s1);
+    public static <T> Set<T> union(Set<T> s1, Set<T> s2) {
+        Set<T> u = new HashSet<T>(s1);
         u.addAll(s2);
         return u;
     }
 
-    public static Set<Integer> add(Set<Integer> s, Integer e) {
-        Set<Integer> u = new HashSet<Integer>(s);
+    public static <T> Set<T> add(Set<T> s, T e) {
+        Set<T> u = new HashSet<T>(s);
         u.add(e);
         return u;
     }
