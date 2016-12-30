@@ -16,7 +16,6 @@ CLASSES = \
         DBDataProvider.java \
         EvenSplit.java \
         GeometryProvider.java \
-        GeometryRelationship.java \
         GeometrySpace.java \
         Intersection.java \
         Progress.java \
