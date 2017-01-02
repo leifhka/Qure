@@ -32,8 +32,6 @@ public abstract class Relation {
 
     public static Relation overlaps(int r1, int r2, int a1, int a2) { return new Overlaps(r1, r2, a1, a2); }
 
-    public static Relation overlaps(int[] rs, int[] as) { return new Overlaps(rs, as); }
-
     public static Relation partOf(int r1, int r2, int a1, int a2) { return new PartOf(r1, r2, a1, a2); }
 
     public Relation and(Relation o) { return new And(this, o); }
@@ -60,8 +58,8 @@ class And extends Relation {
                (conj1.equals(oand.conj2) && conj2.equals(oand.conj1));
     }
 
-    public String toSQL() {
-        return ""; //TODO
+    public String toSQL() { //TODO
+        return "";
     }
 
     public boolean eval(Space[] args) {
@@ -88,8 +86,8 @@ class Not extends Relation {
         return rel.equals(onot.rel);
     }
 
-    public String toSQL() {
-        return ""; //TODO
+    public String toSQL() { //TODO
+        return "";
     }
 
     public boolean eval(Space[] args) {
@@ -103,76 +101,39 @@ class Not extends Relation {
 
 class Overlaps extends Relation {
 
-    private final int[] args;
-    private final int[] roles;
+    private final int a1, a2, r1, r2;
 
     public Overlaps(int r1, int r2, int a1, int a2) {
-        this.args = new int[]{a1, a2};
-        this.roles = new int[]{r1, r2};
-    }
-
-    public Overlaps(int[] roles, int[] args) {
-        if (args.length < 2) {
-            System.err.println("ERROR: Overlaps needs at least 2 arguments!");
-            System.exit(1);
-        } else if (args.length != roles.length) {
-            System.err.println("ERROR: Overlaps needs at same number of roles as arguments!");
-            System.exit(1);
-        }
-        this.args = args;
-        this.roles = roles;
+        this.a1 = a1;
+        this.a2 = a2;
+        this.r1 = r1;
+        this.r2 = r2;
     }
 
     public boolean equals(Object o) {
         if (!(o instanceof Overlaps)) return false;
 
         Overlaps oov = (Overlaps) o;
-
-        Map<Integer, Set<Integer>> ts = new HashMap<Integer, Set<Integer>>();
-        for (int i = 0; i < args.length; i++) {
-            if (!ts.containsKey(args[i])) ts.put(args[i], new HashSet<Integer>());
-            ts.get(args[i]).add(roles[i]);
-        }
-
-        Map<Integer, Set<Integer>> os = new HashMap<Integer, Set<Integer>>();
-        for (int i = 0; i < oov.args.length; i++) {
-            if (!os.containsKey(oov.args[i])) os.put(oov.args[i], new HashSet<Integer>());
-            os.get(oov.args[i]).add(oov.roles[i]);
-        }
-
-        return ts.entrySet().equals(os.entrySet());
-    }
-
-    public String toSQL() {
-        return ""; //TODO
+        return (a1 == oov.a1 && a2 == oov.a2) ||
+               (a1 == oov.a2 && a2 == oov.a1);
     }
 
     public boolean eval(Space[] spaceArgs) {
-        
-        Space s = spaceArgs[args[0]];
-
-        for (int i = 0; i < args.length; i++)
-            s = s.intersection(spaceArgs[args[i]]);
-
-        return !s.isEmpty();
+        return spaceArgs[a1].overlaps(spaceArgs[a2]);
     }
 
     public Set<Relation> getPositiveAtomicRels() {
 
-        int[] normArgs = new int[args.length];
-        Map<Integer, Integer> argsMap = new HashMap<Integer, Integer>();
-        for (int i = 0; i < args.length; i++) {
-            if (argsMap.containsKey(args[i])) {
-                normArgs[i] = argsMap.get(args[i]);
-            } else {
-                normArgs[i] = i;
-                argsMap.put(args[i], i);
-            }
-        }
-
         Set<Relation> rels = new HashSet<Relation>();
-        rels.add(new Overlaps(roles, normArgs));
+        if (a1 == a2)
+            rels.add(new Overlaps(r1, r2, 0, 0));
+        else
+            rels.add(new Overlaps(r1, r2, 0, 1));
         return rels;
+    }
+
+    public String toSQL() { //TODO
+        return "";
     }
 }
 
@@ -187,8 +148,8 @@ class PartOf extends Relation {
         this.r2 = r2;
     }
 
-    public String toSQL() {
-        return ""; //TODO
+    public String toSQL() { //TODO
+        return "";
     }
 
     public boolean equals(Object o) {
@@ -199,7 +160,7 @@ class PartOf extends Relation {
     }
 
     public boolean eval(Space[] spaceArgs) {
-        return spaceArgs[a1].relate(spaceArgs[a2]).isCoveredBy();
+        return spaceArgs[a1].partOf(spaceArgs[a2]);
     }
 
     public Set<Relation> getPositiveAtomicRels() {
