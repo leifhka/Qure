@@ -2,15 +2,18 @@ package no.uio.ifi.qure;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Set;
+import java.util.HashSet;
 
 public class TimeSpace implements Space {
 
     private final LocalDateTime start; 
     private final LocalDateTime end;
 
-    public static int interior = 1;
-    public static int boundary = 2;
-    public static int unique = 4;
+    public static int UNIQUE = 1;
+    public static int INTERIOR = 2;
+    public static int FIRST = 4;
+    public static int LAST = 8;
 
     public TimeSpace(LocalDateTime start, LocalDateTime end) {
         if (start != null && end != null && (start.isBefore(end) || start.equals(end))) {
@@ -86,14 +89,32 @@ public class TimeSpace implements Space {
         return new TimeSpace[]{ts1, ts2};
     }
 
+    public Set<Integer> extractRoles(Space o) {
+        if (!(o instanceof TimeSpace)) return null;
+
+        TimeSpace ots = (TimeSpace) o;
+        TimeSpace intersection = (TimeSpace) this.intersection(ots);
+
+        Set<Integer> rs = new HashSet<Integer>();
+        
+        if (this.equals(intersection))
+            rs.add(UNIQUE);
+        if (!intersection.getStart().equals(intersection.getEnd()))
+            rs.add(INTERIOR);
+        if ((new TimeSpace(getStart(), getStart())).partOf(intersection))
+            rs.add(FIRST);
+        if ((new TimeSpace(getEnd(), getEnd())).partOf(intersection))
+            rs.add(LAST);
+
+        return rs;
+    }
+
     public Relationship relate(int tRole, int oRole, Space o) {
 
         if (!(o instanceof TimeSpace))
             return null;
 
-        if ((tRole & unique) != 0) return null; //TODO
-        else if ((oRole & unique) != 0) return null; //TODO
-        else return null; //TODO
+        else return null; //TODO(?)
     }
 
     public boolean before(Space o) {
@@ -118,26 +139,149 @@ public class TimeSpace implements Space {
         return !intersection(ots).equals(this);
     }
 
-    public boolean before(int tRole, int oRole, Space o) { //TODO
+    private boolean isPoint() {
+        return !isEmpty() && !getStart().isEqual(getEnd());
+    }
+
+    private boolean hasPointProperPart(LocalDateTime t) {
+        return !isEmpty() &&
+               getStart().isBefore(t) &&
+               getEnd().isAfter(t);
+    }
+
+    private boolean hasPointPart(LocalDateTime t) {
+        return !isEmpty() &&
+               (getStart().isBefore(t) || getStart().isEqual(t)) &&
+               (getEnd().isAfter(t) || getEnd().isEqual(t));
+    }
+
+    public boolean before(int tRole, int oRole, Space o) {
 
         if (!(o instanceof TimeSpace) || isEmpty() || o.isEmpty()) return false;
 
         TimeSpace ots = (TimeSpace) o;
-        return getEnd().isBefore(ots.getStart());
+
+        if ((tRole | UNIQUE | LAST) == (UNIQUE | LAST) && //tRole is a combination of 0, UNIQUE and LAST
+            (oRole | UNIQUE | FIRST) == (UNIQUE | FIRST)) //oRole is a combination of 0, UNIQUE and FIRST
+            return getEnd().isBefore(ots.getStart());
+        else if ((tRole | UNIQUE | LAST) == (UNIQUE | LAST) && (oRole & INTERIOR) != 0)
+            return getEnd().isBefore(ots.getStart()) || getEnd().isEqual(ots.getStart());
+        else if ((tRole | UNIQUE | LAST) == (UNIQUE | LAST) && (oRole & LAST) != 0)
+            return getEnd().isBefore(ots.getEnd());
+        else if ((tRole & FIRST) != 0 && (oRole & FIRST) != 0)
+            return getStart().isBefore(ots.getStart());
+        else if ((tRole & FIRST) != 0 && (oRole & INTERIOR) != 0)
+            return getStart().isBefore(ots.getStart()) || getStart().isEqual(ots.getStart());
+        else if ((tRole & FIRST) != 0 && (oRole & LAST) != 0)
+            return getStart().isBefore(ots.getEnd());
+        else if ((tRole & INTERIOR) != 0 && (oRole & FIRST) != 0)
+            return getEnd().isBefore(ots.getStart()) || getEnd().isEqual(ots.getStart());
+        else if ((tRole & INTERIOR) != 0 && (oRole & INTERIOR) != 0)
+            return getEnd().isBefore(ots.getStart()) || getEnd().isEqual(ots.getStart()); // (?)
+        else if ((tRole & INTERIOR) != 0 && (oRole & LAST) != 0)
+            return getEnd().isBefore(ots.getEnd()) || getEnd().isEqual(ots.getEnd());
+        else if ((tRole & LAST) != 0 && (oRole & LAST) != 0)
+            return getEnd().isBefore(ots.getEnd()); 
+        else {
+            System.err.println("ERROR: the roles " + tRole + ", " + oRole + " cannot be related or does not exist for this type.");
+            (new Exception()).printStackTrace();
+            System.exit(1);
+            return false;
+        }
     }
 
     public boolean overlaps(int tRole, int oRole, Space o) { //TODO
         if (!(o instanceof TimeSpace)) return false;
 
+        if ((tRole & UNIQUE) != 0 || isEmpty() || (oRole & UNIQUE) != 0 || o.isEmpty())
+            return false;
+
         TimeSpace ots = (TimeSpace) o;
-        return !intersection(ots).isEmpty();
+
+        if (tRole == 0 && oRole == 0)
+            return !intersection(ots).isEmpty();
+        else if (tRole == 0 && (oRole & FIRST) != 0)
+            return hasPointPart(ots.getStart());
+        else if (tRole == 0 && (oRole & LAST) != 0)
+            return hasPointPart(ots.getEnd());
+        else if (tRole == 0 && (oRole & INTERIOR) !=  0)
+            return hasPointProperPart(ots.getStart()) || hasPointProperPart(ots.getEnd());
+        else if ((tRole & FIRST) != 0 && oRole == 0)
+            return ots.hasPointPart(getStart());
+        else if ((tRole & FIRST) != 0 && (oRole & FIRST) != 0)
+            return getStart().isEqual(ots.getStart());
+        else if ((tRole & FIRST) != 0 && (oRole & LAST) != 0)
+            return getStart().isEqual(ots.getEnd());
+        else if ((tRole & FIRST) != 0 && (oRole & INTERIOR) !=  0)
+            return ots.hasPointProperPart(getStart());
+        else if ((tRole & LAST) != 0 && oRole == 0)
+            return ots.hasPointPart(getEnd());
+        else if ((tRole & LAST) != 0 && (oRole & FIRST) != 0)
+            return getEnd().isEqual(ots.getStart());
+        else if ((tRole & LAST) != 0 && (oRole & LAST) != 0)
+            return getEnd().isEqual(ots.getEnd());
+        else if ((tRole & LAST) != 0 && (oRole & INTERIOR) !=  0)
+            return ots.hasPointProperPart(getEnd());
+        else if ((tRole & INTERIOR) != 0 && oRole == 0)
+            return hasPointProperPart(ots.getStart()) || hasPointProperPart(ots.getEnd());
+        else if ((tRole & INTERIOR) != 0 && (oRole & FIRST) != 0)
+            return hasPointProperPart(ots.getStart());
+        else if ((tRole & INTERIOR) != 0 && (oRole & LAST) != 0)
+            return hasPointProperPart(ots.getEnd());
+        else if ((tRole & INTERIOR) != 0 && (oRole & INTERIOR) !=  0)
+            return hasPointProperPart(ots.getStart()) || hasPointProperPart(ots.getEnd());
+        else {
+            System.err.println("ERROR: the roles " + tRole + ", " + oRole + " cannot be related or does not exist for this type.");
+            (new Exception()).printStackTrace();
+            System.exit(1);
+            return false;
+        }
     }
 
     public boolean partOf(int tRole, int oRole, Space o) { //TODO
         if (!(o instanceof TimeSpace)) return false;
+        if ((oRole & UNIQUE) != 0 || o.isEmpty()) return false;
 
         TimeSpace ots = (TimeSpace) o;
-        return !intersection(ots).equals(this);
+
+        if (tRole == 0 && oRole == 0)
+            return partOf(ots);
+        else if (tRole == 0 && (oRole & FIRST) != 0)
+            return isPoint() && getStart().isEqual(ots.getStart());
+        else if (tRole == 0 && (oRole & LAST) != 0)
+            return isPoint() && getStart().isEqual(ots.getEnd());
+        else if (tRole == 0 && (oRole & INTERIOR) !=  0)
+            return ots.hasPointProperPart(getStart()) && ots.hasPointProperPart(getEnd());
+        else if ((tRole & FIRST) != 0 && oRole == 0)
+            return ots.hasPointPart(getStart());
+        else if ((tRole & FIRST) != 0 && (oRole & FIRST) != 0)
+            return getStart().isEqual(ots.getStart());
+        else if ((tRole & FIRST) != 0 && (oRole & LAST) != 0)
+            return getStart().isEqual(ots.getEnd());
+        else if ((tRole & FIRST) != 0 && (oRole & INTERIOR) !=  0)
+            return ots.hasPointProperPart(getStart());
+        else if ((tRole & LAST) != 0 && oRole == 0)
+            return ots.hasPointPart(getEnd());
+        else if ((tRole & LAST) != 0 && (oRole & FIRST) != 0)
+            return getEnd().isEqual(ots.getStart());
+        else if ((tRole & LAST) != 0 && (oRole & LAST) != 0)
+            return getEnd().isEqual(ots.getEnd());
+        else if ((tRole & LAST) != 0 && (oRole & INTERIOR) !=  0)
+            return ots.hasPointProperPart(getEnd());
+        else if ((tRole & INTERIOR) != 0 && oRole == 0)
+            return ots.hasPointPart(getStart()) || ots.hasPointPart(getEnd());
+        else if ((tRole & INTERIOR) != 0 && (oRole & FIRST) != 0)
+            return isPoint() && getStart().isEqual(ots.getStart());
+        else if ((tRole & INTERIOR) != 0 && (oRole & LAST) != 0)
+            return isPoint() && getStart().isEqual(ots.getEnd());
+        else if ((tRole & INTERIOR) != 0 && (oRole & INTERIOR) !=  0)
+            return ots.hasPointPart(getStart()) || ots.hasPointPart(getEnd());
+        else {
+            System.err.println("ERROR: the roles " + tRole + ", " + oRole + " cannot be related or does not exist for this type.");
+            (new Exception()).printStackTrace();
+            System.exit(1);
+            return false;
+        }
     }
 
     public Relationship relate(Space o) {
@@ -174,5 +318,4 @@ public class TimeSpace implements Space {
         else
             return "'" + getStart().toString() + "', '" + getEnd().toString() + "'";
     }
-
 }
