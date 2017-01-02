@@ -39,6 +39,14 @@ public abstract class Relation {
     public static Relation not(Relation o) { return new Not(o); }
 
     public abstract Set<Relation> getPositiveAtomicRels();
+
+    public abstract Set<Relation> getNegativeAtomicRels();
+
+    public boolean isConjunctive() {
+        return isConjunctive(false);
+    }
+
+    public abstract boolean isConjunctive(boolean insideNgeation);
 }
 
 class And extends Relation {
@@ -69,6 +77,14 @@ class And extends Relation {
     public Set<Relation> getPositiveAtomicRels() {
         return Utils.union(conj1.getPositiveAtomicRels(), conj2.getPositiveAtomicRels());
     }
+
+    public Set<Relation> getNegativeAtomicRels() {
+        return Utils.union(conj1.getNegativeAtomicRels(), conj2.getNegativeAtomicRels());
+    }
+
+    public boolean isConjunctive(boolean insideNgeation) {
+        return conj1.isConjunctive(insideNgeation) && conj2.isConjunctive(insideNgeation);
+    }
 }
 
 class Not extends Relation {
@@ -95,7 +111,18 @@ class Not extends Relation {
     }
 
     public Set<Relation> getPositiveAtomicRels() {
-        return new HashSet<Relation>();
+        return rel.getNegativeAtomicRels();
+    }
+
+    public Set<Relation> getNegativeAtomicRels() {
+        return rel.getPositiveAtomicRels();
+    }
+
+    public boolean isConjunctive(boolean insideNgeation) {
+        if (insideNgeation)
+            return false;
+        else 
+            return rel.isConjunctive(true);
     }
  }
 
@@ -132,9 +159,15 @@ class Overlaps extends Relation {
         return rels;
     }
 
+    public Set<Relation> getNegativeAtomicRels() {
+        return new HashSet<Relation>();
+    }
+
     public String toSQL() { //TODO
         return "";
     }
+
+    public boolean isConjunctive(boolean insideNgeation) { return true; }
 }
 
 class PartOf extends Relation {
@@ -172,4 +205,10 @@ class PartOf extends Relation {
             rels.add(new PartOf(r1, r2, 0, 1));
         return rels;
     }
+
+    public Set<Relation> getNegativeAtomicRels() {
+        return new HashSet<Relation>();
+    }
+
+    public boolean isConjunctive(boolean insideNgeation) { return true; }
 }
