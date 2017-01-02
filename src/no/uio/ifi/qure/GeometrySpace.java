@@ -16,9 +16,11 @@ import com.vividsolutions.jts.geom.IntersectionMatrix;
 public class GeometrySpace implements Space {
 
     private Geometry geo;
-    public static int interior = 1;
-    public static int boundary = 2;
-    public static int unique = 4;
+
+    /* Roles */
+    public static int INTERIOR = 1;
+    public static int BOUNDARY = 2;
+    public static int UNIQUE = 4;
 
     public GeometrySpace(Geometry geo) {
         this.geo = flatten(geo);
@@ -120,11 +122,79 @@ public class GeometrySpace implements Space {
 
     public boolean before(Space o) { return false; }
 
+    public Relationship relate(Space o) {
+
+        Geometry go = ((GeometrySpace) o).getGeometry();
+        IntersectionMatrix im = geo.relate(go);
+
+        return new Relationship() {
+            public boolean isCovers() {
+                return im.isCovers();
+            }
+
+            public boolean isCoveredBy() {
+                return im.isCoveredBy();
+            }
+
+            public boolean isIntersects() {
+                return im.isIntersects();
+            }
+
+            public boolean isBefore() {
+                return false;
+            }
+        };
+    }
+
+    public Set<int> extractRoles(Space o) {
+        if (!(o instanceof GeometrySpace)) return null;
+
+        GeometrySpace ogs = (GeometrySpace) o;
+        Set<int> rs = new HashSet<int>();
+
+        rs.add(UNIQUE); //Always have UNIQUE
+        GeometrySpace boundary = new GeometrySpace(geo.getBoundary());
+        if (boundary.overlaps(ogs)) {
+            rs.add(BOUNDARY);
+            rs.add(BOUNDARY | UNIQUE);
+        }
+        if (!intersection(ogs).equals(boundary)) { // Interior must intersect o
+            rs.add(INTERIOR);
+            rs.add(INTERIOR | UNIQUE);
+        }
+        return rs;
+    }
+
     public boolean overlaps(int tRole, int oRole, Space o) { //TODO
         if (!(o instanceof GeometrySpace)) return false;
 
         GeometrySpace ogs = (GeometrySpace) o;
-        return false;
+        Geometry ogeo = ogs.getGeometry();
+
+        // TODO: Rather use relate() and match agains IntersectionMatrix
+
+        if ((tRole & UNIQUE) != 0 || (oRole & UNIQUE) != 0)
+            return false;
+        else if (tRole == 0 && oRole == 0)
+            return geo.intersects(ogeo);
+        else if (tRole == 0 && (oRole & BOUNDARY) != 0)
+            return geo.(ogeo.getBoundary());
+        else if (tRole == 0 && (oRole & INTERIOR) != 0)
+            return geo.intersects(ogeo) && !geo.touches(ogeo);
+        else if ((tRole & BOUNDARY) != 0 && oRole == 0)
+            return geo.getBoundary().intersects(ogeo);
+        else if ((tRole & BOUNDARY) != 0 && (oRole & BOUNDARY) != 0)
+            return geo.getBoundary().intersects(ogeo.getBoundary());
+        else if ((tRole & BOUNDARY) != 0 && (oRole & INTERIOR) != 0)
+            return geo.getBoundary().intersects(ogeo) && !geo.touches(ogeo);
+        else if ((tRole & INTERIOR) != 0 && oRole == 0)
+            return geo.intersects(ogeo) && !geo.touches(ogeo);
+        else if ((tRole & INTERIOR) != 0 && (oRole & BOUNDARY) != 0)
+            return geo.intersects(ogeo.getBoundary()) && !geo.touches(ogeo);
+        else if ((tRole & INTERIOR) != 0 && (oRole & INTERIOR) != 0)
+            return geo.intersects(ogeo) && !geo.touches(ogeo); //Not correct, same as for INTERIOR and 0
+        else
+            return overlaps(ogs);
     }
 
     public boolean partOf(int tRole, int oRole, Space o) { //TODO
@@ -135,12 +205,6 @@ public class GeometrySpace implements Space {
     }
 
     public boolean before(int tRole, int oRole, Space o) { return false; }
-
-    public GeometryRelationship relate(Space o) {
-
-        Geometry go = ((GeometrySpace) o).getGeometry();
-        return new GeometryRelationship(geo.relate(go));
-    }
 
     public Relationship relate(int tRole, int oRole, Space o) { return null; } //TODO
 }

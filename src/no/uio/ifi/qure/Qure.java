@@ -21,6 +21,8 @@ import java.sql.Statement;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import static no.uio.ifi.qure.Relation.*;
+import java.time.LocalDateTime;
 
 public class Qure {
 
@@ -33,8 +35,17 @@ public class Qure {
 
     public static void main(String[] args) {
 
-        ArrayList<Config> rfs = new ArrayList<Config>();
-        rfs.add(new Config("dallas", "f3", 13, 3, 30, 10));
+        Relation r = partOf(0,0,0,1).and(not(partOf(0,0,0,2))).and(overlaps(0,0,1,2));
+        System.out.println(r.eval(new Space[]{new TimeSpace(LocalDateTime.of(2016, 10, 1, 0, 0),
+                                                            LocalDateTime.of(2016, 11, 1, 0, 0)),
+                                              new TimeSpace(LocalDateTime.of(2016, 9, 1, 0, 0),
+                                                            LocalDateTime.of(2016, 11, 11, 11, 11)),
+                                              new TimeSpace(LocalDateTime.of(2016, 8, 10, 10, 10),
+                                                            LocalDateTime.of(2016, 9, 12, 11, 11))
+                                             }));
+
+        //ArrayList<Config> rfs = new ArrayList<Config>();
+        //rfs.add(new Config("dallas", "f3", 13, 3, 30, 10));
         //rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
         //rfs.add(new Config("npd",    "upsa", 10, 3, 30, 10));
         //rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
@@ -77,7 +88,7 @@ public class Qure {
         //configs.add(new Config("npd",    "full", 8, 3, 30, 10));
 
         
-        runMany(rfs);
+        //runMany(rfs);
         //writeDBSizes(rfs);
         //times = new HashMap<String, Long>();
         //runManyQueryBM(rfs);

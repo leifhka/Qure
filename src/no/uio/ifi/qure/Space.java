@@ -1,5 +1,7 @@
 package no.uio.ifi.qure;
 
+import java.util.Set;
+
 public interface Space {
 
     public Space intersection(Space o);
@@ -24,6 +26,7 @@ public interface Space {
         return o.partOf(this);
     }
 
+    public Set<Integer> extractRoles(Space block);
 
     /**
      *  Returns the relationship between the tRole of this and the oRole of o,
