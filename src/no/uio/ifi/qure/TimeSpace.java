@@ -109,12 +109,12 @@ public class TimeSpace implements Space {
         return rs;
     }
 
-    public Relationship relate(int tRole, int oRole, Space o) {
+    public Relationship relate(int tRole, int oRole, Space o) { //TODO(?)
 
         if (!(o instanceof TimeSpace))
             return null;
 
-        else return null; //TODO(?)
+        else return null;
     }
 
     public boolean before(Space o) {
@@ -190,7 +190,7 @@ public class TimeSpace implements Space {
         }
     }
 
-    public boolean overlaps(int tRole, int oRole, Space o) { //TODO
+    public boolean overlaps(int tRole, int oRole, Space o) { 
         if (!(o instanceof TimeSpace)) return false;
 
         if ((tRole & UNIQUE) != 0 || isEmpty() || (oRole & UNIQUE) != 0 || o.isEmpty())
@@ -238,7 +238,7 @@ public class TimeSpace implements Space {
         }
     }
 
-    public boolean partOf(int tRole, int oRole, Space o) { //TODO
+    public boolean partOf(int tRole, int oRole, Space o) { 
         if (!(o instanceof TimeSpace)) return false;
         if ((oRole & UNIQUE) != 0 || o.isEmpty()) return false;
 
