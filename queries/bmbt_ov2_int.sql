@@ -36,7 +36,7 @@ BEGIN
                 B2.block <= ((B1.block & ~((1 << ((32 - V.n) - 1)) - 1)) | ((V.n<<1)+1))) OR
                 B2.block = 0)
       ) AS T3
-     WHERE T2.gid != ' || id_val ' || AND T3.gid != ' || id_val || ' AND T2.gid != T3.gid AND
+     WHERE T2.gid != ' || id_val || ' AND T3.gid != ' || id_val || ' AND T2.gid != T3.gid AND
            ((T2.block & -2 <= T3.block AND
              (((1 << (31 - ((T2.block & 63) >> 1)) - 1) | T2.block) >= T3.block)) OR
             (((T2.block & 63) >> 1) >= V.n AND
