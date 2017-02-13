@@ -35,25 +35,25 @@ public class Qure {
 
     public static void main(String[] args) {
 
-        Relation r = partOf(0,0,0,1).and(not(partOf(0,0,0,2))).and(overlaps(0,0,1,2));
-        System.out.println(r.eval(new Space[]{new TimeSpace(LocalDateTime.of(2016, 10, 1, 0, 0),
-                                                            LocalDateTime.of(2016, 11, 1, 0, 0)),
-                                              new TimeSpace(LocalDateTime.of(2016, 9, 1, 0, 0),
-                                                            LocalDateTime.of(2016, 11, 11, 11, 11)),
-                                              new TimeSpace(LocalDateTime.of(2016, 8, 10, 10, 10),
-                                                            LocalDateTime.of(2016, 9, 12, 11, 11))
-                                             }));
+        // Relation r = partOf(0,0,0,1).and(not(partOf(0,0,0,2))).and(overlaps(0,0,1,2));
+        // System.out.println(r.eval(new Space[]{new TimeSpace(LocalDateTime.of(2016, 10, 1, 0, 0),
+        //                                                     LocalDateTime.of(2016, 11, 1, 0, 0)),
+        //                                       new TimeSpace(LocalDateTime.of(2016, 9, 1, 0, 0),
+        //                                                     LocalDateTime.of(2016, 11, 11, 11, 11)),
+        //                                       new TimeSpace(LocalDateTime.of(2016, 8, 10, 10, 10),
+        //                                                     LocalDateTime.of(2016, 9, 12, 11, 11))
+        //                                      }));
 
-        //ArrayList<Config> rfs = new ArrayList<Config>();
+        ArrayList<Config> rfs = new ArrayList<Config>();
         //rfs.add(new Config("dallas", "f3", 13, 3, 30, 10));
         //rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
         //rfs.add(new Config("npd",    "upsa", 10, 3, 30, 10));
         //rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
-        //rfs.add(new Config("osm_no", "fns", 13, 3, 30, 10));
-        //rfs.add(new Config("dallas", "fns", 15, 2, 30, 10));
-        //rfs.add(new Config("osm_no", "fns", 15, 2, 30, 10));
-        //rfs.add(new Config("dallas", "fns", 10, 3, 30, 10));
-        //rfs.add(new Config("osm_no", "fns", 10, 3, 30, 10));
+
+        //rfs.add(new Config("npd",    "upsa", 10, 3, 30, 10));
+        rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
+        rfs.add(new Config("osm_no", "upsa", 15, 3, 30, 10));
+        rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
 
         //runMany(rfs);
         //writeDBSizes(rfs);
@@ -91,7 +91,7 @@ public class Qure {
         //runMany(rfs);
         //writeDBSizes(rfs);
         //times = new HashMap<String, Long>();
-        //runManyQueryBM(rfs);
+        runManyQueryBM(rfs);
         //times = new HashMap<String, Long>();
         //runAllInsertBM(configs, 100, 20, false);
         //runAllInsertBM(rfs, 100, 20, true);
@@ -627,11 +627,11 @@ public class Qure {
     public static void runManyQueryBM(Collection<Config> configs) {
 
         for (Config config : configs) {
+            System.out.println("--------------------------------------");
+            System.out.println("Running query benchmark for " + config.rawBTTableName + "...");
             runQueryBM(config);
             try {
                 clearCache();
-                System.out.println("--------------------------------------");
-                System.out.println("Running query benchmark for " + config.rawBTTableName + "...");
             } catch (Exception ex) {
                 try {
                     FileWriter fw = new FileWriter("errs.txt", true);

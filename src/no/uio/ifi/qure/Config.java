@@ -56,7 +56,7 @@ public class Config {
         }
     };
 
-    public int blockSize = 63;
+    public int blockSize = 31;
     public String dbName = "test";
     public String dbPWD = "test";
     public String dbUsername = "leifhka";

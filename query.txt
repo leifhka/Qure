@@ -101,3 +101,41 @@ npd_d10_k3_bc30_ms10_upsf - po2 time: 1703ms = 0.85
 dallas_d13_k3_bc30_ms10_upsf - po1 time: 899ms = 0.45
 dallas_d13_k3_bc30_ms10_upsf - po2 time: 1364ms = 0.68
 ------------------------------------------
+
+dallas_d13_k3_bc30_ms10_upsa - po1 time: 922ms
+dallas_d13_k3_bc30_ms10_upsa - po2 time: 718ms
+osm_no_d15_k3_bc30_ms10_upsa - po1 time: 1023ms
+osm_no_d15_k3_bc30_ms10_upsa - po2 time: 988ms
+osm_dk_d15_k3_bc30_ms10_upsa - po1 time: 433ms
+osm_dk_d15_k3_bc30_ms10_upsa - po2 time: 1027ms
+------------------------------------------
+npd_d10_k3_bc30_ms10_upsf - po1 time: 1160ms
+npd_d10_k3_bc30_ms10_upsf - po2 time: 1045ms
+dallas_d13_k3_bc30_ms10_upsa - po1 time: 495ms
+dallas_d13_k3_bc30_ms10_upsa - po2 time: 709ms
+osm_no_d15_k3_bc30_ms10_upsa - po1 time: 449ms
+osm_no_d15_k3_bc30_ms10_upsa - po2 time: 688ms
+osm_dk_d15_k3_bc30_ms10_upsa - po1 time: 458ms
+osm_dk_d15_k3_bc30_ms10_upsa - po2 time: 663ms
+npd_d10_k3_bc30_ms10_upsf - po1 time: 702ms
+npd_d10_k3_bc30_ms10_upsf - po2 time: 922ms
+dallas_d13_k3_bc30_ms10_upsf - po1 time: 1006ms
+dallas_d13_k3_bc30_ms10_upsf - po2 time: 914ms
+osm_no_d15_k3_bc30_ms10_upsf - po1 time: 1251ms
+osm_no_d15_k3_bc30_ms10_upsf - po2 time: 1393ms
+osm_dk_d15_k3_bc30_ms10_upsf - po1 time: 1345ms
+osm_dk_d15_k3_bc30_ms10_upsf - po2 time: 1453ms
+npd_d10_k3_bc30_ms10_upsf - po1 time: 2634ms
+npd_d10_k3_bc30_ms10_upsf - po2 time: 1602ms
+dallas_d13_k3_bc30_ms10_upsf - po1 time: 975ms
+dallas_d13_k3_bc30_ms10_upsf - po2 time: 1356ms
+osm_no_d15_k3_bc30_ms10_upsf - po1 time: 908ms
+osm_no_d15_k3_bc30_ms10_upsf - po2 time: 1387ms
+osm_dk_d15_k3_bc30_ms10_upsf - po1 time: 922ms
+osm_dk_d15_k3_bc30_ms10_upsf - po2 time: 1414ms
+dallas_d13_k3_bc30_ms10_upsa - po1 time: 1224ms
+dallas_d13_k3_bc30_ms10_upsa - po2 time: 1402ms
+osm_no_d15_k3_bc30_ms10_upsa - po1 time: 895ms
+osm_no_d15_k3_bc30_ms10_upsa - po2 time: 1367ms
+osm_dk_d15_k3_bc30_ms10_upsa - po1 time: 913ms
+osm_dk_d15_k3_bc30_ms10_upsa - po2 time: 1392ms
