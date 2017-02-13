@@ -10,37 +10,52 @@ public class Config {
     public String btTableName;
     public String geoQuerySelectFromStr;
     public String geoQueryStr;
+    public String splitTable;
+    public String splitQuery;
+    public String schemaName;
 
-    public BintreeFactory bf = new BintreeFactory();
-    public int maxIterDepth = 40;
-    public int blockMemberCount = 30;
-    public int representationDepth = 15;
-    public int overlapsArity = 3;
+    public int maxIterDepth;
+    public int overlapsArity;
+    public int blockMemberCount;
+    public int numThreads = 8;
     public int dim = 2;
 
-    public Config(String table, int representationDepth, int overlapsArity) {
+    //public int maxDiff = 25;
+    public double minRatio = 0.9;
+    public int maxSplits = 7;
+ 
+    public Config(String table, String suff, int representationDepth, int overlapsArity, 
+                  int blockMemberCount, int maxSplits) {
 
         this.overlapsArity = overlapsArity;
-        this.representationDepth = representationDepth;
+        this.maxIterDepth = representationDepth;
+        this.blockMemberCount = blockMemberCount;
+        this.maxSplits = maxSplits;
 
         rawGeoTableName = table;
         geoTableName = "geo." + rawGeoTableName;
 
-        rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity;
-        btTableName = "qure." + rawBTTableName;
+        rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity + "_bc" + blockMemberCount + "_ms" + maxSplits + "_" + suff;
+        schemaName = "qure";
+        btTableName = schemaName + "." + rawBTTableName;
+
+        splitTable = "split." + rawBTTableName;
+        splitQuery = "SELECT * FROM " + splitTable + ";";
 
         geoQuerySelectFromStr = "select " + uriColumn + ", " + geoColumn + " from " + geoTableName;
         geoQueryStr = geoQuerySelectFromStr + ";";
+
     }
 
-    public Predicate<SpaceToBintree.Node> atMaxDepth = new Predicate<SpaceToBintree.Node>() {
-        public boolean test(SpaceToBintree.Node node) {
+    public Predicate<TreeNode> atMaxDepth = new Predicate<TreeNode>() {
+        public boolean test(TreeNode node) {
             int d = node.getBlock().depth();
             return d >= maxIterDepth ||
-                   (d >= representationDepth && node.getOverlappingURIs().size() <= blockMemberCount);
+                   (node.getOverlappingURIs().size() <= blockMemberCount);
         }
     };
 
+    public int blockSize = 31;
     public String dbName = "test";
     public String dbPWD = "test";
     public String dbUsername = "leifhka";

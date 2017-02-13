@@ -61,5 +61,4 @@ public class Intersection {
 
         return new Intersection(nsp, nelems);
     }
-
 }

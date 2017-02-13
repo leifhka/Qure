@@ -9,129 +9,105 @@ import com.vividsolutions.jts.io.WKBReader;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.PrecisionModel;
+import com.vividsolutions.jts.geom.CoordinateSequence;
 import com.vividsolutions.jts.io.ParseException;
 import com.vividsolutions.jts.precision.EnhancedPrecisionOp;
 import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
 import com.vividsolutions.jts.geom.IntersectionMatrix;
 import com.vividsolutions.jts.geom.Envelope;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet; 
-import java.sql.SQLException;
-import java.sql.Statement;
-
 public class GeometryProvider implements SpaceProvider {
 
     private Map<Integer, GeometrySpace> geometries;
+    private boolean updating;
     private Set<Integer> coversUniverse;
-    private Set<Integer> urisToInsert;
     private GeometrySpace universe;
     private GeometryFactory geometryFactory;
+    private RawDataProvider dataProvider;
     private Config config;
 
-    private Connection connect = null;
-    private Statement statement = null;
-    private PreparedStatement preparedStatement = null;
-    private ResultSet resultSet = null;
-
-    public GeometryProvider(Config config, Set<Integer> urisToInsert) {
+    public GeometryProvider(Config config, RawDataProvider dataProvider) {
         this.config = config;
-        this.urisToInsert = urisToInsert;
+        this.dataProvider = dataProvider;
         geometryFactory = new GeometryFactory(config.geometryFactoryPrecision);
         coversUniverse = new HashSet<Integer>();
     }
 
-    public GeometryProvider(Config config) {
+    private GeometryProvider(Config config, RawDataProvider dataProvider,
+                             GeometrySpace universe, Map<Integer, GeometrySpace> geometries, 
+                             Set<Integer> coversUniverse, GeometryFactory geometryFactory,
+                             boolean updating) {
         this.config = config;
-        geometryFactory = new GeometryFactory(config.geometryFactoryPrecision);
-        coversUniverse = new HashSet<Integer>();
-    }
-
-    private GeometryProvider(Config config, GeometrySpace universe, Map<Integer, GeometrySpace> geometries,
-                            Set<Integer> coversUniverse, GeometryFactory geometryFactory) {
-        this.config = config;
+        this.dataProvider = dataProvider;
         this.universe = universe;
         this.geometries = geometries;
         this.coversUniverse = coversUniverse;
         this.geometryFactory = geometryFactory;
+        this.updating = updating;
     }
 
-    private GeometryProvider(Config config, GeometrySpace universe, Map<Integer, GeometrySpace> geometries, 
-                            Set<Integer> coversUniverse, GeometryFactory geometryFactory,
-                            Set<Integer> urisToInsert) {
-        this.config = config;
-        this.universe = universe;
-        this.geometries = geometries;
-        this.coversUniverse = coversUniverse;
-        this.geometryFactory = geometryFactory;
-        this.urisToInsert = urisToInsert;
+    public void populateBulk() {
+
+        updating = false;
+        Map<Integer, String> wkbs = dataProvider.getSpaces();
+        geometries = parseGeometries(wkbs, config.verbose);
+        makeAndSetUniverse();
     }
 
-    public void populate() {
+    public void populateUpdate() {
 
-        Progress prog;
-
-        if (urisToInsert == null) {
-            Map<Integer, String> wkbs = queryDBForGeometries();
-            geometries = parseGeometries(wkbs, config.verbose);
-            makeUniverse();
-        } else {
-            Map<Integer, String> wkbs = queryDBForGeometries(urisToInsert);
-            geometries = parseGeometries(wkbs, config.verbose);
-            obtainUniverse();
-        }
+        updating = true;
+        Set<Integer> urisToInsert = dataProvider.getInsertURIs();
+        Map<Integer, String> wkbs = dataProvider.getSpaces(urisToInsert);
+        geometries = parseGeometries(wkbs, config.verbose);
+        obtainUniverse();
     }
 
-    public Map<Integer, GeometrySpace> getSpaces() {
-        return geometries;
-    }
+    public Map<Integer, GeometrySpace> getSpaces() { return geometries; }
 
-    public GeometryFactory getGeometryFactory() {
-        return geometryFactory;
+    public GeometryFactory getGeometryFactory() { return geometryFactory; }
+
+    public GeometrySpace getUniverse() { return universe; }
+
+    public Set<Integer> getCoversUniverse() { return coversUniverse; }
+
+    public Geometry toGeometry(Envelope envelope) { return getGeometryFactory().toGeometry(envelope); }
+
+    public Set<Integer> keySet() { return getSpaces().keySet(); }
+
+    public GeometrySpace makeEmptySpace() { 
+         return new GeometrySpace(geometryFactory.createPoint((CoordinateSequence) null));
     }
 
     private void obtainUniverse() {
 
-        String universeWKB = queryDBForUniverse();
+        String universeWKB = dataProvider.getUniverse();
         Map<Integer, String> uwm = new HashMap<Integer, String>();
         uwm.put(0, universeWKB);
         Map<Integer, GeometrySpace> ugm = parseGeometries(uwm, false);
         universe = ugm.get(0);
     }
 
-    private void makeUniverse() {
+    private GeometrySpace constructUniverse(boolean verbose) {
 
         Envelope universeEnv = new Envelope();
 
         Progress prog = new Progress("Making universe...", geometries.keySet().size(), 1, "##0");
         prog.setConvertToLong(true);
-        if (config.verbose) prog.init();
+        if (verbose) prog.init();
         
         for (GeometrySpace gs : geometries.values()) {
             universeEnv.expandToInclude(gs.getGeometry().getEnvelopeInternal());
-            if (config.verbose) prog.update();
+            if (verbose) prog.update();
         }
-        universe = new GeometrySpace(geometryFactory.toGeometry(universeEnv));
-        if (config.verbose) prog.done();
+        if (verbose) prog.done();
+
+        return new GeometrySpace(geometryFactory.toGeometry(universeEnv));
+    }
+
+    private void makeAndSetUniverse() {
+        universe = constructUniverse(config.verbose);
         if (config.verbose) System.out.println("Universe set to: " + universe.toString());
-    }
-
-    public GeometrySpace getUniverse() {
-        return universe;
-    }
-
-    public Set<Integer> getCoversUniverse() {
-        return coversUniverse;
-    }
-
-    public Geometry toGeometry(Envelope envelope) {
-        return getGeometryFactory().toGeometry(envelope);
-    }
-
-    public Set<Integer> keySet() {
-        return getSpaces().keySet();
     }
 
     public GeometrySpace get(Integer uri) {
@@ -141,94 +117,96 @@ public class GeometryProvider implements SpaceProvider {
         } else {
             Set<Integer> s = new HashSet<Integer>();
             s.add(uri);
-            Map<Integer, String> m = queryDBForGeometries(s);
+            Map<Integer, String> m = dataProvider.getSpaces(s);
             Map<Integer, GeometrySpace> g = parseGeometries(m, false);
             return g.get(uri);
         }
     }
 
-    public GeometryProvider[] splitProvider(int split, int depth) {
-        return splitProvider(split == 0, depth);
+    private GeometryProvider makeSubProvider(GeometrySpace uni, Set<Integer> ints) {
+
+        Set<Integer> coversChildUniverse = new HashSet<Integer>();
+        Map<Integer, GeometrySpace> overlappingChildUniverse = new HashMap<Integer, GeometrySpace>();
+        getIntersections(uni, ints, geometries, overlappingChildUniverse, coversChildUniverse);
+
+        return new GeometryProvider(config, dataProvider, uni, overlappingChildUniverse, coversChildUniverse,
+                                    geometryFactory, updating);
     }
 
-    public GeometryProvider[] splitProvider(boolean xSplit, int depth) {
+    private void getIntersections(GeometrySpace uni, Set<Integer> elems,  Map<Integer, GeometrySpace> geos,
+                                  Map<Integer, GeometrySpace> overlapping, Set<Integer> covers) {
 
-        GeometrySpace[] childUniverseres = universe.split(xSplit);
-        GeometryProvider[] res = new GeometryProvider[childUniverseres.length];
+        Map<Integer, Space> spMap = new HashMap<Integer, Space>();
+        Utils.getIntersections(uni, elems, geos, config.numThreads, spMap, covers);
 
-        for (int i = 0; i < childUniverseres.length; i++) {
+        for (Integer uri : spMap.keySet()) overlapping.put(uri, (GeometrySpace) spMap.get(uri));
+    }
 
-            Map<Integer, GeometrySpace> geoms = new HashMap<Integer, GeometrySpace>();
-            Set<Integer> coversChildUniverse = new HashSet<Integer>();
+    private GeometryProvider[] makeSubProviders(GeometrySpace childUniL, GeometrySpace childUniR,
+                                                Set<Integer> intL, Set<Integer> intR) {
 
-            for (Integer uri : keySet()) {
+        GeometryProvider subPL = makeSubProvider(childUniL, intL);
+        GeometryProvider subPR = makeSubProvider(childUniR, intR);
 
-                GeometrySpace gs = get(uri);
-                GeometrySpace ngs = gs.intersection(childUniverseres[i]);
+        return new GeometryProvider[]{subPL, subPR};
+    }
 
-                if (!ngs.isEmpty())  {
-                    if (ngs.covers(childUniverseres[i]))
-                        coversChildUniverse.add(uri);
-                    else
-                        geoms.put(uri, ngs);
-                }
+    public GeometryProvider[] splitProvider(int split) {
+
+        GeometrySpace[] childUniverseres = universe.split(split);
+        return makeSubProviders(childUniverseres[0], childUniverseres[1], keySet(), keySet());
+    }
+
+    public GeometryProvider[] splitProvider(int split, EvenSplit evenSplit) {
+
+        Block splitBlock = evenSplit.splitBlock;
+        GeometrySpace spL = makeEmptySpace(), spR = makeEmptySpace();
+        GeometrySpace[] splitLR = getUniverse().split(split);
+        GeometrySpace splitL = splitLR[0], splitR = splitLR[1];
+
+        for (int i = 0; i < splitBlock.depth(); i++) {
+
+            if (splitBlock.getBit(i) == 1L) {
+                spL = spL.union(splitL);
+                splitLR = splitR.split(split);
+                splitL = splitLR[0];
+                splitR = splitLR[1];
+            } else {
+                spR = spR.union(splitR);
+                splitLR = splitL.split(split);
+                splitL = splitLR[0];
+                splitR = splitLR[1];
             }
-
-            if (urisToInsert == null)
-                res[i] = new GeometryProvider(config, childUniverseres[i], geoms, coversChildUniverse,
-                                              geometryFactory);
-            else
-                res[i] = new GeometryProvider(config, childUniverseres[i], geoms, coversChildUniverse,
-                                              geometryFactory, urisToInsert);
         }
 
-        return res;
+        return makeSubProviders(spL.union(splitL), spR.union(splitR),
+                                evenSplit.intL, evenSplit.intR);
     }
 
     public void populateWithExternalOverlapping() {
 
-        if (urisToInsert == null) return; // Do not get external if not in insert mode
+        if (!updating) return; // Do not get external if not in insert mode
         
-        Map<Integer, GeometrySpace> extGeos = getExternalOverlapping(universe);
-        Set<Integer> extGeoKeys = new HashSet<Integer>(extGeos.keySet());
-
-        for (Integer uri : extGeoKeys) {
-            if (extGeos.get(uri).covers(universe))
-                extGeos.remove(uri);
-        }
-
-        geometries.putAll(extGeos);
+        Map<Integer, GeometrySpace> external = getExternalOverlapping(universe);
+        for (Integer uri : external.keySet())
+            geometries.put(uri, universe.intersection(external.get(uri)));
     }
-    
-    private Map<Integer, GeometrySpace> getExternalOverlapping(Space s) {
+
+   public String extGeo() {
+        GeometrySpace geo = (GeometrySpace) getUniverse();
+        String gs = geo.getGeometry().toString();
+        String whereClause = "ST_intersects(geom, ST_GeomFromText('" + gs + "')) AND ";
+        whereClause += "NOT ST_contains(geom, ST_GeomFromText('" + gs + "'))";
+        return whereClause;
+    }
+   
+    public Map<Integer, GeometrySpace> getExternalOverlapping(Space s) {
 
         GeometrySpace geo = (GeometrySpace) s;
-
-        Map<Integer, String> wkbs = new HashMap<Integer, String>();
-
-        try {
-            Class.forName("org.postgresql.Driver");
-
-            connect = DriverManager.getConnection(config.connectionStr);
-
-            statement = connect.createStatement();
-            String query = config.geoQuerySelectFromStr;
-            query += " WHERE ST_intersects(geom, ST_GeomFromText('" + geo.getGeometry().toString() + "'));";
-            statement.execute(query);
-            resultSet = statement.getResultSet();
- 
-            while (resultSet.next()) {
-                Integer uri = Integer.parseInt(resultSet.getString(1));
-                String wkb = resultSet.getString(2);
-                wkbs.put(uri,wkb);
-            }
-        } catch (Exception e) {
-            System.err.println("Error in query process: " + e.toString());
-            System.exit(1);
-        } finally {
-    	    close();
-        }
-
+        String gs = geo.getGeometry().toString();
+        String whereClause = "ST_intersects(geom, ST_GeomFromText('" + gs + "')) AND ";
+        whereClause += "NOT ST_contains(geom, ST_GeomFromText('" + gs + "'))";
+        Map<Integer, String> wkbs = dataProvider.getExternalOverlapping(whereClause);
         Map<Integer, GeometrySpace> res = parseGeometries(wkbs, false);
         return res;
     }
@@ -270,143 +248,5 @@ public class GeometryProvider implements SpaceProvider {
         }
 
         return result;
-    }
-
-    private String queryDBForUniverse() {
-
-        String universeStr = null;
-
-        try {
-            Class.forName("org.postgresql.Driver");
-            connect = DriverManager.getConnection(config.connectionStr);
-
-            statement = connect.createStatement();
-            String query = "SELECT " + config.geoColumn + " FROM " + config.universeTable + 
-                           " WHERE table_name = '" + config.btTableName + "';";
-            
-            statement.execute(query);
-            resultSet = statement.getResultSet();
-            resultSet.next(); 
-            universeStr = resultSet.getString(1);
-        } catch (Exception e) {
-            System.err.println("Error querying for universe: " + e.toString());
-            System.exit(1);
-        } finally {
-    	    close();
-        }
-
-        return universeStr;
-    }
-
-    private Map<Integer,String> queryDBForGeometries() {
-
-        Map<Integer, String> res = new HashMap<Integer,String>();
-
-        try {
-            Class.forName("org.postgresql.Driver");
-
-            if (config.verbose) {
-                System.out.print("Connecting to database " + config.dbName +
-                                 " as user " + config.dbUsername + "...");
-            }
-
-            connect = DriverManager.getConnection(config.connectionStr);
-
-            if (config.verbose) {
-                System.out.println(" Done");
-                System.out.print("Retriving geometries from table " + config.geoTableName + "...");
-            }
-
-            statement = connect.createStatement();
-            statement.execute(config.geoQueryStr);
-            resultSet = statement.getResultSet();
- 
-            while (resultSet.next()) {
-                Integer uri = Integer.parseInt(resultSet.getString(1));
-                String wkb = resultSet.getString(2);
-                res.put(uri,wkb);
-            }
-            if (config.verbose) System.out.println(" Done");
-        } catch (Exception e) {
-            System.err.println("Error in query process: " + e.toString());
-            System.exit(1);
-        } finally {
-    	    close();
-        }
-
-        return res;
-    }
-
-    private Map<Integer,String> queryDBForGeometries(Set<Integer> uris) {
-
-        Map<Integer, String> res = new HashMap<Integer,String>();
-
-        try {
-            Class.forName("org.postgresql.Driver");
-
-            if (config.verbose) {
-                System.out.println("--------------------------------------");
-                System.out.print("Connecting to database " + config.dbName +
-                                 " as user " + config.dbUsername + "...");
-            }
-
-            connect = DriverManager.getConnection(config.connectionStr);
-
-            if (config.verbose) {
-                System.out.println(" Done");
-                System.out.print("Retriving geometries from table " + config.geoTableName + "...");
-            }
-
-            statement = connect.createStatement();
-            statement.execute(makeValuesQuery(uris));
-            resultSet = statement.getResultSet();
- 
-            while (resultSet.next()) {
-                Integer uri = Integer.parseInt(resultSet.getString(1));
-                String wkb = resultSet.getString(2);
-                res.put(uri, wkb);
-            }
-            if (config.verbose) System.out.println(" Done");
-        } catch (Exception e) {
-            System.err.println("Error in query process: " + e.toString());
-            System.exit(1);
-        } finally {
-    	    close();
-        }
-
-        return res;
-    }
-
-    private String makeValuesQuery(Set<Integer> uris) {
-
-        String query = config.geoQuerySelectFromStr + ", (VALUES ";
-
-        Integer[] urisArr = uris.toArray(new Integer[uris.size()]);
-
-        for (int i = 0; i < urisArr.length - 1; i++)
-            query += "(" + urisArr[i] + "), ";
-
-        query += "(" + urisArr[urisArr.length-1] + ")"; // Last element, no need for comma after.
-        query += ") AS V(uri) WHERE V.uri = " + config.uriColumn + ";";
-        
-        return query;
-    }
-
-    private void close() {
-        try {
-            if (resultSet != null) {
-        	resultSet.close();
-            }
-  
-            if (statement != null) {
-        	statement.close();
-            }
-  
-            if (connect != null) {
-        	connect.close();
-            }
-        } catch (Exception e) {
-            System.err.println("Error: " + e.toString()); 
-        }
     }
 }

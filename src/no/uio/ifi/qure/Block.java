@@ -6,19 +6,27 @@ import java.util.Arrays;
 public class Block {
 
     // Total number of bits per block.
-    private static final int BLOCK_SIZE = Long.SIZE - 1;
+    private static int BLOCK_SIZE = Long.SIZE - 1;
 
     // Total number of bits for meta information (size + unique part flag)
-    private static final int META_SIZE = 1 + (Integer.SIZE - Integer.numberOfLeadingZeros(BLOCK_SIZE));
+    private static int META_SIZE = 1 + (Integer.SIZE - Integer.numberOfLeadingZeros(BLOCK_SIZE));
 
     // Maximum number of bits reserved for the bit-string.
-    private static final int MAX_SIZE = BLOCK_SIZE - META_SIZE;
+    private static int MAX_SIZE = BLOCK_SIZE - META_SIZE;
 
     // Long that if bitwise-AND-ed with a block returns a long containing only the meta-information.
-    private static final long META_SIZE_ONES = (1L << META_SIZE) - 1;
+    private static long META_SIZE_ONES = (1L << META_SIZE) - 1;
 
-    public static final Block EMPTYBLOCK = new Block(0,-1L);
-    public static final Block TOPBLOCK = new Block(0,0L);
+    public static Block EMPTYBLOCK = new Block(0,-1L);
+    public static Block TOPBLOCK = new Block(0,0L);
+
+    public static void setBlockSize(int size) { 
+        BLOCK_SIZE = size;
+        META_SIZE = 1 + (Integer.SIZE - Integer.numberOfLeadingZeros(BLOCK_SIZE));
+        MAX_SIZE = BLOCK_SIZE - META_SIZE;
+        META_SIZE_ONES = (1L << META_SIZE) - 1;
+    }
+
 
     // The long-representation of this block.
     private final long value;
@@ -49,6 +57,12 @@ public class Block {
     public long getRepresentation() {
         return value;
     }
+
+    /**
+     * Returns the i'th bit in the bit-string, where the 0'th bit is the most significant, that is,
+     * the bit representing the first split.
+     */
+    public long getBit(int i) { return (getRawBitsShifted() >> (getSize()-(i+1))) & 1; }
 
     /**
      * Returns the long containing only the raw bitstring, unshifted.
@@ -93,11 +107,11 @@ public class Block {
     }
 
     public static Block getTopBlock() {
-        return TOPBLOCK;
+        return new Block(TOPBLOCK.getRepresentation());
     }
 
     public static Block getEmptyBlock() {
-        return EMPTYBLOCK;
+        return new Block(EMPTYBLOCK.getRepresentation());
     }
 
     /**
@@ -124,8 +138,11 @@ public class Block {
         return value < 0;
     }
 
-    public Block getParent(int n) {
+    public Block getParentAtDepth(int depth) {
+        return getParent(depth - getSize());
+    }
 
+    public Block getParent(int n) {
         return new Block(getSize() - n, getRawBitsShifted() >> n);
     }
 
@@ -136,7 +153,6 @@ public class Block {
     public Block getNeighbor() {
 
         long neiVal = getRawBitsShifted() ^ 1;
-
         return new Block(getSize(), neiVal);
     }
 
@@ -162,7 +178,7 @@ public class Block {
 	else if (b.blockPartOf(this))
 	    return b;
 	else
-	    return Block.EMPTYBLOCK;
+	    return getEmptyBlock();
     }
 
     private int getTrailingBitsSize() {
@@ -200,8 +216,26 @@ public class Block {
 
     public String toString() {
         
+        String vs = Long.toBinaryString(value);
         String zeros = "";
-        for (int i = 0; i < Long.numberOfLeadingZeros(value); i++) zeros += "0";
-        return zeros + Long.toBinaryString(value);
+        for (int i = 0; i < BLOCK_SIZE - vs.length(); i++) zeros += "0";
+        return zeros + vs;
+    }
+
+    /**
+     * @param n the number of distinct objects to return
+     * @return an array of n pairwise disjoint bintrees
+     */
+    public static Block[] makeNDistinct(int n) {
+         
+        double log2n = Math.log(n)/Math.log(2);
+        int size = Math.toIntExact(Math.round(Math.ceil(log2n)));
+
+        Block[] res = new Block[n];
+
+        for (int i = 0; i < n; i++) {
+            res[i] = new Block(size, i);
+        }
+        return res;
     }
  }

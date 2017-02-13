@@ -2,13 +2,15 @@ package no.uio.ifi.qure;
 
 public interface Space {
 
+    public Space clone();
+
     public Space intersection(Space o);
+
+    public Space union(Space o);
 
     public boolean isEmpty();
 
     public Space[] split(int dim);
-
-    public Space[] split(boolean xSplit);
 
     public Relation relate(Space o);
 
