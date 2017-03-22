@@ -1,4 +1,6 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.spaces;
+
+import no.uio.ifi.qure.*;
 
 import java.util.ArrayList;
 import java.util.List;

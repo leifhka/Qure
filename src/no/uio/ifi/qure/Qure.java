@@ -88,10 +88,10 @@ public class Qure {
         //configs.add(new Config("npd",    "full", 8, 3, 30, 10));
 
         
-        //runMany(rfs);
+        runMany(rfs);
         //writeDBSizes(rfs);
         //times = new HashMap<String, Long>();
-        runManyQueryBM(rfs);
+        //runManyQueryBM(rfs);
         //times = new HashMap<String, Long>();
         //runAllInsertBM(configs, 100, 20, false);
         //runAllInsertBM(rfs, 100, 20, true);
@@ -208,7 +208,7 @@ public class Qure {
 
         if (config.verbose) printConfig(config);
 
-        SpaceProvider geometries = new GeometryProvider(config, new DBDataProvider(config));
+        SpaceProvider geometries = new no.uio.ifi.qure.spaces.GeometryProvider(config, new DBDataProvider(config));
         geometries.populateBulk();
         SpaceToBintree gtb = new SpaceToBintree(config);
 
@@ -262,7 +262,7 @@ public class Qure {
         long beforeAll = System.currentTimeMillis();
 
         RawDataProvider dataProvider = new DBDataProvider(config);
-        SpaceProvider geometries = new GeometryProvider(config, dataProvider);
+        SpaceProvider geometries = new no.uio.ifi.qure.spaces.GeometryProvider(config, dataProvider);
         geometries.populateUpdate();
         Map<Block, Block> oldSplits = dataProvider.getEvenSplits();
         SpaceToBintree gtb = new SpaceToBintree(config, oldSplits);

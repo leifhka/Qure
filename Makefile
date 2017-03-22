@@ -13,10 +13,10 @@ CLASSES = \
         Bintree.java \
         Block.java \
         Config.java \
-        DBDataProvider.java \
+        dataproviders/DBDataProvider.java \
         EvenSplit.java \
-        GeometryProvider.java \
-        GeometrySpace.java \
+        spaces/GeometryProvider.java \
+        spaces/GeometrySpace.java \
         Intersection.java \
         Progress.java \
         Qure.java \
@@ -28,8 +28,8 @@ CLASSES = \
         Space.java \
         SpaceProvider.java \
         SpaceToBintree.java \
-        TimeProvider.java \
-        TimeSpace.java  \
+        spaces/TimeProvider.java \
+        spaces/TimeSpace.java  \
         TreeNode.java \
         Utils.java
 
@@ -44,7 +44,7 @@ bin :
 	mkdir -p bin
 
 compile : libs bin $(source_files)
-	@$(javac) src/no/uio/ifi/qure/*.java -d bin/
+	@$(javac) $(source_files) -d bin/
 
 run: 
 	date; $(java) no.uio.ifi.qure.Qure; date
