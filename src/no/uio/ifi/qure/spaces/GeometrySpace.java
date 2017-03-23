@@ -174,6 +174,7 @@ public class GeometrySpace implements Space {
 		} else if ((role & BOUNDARY) == role) {
 			return new GeometrySpace(geo.getBoundary());
 		} else if ((role & INTERIOR) == role) {
+			// TODO: Fix this, does not work as geo.equals(geo.difference(geo.getBoundary()))
 			return new GeometrySpace(geo.difference(geo.getBoundary()));
 		} else {
 			assert(role == (BOUNDARY | INTERIOR));
