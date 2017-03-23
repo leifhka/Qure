@@ -28,19 +28,5 @@ public interface Space {
 
     public Set<Integer> extractRoles(Space block);
 
-    /**
-     *  Returns the relationship between the tRole of this and the oRole of o,
-     *  if the role does not exist for this Space-type, it should return null.
-     */
-    public Relationship relate(int tRole, int oRole, Space o);
-
-    public boolean overlaps(int tRole, int oRole, Space o);
-
-    public boolean partOf(int tRole, int oRole, Space o);
-
-    public default boolean hasPart(int tRole, int oRole, Space o) {
-        return o.partOf(oRole, tRole, this);
-    }
-
-    public boolean before(int tRole, int oRole, Space o);
+	public Space getPart(int role);
 }

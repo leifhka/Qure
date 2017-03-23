@@ -11,6 +11,7 @@ import com.vividsolutions.jts.io.WKBWriter;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.CoordinateSequence;
 import com.vividsolutions.jts.geom.util.PolygonExtracter;
 import com.vividsolutions.jts.geom.impl.CoordinateArraySequence;
 import com.vividsolutions.jts.geom.TopologyException;
@@ -24,7 +25,6 @@ public class GeometrySpace implements Space {
     /* Roles */
     public static int INTERIOR = 1;
     public static int BOUNDARY = 2;
-    public static int UNIQUE = 4;
 
     public GeometrySpace(Geometry geo) {
         this.geo = flatten(geo);
@@ -35,9 +35,9 @@ public class GeometrySpace implements Space {
 
         //Needed to convert GeometryCollection to Geometry
         List<Geometry> gs = new ArrayList<Geometry>();
-        for (int i = 0; i < gc.getNumGeometries(); i++)
+        for (int i = 0; i < gc.getNumGeometries(); i++) {
             gs.add(gc.getGeometryN(i));
-
+		}
         return gc.getFactory().buildGeometry(gs);
     }
 
@@ -96,10 +96,11 @@ public class GeometrySpace implements Space {
     }
 
     public String toString() {
-        if (geo.isRectangle())
+        if (geo.isRectangle()) {
             return geo.getEnvelopeInternal().toString();
-        else
+        } else {
             return geo.toString();
+		}
     }
 
     public boolean equals(Object o) {
@@ -156,86 +157,27 @@ public class GeometrySpace implements Space {
         GeometrySpace ogs = (GeometrySpace) o;
         Set<Integer> rs = new HashSet<Integer>();
 
-        rs.add(UNIQUE); //Always have UNIQUE
         GeometrySpace boundary = new GeometrySpace(geo.getBoundary());
         if (boundary.overlaps(ogs)) {
             rs.add(BOUNDARY);
-            rs.add(BOUNDARY | UNIQUE);
         }
         if (!intersection(ogs).equals(boundary)) { // Interior must intersect o
             rs.add(INTERIOR);
-            rs.add(INTERIOR | UNIQUE);
         }
         return rs;
     }
 
-    public boolean overlaps(int tRole, int oRole, Space o) { 
-        if (!(o instanceof GeometrySpace)) return false;
-        if ((tRole & UNIQUE) != 0 || (oRole & UNIQUE) != 0) return false; //Nothing overlaps a UNIQUE-part
-
-        Geometry ogeo = ((GeometrySpace) o).getGeometry();
-        IntersectionMatrix im = geo.relate(ogeo);
-
-        if (tRole == 0 && oRole == 0)
-            return im.isIntersects();
-        else if (tRole == 0 && (oRole & BOUNDARY) != 0)
-            return im.matches("*T*******") || im.matches("****T****");
-        else if (tRole == 0 && (oRole & INTERIOR) != 0)
-            return im.matches("T********") || im.matches("***T*****");
-        else if ((tRole & BOUNDARY) != 0 && oRole == 0)
-            return im.matches("***T*****") || im.matches("****T****");
-        else if ((tRole & BOUNDARY) != 0 && (oRole & BOUNDARY) != 0)
-            return im.matches("****T****");
-        else if ((tRole & BOUNDARY) != 0 && (oRole & INTERIOR) != 0)
-            return im.matches("***T*****");
-        else if ((tRole & INTERIOR) != 0 && oRole == 0)
-            return im.matches("T********") || im.matches("*T*******");
-        else if ((tRole & INTERIOR) != 0 && (oRole & BOUNDARY) != 0)
-            return im.matches("*T*******");
-        else if ((tRole & INTERIOR) != 0 && (oRole & INTERIOR) != 0)
-            return im.matches("T********");
-        else {
-            System.err.println("ERROR: the roles " + tRole + ", " + oRole + " cannot be related or does not exist for this type.");
-            (new Exception()).printStackTrace();
-            System.exit(1);
-            return false;
-        }
-    }
-
-    public boolean partOf(int tRole, int oRole, Space o) {
-        if (!(o instanceof GeometrySpace)) return false;
-        if ((oRole & UNIQUE) != 0) return false; // Nothing is contained in a UNIQUE-part
-
-        Geometry ogeo = ((GeometrySpace) o).getGeometry();
-        IntersectionMatrix im = geo.relate(ogeo);
-
-        if ((tRole | UNIQUE) == UNIQUE && oRole == 0) // tRole is UNIQUE or 0
-            return im.isCoveredBy();
-        else if ((tRole | UNIQUE) == UNIQUE && (oRole & BOUNDARY) != 0)
-            return im.matches("FTFFTF***");
-        else if ((tRole | UNIQUE) == UNIQUE && (oRole & INTERIOR) != 0)
-            return im.matches("TFFTFF***");
-        else if ((tRole & BOUNDARY) != 0 && oRole == 0)
-            return im.matches("*****F***");
-        else if ((tRole & BOUNDARY) != 0 && (oRole & BOUNDARY) != 0)
-            return im.matches("***FTF***");
-        else if ((tRole & BOUNDARY) != 0 && (oRole & INTERIOR) != 0)
-            return im.matches("***TFF***");
-        else if ((tRole & INTERIOR) != 0 && oRole == 0)
-            return im.matches("**F******");
-        else if ((tRole & INTERIOR) != 0 && (oRole & BOUNDARY) != 0)
-            return im.matches("FTF******");
-        else if ((tRole & INTERIOR) != 0 && (oRole & INTERIOR) != 0)
-            return im.matches("TFF******");
-        else {
-            System.err.println("ERROR: the roles " + tRole + ", " + oRole + " cannot be related or does not exist for this type.");
-            (new Exception()).printStackTrace();
-            System.exit(1);
-            return false;
-        }
-    }
-
-    public boolean before(int tRole, int oRole, Space o) { return false; }
-
-    public Relationship relate(int tRole, int oRole, Space o) { return null; } //TODO(?)
+	public GeometrySpace getPart(int role) {
+		
+		if (role == 0) {
+			return this;
+		} else if ((role & BOUNDARY) == role) {
+			return new GeometrySpace(geo.getBoundary());
+		} else if ((role & INTERIOR) == role) {
+			return new GeometrySpace(geo.difference(geo.getBoundary()));
+		} else {
+			assert(role == (BOUNDARY | INTERIOR));
+			return new GeometrySpace(geo.getFactory().createPoint((CoordinateSequence) null));
+		}
+	}
 }
