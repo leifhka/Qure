@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Iterator;
 
 public class TimeProvider implements SpaceProvider {
 
@@ -17,16 +18,18 @@ public class TimeProvider implements SpaceProvider {
     private boolean updating;
     private Set<Integer> coversUniverse;
     private TimeSpace universe;
-    private RawDataProvider dataProvider;
+	private DateTimeFormatter format;
+    private RawDataProvider<String> dataProvider;
     private Config config;
 
-    public TimeProvider(Config config, RawDataProvider dataProvider) {
+    public TimeProvider(Config config, RawDataProvider<String> dataProvider) {
         this.config = config;
         this.dataProvider = dataProvider;
         coversUniverse = new HashSet<Integer>();
+        format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     }
 
-    private TimeProvider(Config config, RawDataProvider dataProvider,
+    private TimeProvider(Config config, RawDataProvider<String> dataProvider,
                          TimeSpace universe, Map<Integer, TimeSpace> times, 
                          Set<Integer> coversUniverse, boolean updating) {
         this.config = config;
@@ -40,7 +43,7 @@ public class TimeProvider implements SpaceProvider {
     public void populateBulk() {
 
         updating = false;
-        Map<Integer, List<String>> timeStrs = dataProvider.getSpaces();
+        UnparsedIterator<String> timeStrs = dataProvider.getSpaces();
         times = parseTimes(timeStrs, config.verbose);
         makeAndSetUniverse();
     }
@@ -49,7 +52,7 @@ public class TimeProvider implements SpaceProvider {
 
         updating = true;
         Set<Integer> urisToInsert = dataProvider.getInsertURIs();
-        Map<Integer, List<String>> wkbs = dataProvider.getSpaces(urisToInsert);
+        UnparsedIterator<String> wkbs = dataProvider.getSpaces(urisToInsert);
         times = parseTimes(wkbs, config.verbose);
         obtainUniverse();
     }
@@ -68,11 +71,8 @@ public class TimeProvider implements SpaceProvider {
 
     private void obtainUniverse() {
 
-        List<String> universeWKB = dataProvider.getUniverse();
-        Map<Integer, List<String>> uwm = new HashMap<Integer, List<String>>();
-        uwm.put(0, universeWKB);
-        Map<Integer, TimeSpace> ugm = parseTimes(uwm, false);
-        universe = ugm.get(0);
+        UnparsedSpace<String> universeTime = dataProvider.getUniverse();
+        universe = parseTime(universeTime.unparsedSpace);
     }
 
     private TimeSpace constructUniverse(boolean verbose) {
@@ -178,41 +178,48 @@ public class TimeProvider implements SpaceProvider {
    
     public Map<Integer, TimeSpace> getExternalOverlapping(Space s) {
 
-        Map<Integer, List<String>> timeStrs = dataProvider.getExternalOverlapping(extTime());
+        UnparsedIterator<String> timeStrs = dataProvider.getExternalOverlapping(extTime());
         Map<Integer, TimeSpace> res = parseTimes(timeStrs, false);
         return res;
     }
 
-    private Map<Integer, TimeSpace> parseTimes(Map<Integer, List<String>> timeStrs, boolean verbose) {
+	private TimeSpace parseTime(List<String> timeStr) {
 
-        Progress prog = new Progress("Parsing timestamp pairs...", timeStrs.keySet().size(), 1, "##0");  
+    	String start = timeStr.get(0);
+    	String stop = timeStr.get(1);
+    	TimeSpace newTime = null;
+
+        try {
+            newTime = new TimeSpace(LocalDateTime.parse(start,format), LocalDateTime.parse(stop,format));
+        } catch (DateTimeParseException e) {
+            System.err.println(e.toString());
+            System.exit(1);
+        }
+		return newTime;
+	}	
+
+    private Map<Integer, TimeSpace> parseTimes(UnparsedIterator<String> timeStrs, boolean verbose) {
+
+		int total = timeStrs.size();
+        Progress prog = new Progress("Parsing timestamp pairs...", total, 1, "##0");  
         prog.setConvertToLong(true);
 
-        Map<Integer, TimeSpace> result = new HashMap<Integer,TimeSpace>(timeStrs.keySet().size());
-        DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        Map<Integer, TimeSpace> result = new HashMap<Integer,TimeSpace>(total);
 
         if (verbose) prog.init();
 
-        for (Integer uri : timeStrs.keySet()) {
+        while (timeStrs.hasNext()) {
 
-            String start = timeStrs.get(uri).get(0);
-            String stop = timeStrs.get(uri).get(1);
-            TimeSpace newTime;
+			UnparsedSpace<String> ups = timeStrs.next();
 
-            try {
-                newTime = new TimeSpace(LocalDateTime.parse(start,format), LocalDateTime.parse(stop,format));
-            } catch (DateTimeParseException e) {
-                System.err.println(e.toString());
-                System.exit(1);
-                continue;
-            }
-            
-            if (!newTime.isEmpty()) result.put(uri, newTime);
+            TimeSpace newTime = parseTime(ups.unparsedSpace);
+           
+            if (!newTime.isEmpty()) result.put(ups.uri, newTime);
             if (verbose) prog.update();
         }
         if (verbose) {
             prog.done();
-            int errors = timeStrs.keySet().size() - result.values().size();
+            int errors = total - result.values().size();
             if (errors > 0) System.out.println("Unable to parse " + errors + " timestamp pairs.");
             System.out.println("Parsed " + result.values().size() + " timestamp pairs.");
         }

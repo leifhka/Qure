@@ -31,6 +31,8 @@ CLASSES = \
         spaces/TimeProvider.java \
         spaces/TimeSpace.java  \
         TreeNode.java \
+        UnparsedIterator.java \
+        UnparsedSpace.java \
         Utils.java
 
 source_files = $(addprefix $(src_prefix), $(addprefix $(package_name), $(CLASSES)))

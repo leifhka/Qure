@@ -2,21 +2,20 @@ package no.uio.ifi.qure;
 
 import java.util.Map;
 import java.util.List;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
-
-public interface RawDataProvider {
+public interface RawDataProvider<E> {
 
     public Set<Integer> getInsertURIs();
 
-    public Map<Integer, List<String>> getExternalOverlapping(String whereClause);
+    public UnparsedIterator<E> getExternalOverlapping(String whereClause);
 
-    public List<String> getUniverse();
+    public UnparsedSpace<E> getUniverse();
 
-    public Map<Integer, List<String>> getSpaces();
+    public UnparsedIterator<E> getSpaces();
     
-    public Map<Integer, List<String>> getSpaces(Set<Integer> uris);
+    public UnparsedIterator<E> getSpaces(Set<Integer> uris);
 
     public Map<Block, Block> getEvenSplits();
 }

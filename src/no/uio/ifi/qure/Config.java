@@ -64,6 +64,7 @@ public class Config {
     //public String uriColumn = "trip_id";
     public String blockColumn = "block";
     public String geoColumn = "geom";
+	public int limit = 100;
     //public String geoColumn = "starttime, stoptime";
     public String universeTable = "qure.universes";
     public boolean convertUriToInt = true;

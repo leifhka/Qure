@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -15,8 +17,9 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import no.uio.ifi.qure.UnparsedSpace;
 
-public class DBDataProvider implements RawDataProvider {
+public class DBDataProvider implements RawDataProvider<String> {
 
     private Config config;
     private Connection connect = null;
@@ -67,9 +70,17 @@ public class DBDataProvider implements RawDataProvider {
         return insertUris;
     }
 
-    public Map<Integer, List<String>> getExternalOverlapping(String whereClause) {
+    public DBUnparsedIterator getExternalOverlapping(String whereClause) {
 
-        Map<Integer, List<String>> spaceMap = new HashMap<Integer, List<String>>();
+        String query = config.geoQuerySelectFromStr;
+        query += " WHERE " + whereClause;	
+		int total = queryForTotal(config.geoTableName);
+        return new DBUnparsedIterator(total, config.limit, config.jdbcDriver, config.connectionStr, query);
+    }
+
+	public int queryForTotal(String tableName) {
+
+		Integer total = -1;
 
         try {
             Class.forName(config.jdbcDriver);
@@ -77,19 +88,10 @@ public class DBDataProvider implements RawDataProvider {
             connect = DriverManager.getConnection(config.connectionStr);
 
             statement = connect.createStatement();
-            String query = config.geoQuerySelectFromStr;
-            query += " WHERE " + whereClause + ";";
-            statement.execute(query);
-            resultSet = statement.getResultSet();
-            int numCol = resultSet.getMetaData().getColumnCount();
- 
-            while (resultSet.next()) {
-                Integer uri = Integer.parseInt(resultSet.getString(1));
-                List<String> spaceStrs = new ArrayList<String>();
-                for (int i = 2; i <= numCol; i++)
-                    spaceStrs.add(resultSet.getString(i));
-                spaceMap.put(uri,spaceStrs);
-            }
+			statement.execute("select count(*) from " + tableName + ";");
+			resultSet = statement.getResultSet();
+			resultSet.next();
+			total = resultSet.getInt(1);
         } catch (Exception e) {
             System.err.println("Error in query process: " + e.toString());
             e.printStackTrace();
@@ -98,10 +100,10 @@ public class DBDataProvider implements RawDataProvider {
     	    close();
         }
 
-        return spaceMap;
-    }
+		return total.intValue();
+	}
 
-    public List<String> getUniverse() {
+    public UnparsedSpace<String> getUniverse() {
 
         List<String> universeStrs = null;
 
@@ -127,95 +129,20 @@ public class DBDataProvider implements RawDataProvider {
     	    close();
         }
 
-        return universeStrs;
+        return new UnparsedSpace<String>(0, universeStrs);
     }
 
-    public Map<Integer, List<String>> getSpaces() {
+    public DBUnparsedIterator getSpaces() {
 
-        Map<Integer, List<String>> spaceMap = new HashMap<Integer, List<String>>();
-
-        try {
-            Class.forName(config.jdbcDriver);
-
-            if (config.verbose) {
-                System.out.print("Connecting to database " + config.dbName +
-                                 " as user " + config.dbUsername + "...");
-            }
-
-            connect = DriverManager.getConnection(config.connectionStr);
-
-            if (config.verbose) {
-                System.out.println(" Done");
-                System.out.print("Retriving spaces from table " + config.geoTableName + "...");
-            }
-
-            statement = connect.createStatement();
-            statement.execute(config.geoQueryStr);
-            resultSet = statement.getResultSet();
-            int numCol = resultSet.getMetaData().getColumnCount();
- 
-            while (resultSet.next()) {
-                Integer uri = Integer.parseInt(resultSet.getString(1));
-                List<String> spaceStrs = new ArrayList<String>();
-                for (int i = 2; i <= numCol; i++)
-                    spaceStrs.add(resultSet.getString(i));
-                spaceMap.put(uri,spaceStrs);
-            }
-            if (config.verbose) System.out.println(" Done");
-        } catch (Exception e) {
-            System.err.println("Error in query process: " + e.toString());
-            e.printStackTrace();
-            System.exit(1);
-        } finally {
-    	    close();
-        }
-
-        return spaceMap;
+		int total = queryForTotal(config.geoTableName);
+        return new DBUnparsedIterator(total, config.limit, config.jdbcDriver, config.connectionStr, config.geoQuerySelectFromStr);
     }
 
-    public Map<Integer, List<String>> getSpaces(Set<Integer> uris) {
+    public DBUnparsedIterator getSpaces(Set<Integer> uris) {
 
-        if (uris.isEmpty()) return new HashMap<Integer, List<String>>();
+        if (uris.isEmpty()) return new DBUnparsedIterator(0, 0, "", "", "");
 
-        Map<Integer, List<String>> spaceMap = new HashMap<Integer, List<String>>();
-
-        try {
-            Class.forName(config.jdbcDriver);
-
-            if (config.verbose) {
-                System.out.print("Connecting to database " + config.dbName +
-                                 " as user " + config.dbUsername + "...");
-            }
-
-            connect = DriverManager.getConnection(config.connectionStr);
-
-            if (config.verbose) {
-                System.out.println(" Done");
-                System.out.print("Retriving spaces from table " + config.geoTableName + "...");
-            }
-
-            statement = connect.createStatement();
-            statement.execute(makeValuesQuery(uris));
-            resultSet = statement.getResultSet();
-            int numCol = resultSet.getMetaData().getColumnCount();
- 
-            while (resultSet.next()) {
-                Integer uri = Integer.parseInt(resultSet.getString(1));
-                List<String> spaceStrs = new ArrayList<String>();
-                for (int i = 2; i <= numCol; i++)
-                    spaceStrs.add(resultSet.getString(i));
-                spaceMap.put(uri,spaceStrs);
-            }
-            if (config.verbose) System.out.println(" Done");
-        } catch (Exception e) {
-            System.err.println("Error in query process: " + e.toString());
-            e.printStackTrace();
-            System.exit(1);
-        } finally {
-    	    close();
-        }
-
-        return spaceMap;
+        return new DBUnparsedIterator(uris.size(), uris.size(), config.jdbcDriver, config.connectionStr, makeValuesQuery(uris));
     }
 
     private String makeValuesQuery(Set<Integer> uris) {
@@ -284,4 +211,75 @@ public class DBDataProvider implements RawDataProvider {
             System.err.println("Error: " + e.toString()); 
         }
     }
+
+	private class DBUnparsedIterator extends UnparsedIterator<String> {
+		
+		private int total;
+		private int offset;
+		private int limit;
+		private String connectionStr;
+		private String baseQuery;
+		private String jdbcDriver;
+		private Set<Integer> uris;
+		
+		private Iterator<UnparsedSpace<String>> batch;
+		
+		public DBUnparsedIterator(int total, int limit, String jdbcDriver, String connectionStr, String baseQuery) {
+			this.total = total;
+			this.limit = limit;
+			this.offset = 0;
+			this.jdbcDriver = jdbcDriver;
+			this.connectionStr = connectionStr;
+			this.baseQuery = baseQuery;
+
+			batch = new ArrayList<UnparsedSpace<String>>().iterator();
+			uris = new HashSet<Integer>();
+		}
+	
+		public boolean hasNext() { return batch.hasNext() || offset < total; }
+
+		public UnparsedSpace<String> next() {
+
+			if (!batch.hasNext() && offset < total) {
+            	try {
+            	    Class.forName(jdbcDriver);
+    	
+            	    connect = DriverManager.getConnection(connectionStr);
+            	    statement = connect.createStatement();
+            	    
+					String query = baseQuery + " offset " + offset + " limit " + limit + ";";
+					System.out.println(query);
+            	    statement.execute(query);
+            	    ResultSet resultSet = statement.getResultSet();
+                    int numCol = resultSet.getMetaData().getColumnCount();
+    	
+					List<UnparsedSpace<String>> lst = new ArrayList<UnparsedSpace<String>>(limit);
+
+            	    while (resultSet.next()) {
+                        Integer uri = resultSet.getInt(1);
+                        List<String> spaceStrs = new ArrayList<String>();
+                        for (int i = 2; i <= numCol; i++)
+                            spaceStrs.add(resultSet.getString(i));
+    					lst.add(new UnparsedSpace<String>(uri, spaceStrs));
+
+						if (uris.contains(uri)) {System.err.println("Contained in set: " + uri); System.exit(1);} // TODO: ERROR here
+						uris.add(uri);
+            	    }
+    	
+					offset += limit;
+					batch = lst.iterator();
+            	} catch (Exception e) {
+            	    System.err.println("Error in query process: " + e.toString());
+            	    e.printStackTrace();
+            	    System.exit(1);
+            	} finally {
+        	   		close();
+            	}
+			}
+
+			return batch.next();
+		}
+
+		public int size() { return total; }
+	}
 }

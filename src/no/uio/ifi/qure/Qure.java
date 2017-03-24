@@ -261,7 +261,7 @@ public class Qure {
 
         long beforeAll = System.currentTimeMillis();
 
-        RawDataProvider dataProvider = new DBDataProvider(config);
+        RawDataProvider<String> dataProvider = new DBDataProvider(config);
         SpaceProvider geometries = new no.uio.ifi.qure.spaces.GeometryProvider(config, dataProvider);
         geometries.populateUpdate();
         Map<Block, Block> oldSplits = dataProvider.getEvenSplits();

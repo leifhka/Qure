@@ -26,17 +26,22 @@ public class GeometryProvider implements SpaceProvider {
     private Set<Integer> coversUniverse;
     private GeometrySpace universe;
     private GeometryFactory geometryFactory;
-    private RawDataProvider dataProvider;
+	private WKBReader reader;
+	private GeometryPrecisionReducer geoRed;
+    private RawDataProvider<String> dataProvider;
     private Config config;
 
-    public GeometryProvider(Config config, RawDataProvider dataProvider) {
+    public GeometryProvider(Config config, RawDataProvider<String> dataProvider) {
         this.config = config;
         this.dataProvider = dataProvider;
         geometryFactory = new GeometryFactory(config.geometryFactoryPrecision);
         coversUniverse = new HashSet<Integer>();
+        reader = new WKBReader(geometryFactory);
+        geoRed = new GeometryPrecisionReducer(config.geometryPrecision);
+
     }
 
-    private GeometryProvider(Config config, RawDataProvider dataProvider,
+    private GeometryProvider(Config config, RawDataProvider<String> dataProvider,
                              GeometrySpace universe, Map<Integer, GeometrySpace> geometries, 
                              Set<Integer> coversUniverse, GeometryFactory geometryFactory,
                              boolean updating) {
@@ -52,7 +57,7 @@ public class GeometryProvider implements SpaceProvider {
     public void populateBulk() {
 
         updating = false;
-        Map<Integer, List<String>> wkbs = dataProvider.getSpaces();
+        UnparsedIterator<String> wkbs = dataProvider.getSpaces();
         geometries = parseGeometries(wkbs, config.verbose);
         makeAndSetUniverse();
     }
@@ -61,7 +66,7 @@ public class GeometryProvider implements SpaceProvider {
 
         updating = true;
         Set<Integer> urisToInsert = dataProvider.getInsertURIs();
-        Map<Integer, List<String>> wkbs = dataProvider.getSpaces(urisToInsert);
+        UnparsedIterator<String> wkbs = dataProvider.getSpaces(urisToInsert);
         geometries = parseGeometries(wkbs, config.verbose);
         obtainUniverse();
     }
@@ -84,11 +89,8 @@ public class GeometryProvider implements SpaceProvider {
 
     private void obtainUniverse() {
 
-        List<String> universeWKB = dataProvider.getUniverse();
-        Map<Integer, List<String>> uwm = new HashMap<Integer, List<String>>();
-        uwm.put(0, universeWKB);
-        Map<Integer, GeometrySpace> ugm = parseGeometries(uwm, false);
-        universe = ugm.get(0);
+        UnparsedSpace<String> universeWKB = dataProvider.getUniverse();
+        universe = new GeometrySpace(parseGeometry(universeWKB.unparsedSpace));
     }
 
     private GeometrySpace constructUniverse(boolean verbose) {
@@ -115,15 +117,7 @@ public class GeometryProvider implements SpaceProvider {
 
     public GeometrySpace get(Integer uri) {
 
-        if (geometries.containsKey(uri)) {
-            return geometries.get(uri);
-        } else {
-            Set<Integer> s = new HashSet<Integer>();
-            s.add(uri);
-            Map<Integer, List<String>> m = dataProvider.getSpaces(s);
-            Map<Integer, GeometrySpace> g = parseGeometries(m, false);
-            return g.get(uri);
-        }
+        return geometries.get(uri);
     }
 
     private GeometryProvider makeSubProvider(GeometrySpace uni, Set<Integer> ints) {
@@ -209,43 +203,50 @@ public class GeometryProvider implements SpaceProvider {
         String gs = geo.getGeometry().toString();
         String whereClause = "ST_intersects(geom, ST_GeomFromText('" + gs + "')) AND ";
         whereClause += "NOT ST_contains(geom, ST_GeomFromText('" + gs + "'))";
-        Map<Integer, List<String>> wkbs = dataProvider.getExternalOverlapping(whereClause);
+        UnparsedIterator<String> wkbs = dataProvider.getExternalOverlapping(whereClause);
         Map<Integer, GeometrySpace> res = parseGeometries(wkbs, false);
         return res;
     }
 
-    private Map<Integer, GeometrySpace> parseGeometries(Map<Integer, List<String>> wkbs, boolean verbose) {
+	private Geometry parseGeometry(List<String> wkb) {
 
-        Progress prog = new Progress("Parsing geometries...", wkbs.keySet().size(), 1, "##0");  
+        Geometry geo;
+
+        try {
+            geo = reader.read(WKBReader.hexToBytes(wkb.get(0)));
+            geo = geoRed.reduce(geo);
+        } catch (Exception e) {
+            return null;
+        }
+        return geo;
+	} 
+
+    private Map<Integer, GeometrySpace> parseGeometries(UnparsedIterator<String> wkbs, boolean verbose) {
+
+		int total = wkbs.size();
+        Progress prog = new Progress("Parsing geometries...", total, 1, "##0");  
         prog.setConvertToLong(true);
 
-        WKBReader reader = new WKBReader(geometryFactory);
-        GeometryPrecisionReducer geoRed = new GeometryPrecisionReducer(config.geometryPrecision);
-
-        Map<Integer, GeometrySpace> result = new HashMap<Integer,GeometrySpace>(wkbs.keySet().size());
+        Map<Integer, GeometrySpace> result = new HashMap<Integer,GeometrySpace>(total);
 
         if (verbose) prog.init();
 
-        for (Integer uri : wkbs.keySet()) {
+        while (wkbs.hasNext()) {
 
-            String wkb = wkbs.get(uri).get(0);
-            Geometry geo;
-
-            try {
-                geo = reader.read(WKBReader.hexToBytes(wkb));
-                geo = geoRed.reduce(geo);
-            } catch (Exception e) {
-                continue;
-            }
+			UnparsedSpace<String> ups = wkbs.next();
+            Geometry geo = parseGeometry(ups.unparsedSpace);
             
-            if (geo.isValid() && !geo.isEmpty())
-                result.put(uri, new GeometrySpace(geo));
+            if (geo != null && geo.isValid() && !geo.isEmpty()) {
+				if (result.containsKey(ups.uri)) System.out.println("Contained: " + ups.uri);
+                result.put(ups.uri, new GeometrySpace(geo));
+			}
 
             if (verbose) prog.update();
         }
+
         if (verbose) {
             prog.done();
-            int errors = wkbs.keySet().size() - result.values().size();
+            int errors = total - result.values().size();
             if (errors > 0) System.out.println("Unable to parse " + errors + " geometries.");
             System.out.println("Parsed " + result.values().size() + " geometries.");
         }
