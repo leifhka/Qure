@@ -51,9 +51,9 @@ public class Qure {
         //rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
 
         //rfs.add(new Config("npd",    "upsa", 10, 3, 30, 10));
-        rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
+        //rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
         rfs.add(new Config("osm_no", "upsa", 15, 3, 30, 10));
-        rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
+        //rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
 
         //runMany(rfs);
         //writeDBSizes(rfs);
@@ -301,16 +301,13 @@ public class Qure {
         Map<Block, Block> splits = rep.getEvenSplits();
 
         try {
-            Class.forName("org.postgresql.Driver");
+            Class.forName(config.jdbcDriver);
 
             if (config.verbose) {
-                System.out.print("Connecting to database " + config.dbName +
-                                 " as user " + config.dbUsername + "...");
+                System.out.print("Connecting to database " + config.connectionStr + "...");
             }
 
-            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName +
-                                                  "?user=" + config.dbUsername
-                      + "&password=" + config.dbPWD);
+            connect = DriverManager.getConnection(config.connectionStr);
             if (config.verbose) System.out.println(" Done");
 
             statement = connect.createStatement();
@@ -428,10 +425,9 @@ public class Qure {
 
     private static void deleteRandomBintreesLoc(int n, Config config) {
         try {
-            Class.forName("org.postgresql.Driver");
+            Class.forName(config.jdbcDriver);
 
-            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName + "?user=" +
-                                                  config.dbUsername + "&password=" + config.dbPWD);
+            connect = DriverManager.getConnection(config.connectionStr);
             statement = connect.createStatement();
             String delQuery = "DELETE FROM " + config.btTableName + " WHERE " + config.uriColumn + " IN ";
             delQuery += "(SELECT G." + config.uriColumn + " FROM " + config.geoTableName + " G, (SELECT * FROM " + config.geoTableName + " ORDER BY random() LIMIT 1) R ORDER BY st_distance(G.geom, R.geom) LIMIT " + n + ");";
@@ -448,10 +444,9 @@ public class Qure {
 
     private static void deleteRandomBintreesRand(int n, Config config) {
         try {
-            Class.forName("org.postgresql.Driver");
+            Class.forName(config.jdbcDriver);
 
-            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName + "?user=" +
-                                                  config.dbUsername + "&password=" + config.dbPWD);
+            connect = DriverManager.getConnection(config.connectionStr);
             statement = connect.createStatement();
             String delQuery = "DELETE FROM " + config.btTableName + " WHERE " + config.uriColumn + " IN ";
             delQuery += "(SELECT " + config.uriColumn + " FROM (SELECT * FROM " + config.geoTableName + " ORDER BY random() LIMIT " + n + ") T);";
@@ -666,10 +661,9 @@ public class Qure {
 
     public static void runQueryBM(Config config) {
         try {
-            Class.forName("org.postgresql.Driver");
+            Class.forName(config.jdbcDriver);
 
-            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName + "?user=" +
-                                                  config.dbUsername + "&password=" + config.dbPWD);
+            connect = DriverManager.getConnection(config.connectionStr);
             statement = connect.createStatement();
 
             long before, after;
@@ -721,10 +715,9 @@ public class Qure {
 
     public static void writeDBSize(Config config) {
         try {
-            Class.forName("org.postgresql.Driver");
+            Class.forName(config.jdbcDriver);
 
-            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName + "?user=" +
-                                                  config.dbUsername + "&password=" + config.dbPWD);
+            connect = DriverManager.getConnection(config.connectionStr);
             statement = connect.createStatement();
             
             statement.execute("select pg_size_pretty(pg_relation_size('" + config.btTableName + "'));");

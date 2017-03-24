@@ -33,14 +33,12 @@ public class DBDataProvider implements RawDataProvider {
         Set<Integer> insertUris = new HashSet<Integer>();
 
         try {
-            Class.forName("org.postgresql.Driver");
+            Class.forName(config.jdbcDriver);
             if (config.verbose) {
-                System.out.print("Connecting to database " + config.dbName +
-                                 " as user " + config.dbUsername + "...");
+                System.out.print("Connecting to database " + config.connectionStr + "...");
             }
 
-            connect = DriverManager.getConnection("jdbc:postgresql://localhost/" + config.dbName + "?user=" +
-                                                  config.dbUsername + "&password=" + config.dbPWD);
+            connect = DriverManager.getConnection(config.connectionStr);
             if (config.verbose) System.out.println(" Done");
 
             statement = connect.createStatement();
@@ -74,7 +72,7 @@ public class DBDataProvider implements RawDataProvider {
         Map<Integer, List<String>> spaceMap = new HashMap<Integer, List<String>>();
 
         try {
-            Class.forName("org.postgresql.Driver");
+            Class.forName(config.jdbcDriver);
 
             connect = DriverManager.getConnection(config.connectionStr);
 
@@ -108,7 +106,7 @@ public class DBDataProvider implements RawDataProvider {
         List<String> universeStrs = null;
 
         try {
-            Class.forName("org.postgresql.Driver");
+            Class.forName(config.jdbcDriver);
             connect = DriverManager.getConnection(config.connectionStr);
 
             statement = connect.createStatement();
@@ -137,7 +135,7 @@ public class DBDataProvider implements RawDataProvider {
         Map<Integer, List<String>> spaceMap = new HashMap<Integer, List<String>>();
 
         try {
-            Class.forName("org.postgresql.Driver");
+            Class.forName(config.jdbcDriver);
 
             if (config.verbose) {
                 System.out.print("Connecting to database " + config.dbName +
@@ -182,7 +180,7 @@ public class DBDataProvider implements RawDataProvider {
         Map<Integer, List<String>> spaceMap = new HashMap<Integer, List<String>>();
 
         try {
-            Class.forName("org.postgresql.Driver");
+            Class.forName(config.jdbcDriver);
 
             if (config.verbose) {
                 System.out.print("Connecting to database " + config.dbName +
@@ -240,7 +238,7 @@ public class DBDataProvider implements RawDataProvider {
         Map<Block, Block> res = new HashMap<Block, Block>();
 
         try {
-            Class.forName("org.postgresql.Driver");
+            Class.forName(config.jdbcDriver);
 
             if (config.verbose)
                 System.out.print("Retrieving splitting blocks...");

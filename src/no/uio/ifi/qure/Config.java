@@ -68,6 +68,7 @@ public class Config {
     public String universeTable = "qure.universes";
     public boolean convertUriToInt = true;
 
+    public String jdbcDriver = "org.postgresql.Driver";
     public String connectionStr = "jdbc:postgresql://localhost/" + dbName + "?user=" +
                                   dbUsername + "&password=" + dbPWD;
 
