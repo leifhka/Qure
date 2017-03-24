@@ -43,7 +43,7 @@ public class Config {
         splitTable = "split." + rawBTTableName;
         splitQuery = "SELECT * FROM " + splitTable + ";";
 
-        geoQuerySelectFromStr = "select " + uriColumn + ", " + geoColumn + " from " + geoTableName;
+        geoQuerySelectFromStr = "SELECT " + uriColumn + ", " + geoColumn + " FROM " + geoTableName;
         geoQueryStr = geoQuerySelectFromStr + ";";
 
     }
@@ -64,7 +64,7 @@ public class Config {
     //public String uriColumn = "trip_id";
     public String blockColumn = "block";
     public String geoColumn = "geom";
-	public int limit = 100;
+	public int limit = 1000000;
     //public String geoColumn = "starttime, stoptime";
     public String universeTable = "qure.universes";
     public boolean convertUriToInt = true;

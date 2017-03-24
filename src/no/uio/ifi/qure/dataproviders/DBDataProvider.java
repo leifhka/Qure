@@ -75,7 +75,8 @@ public class DBDataProvider implements RawDataProvider<String> {
         String query = config.geoQuerySelectFromStr;
         query += " WHERE " + whereClause;	
 		int total = queryForTotal(config.geoTableName);
-        return new DBUnparsedIterator(total, config.limit, config.jdbcDriver, config.connectionStr, query);
+        return new DBUnparsedIterator(total, config.limit, config.jdbcDriver, 
+		                              config.connectionStr, query, config.uriColumn);
     }
 
 	public int queryForTotal(String tableName) {
@@ -135,14 +136,16 @@ public class DBDataProvider implements RawDataProvider<String> {
     public DBUnparsedIterator getSpaces() {
 
 		int total = queryForTotal(config.geoTableName);
-        return new DBUnparsedIterator(total, config.limit, config.jdbcDriver, config.connectionStr, config.geoQuerySelectFromStr);
+        return new DBUnparsedIterator(total, config.limit, config.jdbcDriver, config.connectionStr,
+		                              config.geoQuerySelectFromStr, config.uriColumn);
     }
 
     public DBUnparsedIterator getSpaces(Set<Integer> uris) {
 
-        if (uris.isEmpty()) return new DBUnparsedIterator(0, 0, "", "", "");
+        if (uris.isEmpty()) return new DBUnparsedIterator(0, 0, "", "", "", "");
 
-        return new DBUnparsedIterator(uris.size(), uris.size(), config.jdbcDriver, config.connectionStr, makeValuesQuery(uris));
+        return new DBUnparsedIterator(uris.size(), uris.size(), config.jdbcDriver, config.connectionStr,
+		                              makeValuesQuery(uris), config.uriColumn);
     }
 
     private String makeValuesQuery(Set<Integer> uris) {
@@ -220,20 +223,20 @@ public class DBDataProvider implements RawDataProvider<String> {
 		private String connectionStr;
 		private String baseQuery;
 		private String jdbcDriver;
-		private Set<Integer> uris;
+		private String uriCol;
 		
 		private Iterator<UnparsedSpace<String>> batch;
 		
-		public DBUnparsedIterator(int total, int limit, String jdbcDriver, String connectionStr, String baseQuery) {
+		public DBUnparsedIterator(int total, int limit, String jdbcDriver, String connectionStr, String baseQuery, String uriCol) {
 			this.total = total;
 			this.limit = limit;
 			this.offset = 0;
 			this.jdbcDriver = jdbcDriver;
 			this.connectionStr = connectionStr;
 			this.baseQuery = baseQuery;
+			this.uriCol = uriCol;
 
 			batch = new ArrayList<UnparsedSpace<String>>().iterator();
-			uris = new HashSet<Integer>();
 		}
 	
 		public boolean hasNext() { return batch.hasNext() || offset < total; }
@@ -247,8 +250,7 @@ public class DBDataProvider implements RawDataProvider<String> {
             	    connect = DriverManager.getConnection(connectionStr);
             	    statement = connect.createStatement();
             	    
-					String query = baseQuery + " offset " + offset + " limit " + limit + ";";
-					System.out.println(query);
+					String query = baseQuery + " WHERE " + uriCol + " >= " + offset + " AND " + uriCol + " < " + (offset + limit) + ";";
             	    statement.execute(query);
             	    ResultSet resultSet = statement.getResultSet();
                     int numCol = resultSet.getMetaData().getColumnCount();
@@ -261,9 +263,6 @@ public class DBDataProvider implements RawDataProvider<String> {
                         for (int i = 2; i <= numCol; i++)
                             spaceStrs.add(resultSet.getString(i));
     					lst.add(new UnparsedSpace<String>(uri, spaceStrs));
-
-						if (uris.contains(uri)) {System.err.println("Contained in set: " + uri); System.exit(1);} // TODO: ERROR here
-						uris.add(uri);
             	    }
     	
 					offset += limit;

@@ -237,7 +237,6 @@ public class GeometryProvider implements SpaceProvider {
             Geometry geo = parseGeometry(ups.unparsedSpace);
             
             if (geo != null && geo.isValid() && !geo.isEmpty()) {
-				if (result.containsKey(ups.uri)) System.out.println("Contained: " + ups.uri);
                 result.put(ups.uri, new GeometrySpace(geo));
 			}
 
