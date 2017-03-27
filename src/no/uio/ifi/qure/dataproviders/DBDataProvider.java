@@ -215,14 +215,19 @@ public class DBDataProvider implements RawDataProvider<String> {
         }
     }
 
+	/**
+	 * Iterator-class that buffers DB-reading, so that it keeps at most limit
+	 * number of DB-rows in memory. Calls to next() automatically
+	 * reads in new rows when necessary.
+	 */
 	private class DBUnparsedIterator extends UnparsedIterator<String> {
 		
-		private int total;
-		private int offset;
-		private int limit;
+		private int total; // Total number of results in DB
+		private int limit; // Maximum number of rows to keep in main-memory
+		private int offset; // Tracks how far into the results we have come
 		private String connectionStr;
 		private String baseQuery;
-		private String jdbcDriver;
+		private String jdbcDriver; 
 		private String uriCol;
 		
 		private Iterator<UnparsedSpace<String>> batch;
