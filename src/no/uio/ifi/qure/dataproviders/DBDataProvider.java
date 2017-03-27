@@ -244,29 +244,20 @@ public class DBDataProvider implements RawDataProvider<String> {
 		public UnparsedSpace<String> next() {
 
 			if (!batch.hasNext() && offset < total) {
+
             	try {
+
             	    Class.forName(jdbcDriver);
-    	
             	    connect = DriverManager.getConnection(connectionStr);
             	    statement = connect.createStatement();
-            	    
-					String query = baseQuery + " WHERE " + uriCol + " >= " + offset + " AND " + uriCol + " < " + (offset + limit) + ";";
+					String query = baseQuery + " WHERE " + uriCol + " >= " + offset + " AND " + 
+					               uriCol + " < " + (offset + limit) + ";";
             	    statement.execute(query);
             	    ResultSet resultSet = statement.getResultSet();
-                    int numCol = resultSet.getMetaData().getColumnCount();
-    	
-					List<UnparsedSpace<String>> lst = new ArrayList<UnparsedSpace<String>>(limit);
 
-            	    while (resultSet.next()) {
-                        Integer uri = resultSet.getInt(1);
-                        List<String> spaceStrs = new ArrayList<String>();
-                        for (int i = 2; i <= numCol; i++)
-                            spaceStrs.add(resultSet.getString(i));
-    					lst.add(new UnparsedSpace<String>(uri, spaceStrs));
-            	    }
-    	
+    				batchResults(resultSet);	
 					offset += limit;
-					batch = lst.iterator();
+
             	} catch (Exception e) {
             	    System.err.println("Error in query process: " + e.toString());
             	    e.printStackTrace();
@@ -280,5 +271,22 @@ public class DBDataProvider implements RawDataProvider<String> {
 		}
 
 		public int size() { return total; }
+
+        private void batchResults(ResultSet resultSet) throws SQLException {
+
+            int numCol = resultSet.getMetaData().getColumnCount();
+        	List<UnparsedSpace<String>> lst = new ArrayList<UnparsedSpace<String>>(limit);
+
+            while (resultSet.next()) {
+                Integer uri = resultSet.getInt(1);
+                List<String> spaceStrs = new ArrayList<String>();
+                for (int i = 2; i <= numCol; i++) {
+                    spaceStrs.add(resultSet.getString(i));
+        		}
+        		lst.add(new UnparsedSpace<String>(uri, spaceStrs));
+            }
+
+        	batch = lst.iterator();
+        }
 	}
 }
