@@ -17,17 +17,21 @@ import com.vividsolutions.jts.geom.impl.CoordinateArraySequence;
 import com.vividsolutions.jts.geom.TopologyException;
 import com.vividsolutions.jts.precision.EnhancedPrecisionOp;
 import com.vividsolutions.jts.geom.IntersectionMatrix;
+import com.vividsolutions.jts.geom.PrecisionModel;
+import com.vividsolutions.jts.precision.GeometryPrecisionReducer;
 
 public class GeometrySpace implements Space {
 
     private Geometry geo;
+	private PrecisionModel precModel;
 
     /* Roles */
     public static int INTERIOR = 1;
     public static int BOUNDARY = 2;
 
-    public GeometrySpace(Geometry geo) {
+    public GeometrySpace(Geometry geo, PrecisionModel precModel) {
         this.geo = flatten(geo);
+		this.precModel = precModel;
     }
 
     private static Geometry flatten(Geometry gc) {
@@ -47,12 +51,12 @@ public class GeometrySpace implements Space {
 
     public GeometrySpace union(Space o) {
         Geometry go = ((GeometrySpace) o).getGeometry();
-        return new GeometrySpace(geo.union(go));
+        return new GeometrySpace(geo.union(go), precModel);
     }
 
     public GeometrySpace intersection(Space o) {
         Geometry go = ((GeometrySpace) o).getGeometry();
-        return new GeometrySpace(geo.intersection(go));
+        return new GeometrySpace(geo.intersection(go), precModel);
         //return new GeometrySpace(EnhancedPrecisionOp.intersection(geo, go));
     }
 
@@ -83,8 +87,8 @@ public class GeometrySpace implements Space {
 
         Envelope[] es = splitEnvelope(te, dim == 0);
         GeometryFactory gf = geo.getFactory();
-        GeometrySpace gs1 = new GeometrySpace(gf.toGeometry(es[0]));
-        GeometrySpace gs2 = new GeometrySpace(gf.toGeometry(es[1]));
+        GeometrySpace gs1 = new GeometrySpace(gf.toGeometry(es[0]), precModel);
+        GeometrySpace gs2 = new GeometrySpace(gf.toGeometry(es[1]), precModel);
 
         return new GeometrySpace[]{gs1, gs2};
     }
@@ -157,7 +161,7 @@ public class GeometrySpace implements Space {
         GeometrySpace ogs = (GeometrySpace) o;
         Set<Integer> rs = new HashSet<Integer>();
 
-        GeometrySpace boundary = new GeometrySpace(geo.getBoundary());
+        GeometrySpace boundary = new GeometrySpace(geo.getBoundary(), precModel);
         if (boundary.overlaps(ogs)) {
             rs.add(BOUNDARY);
         }
@@ -172,13 +176,28 @@ public class GeometrySpace implements Space {
 		if (role == 0) {
 			return this;
 		} else if ((role & BOUNDARY) == role) {
-			return new GeometrySpace(geo.getBoundary());
+			return new GeometrySpace(geo.getBoundary(), precModel);
 		} else if ((role & INTERIOR) == role) {
-			// TODO: Fix this, does not work as geo.equals(geo.difference(geo.getBoundary()))
-			return new GeometrySpace(geo.difference(geo.getBoundary()));
+			// For closed line-strings and points, the boundary is empty, this the interior is this
+			if (geo.getBoundary().isEmpty()) return this;
+
+			// epsilon represents the smallest representable distance with our resoulution
+			// Thus, to get the interior of a geometry, we only have to remove eveything in distance epsilon from the boundary
+			double epsilon = Math.pow(10,-precModel.getMaximumSignificantDigits()); 
+			Geometry iGeo;
+			if (geo.getGeometryType().equals("MultiPolygon") || geo.getGeometryType().equals("Polygon")) {
+				// For polygons we can just take the negative epsilon-buffer
+				iGeo = geo.buffer(-epsilon);
+			} else {
+				// For line segments we remove the end-points by removing two epsilon balls around them
+				Geometry bGeo = geo.getBoundary().buffer(epsilon); // Representing two epsilon-balls around the end-points of geo
+				Geometry dGeo = (new GeometryPrecisionReducer(precModel)).reduce(bGeo); 
+				iGeo = geo.difference(dGeo); 
+			}
+			return new GeometrySpace(iGeo, precModel);
 		} else {
 			assert(role == (BOUNDARY | INTERIOR));
-			return new GeometrySpace(geo.getFactory().createPoint((CoordinateSequence) null));
+			return new GeometrySpace(geo.getFactory().createPoint((CoordinateSequence) null), precModel);
 		}
 	}
 }

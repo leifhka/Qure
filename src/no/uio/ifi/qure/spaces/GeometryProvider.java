@@ -84,13 +84,13 @@ public class GeometryProvider implements SpaceProvider {
     public Set<Integer> keySet() { return getSpaces().keySet(); }
 
     public GeometrySpace makeEmptySpace() { 
-         return new GeometrySpace(geometryFactory.createPoint((CoordinateSequence) null));
+         return new GeometrySpace(geometryFactory.createPoint((CoordinateSequence) null), config.geometryPrecision);
     }
 
     private void obtainUniverse() {
 
         UnparsedSpace<String> universeWKB = dataProvider.getUniverse();
-        universe = new GeometrySpace(parseGeometry(universeWKB.unparsedSpace));
+        universe = new GeometrySpace(parseGeometry(universeWKB.unparsedSpace), config.geometryPrecision);
     }
 
     private GeometrySpace constructUniverse(boolean verbose) {
@@ -107,7 +107,7 @@ public class GeometryProvider implements SpaceProvider {
         }
         if (verbose) prog.done();
 
-        return new GeometrySpace(geometryFactory.toGeometry(universeEnv));
+        return new GeometrySpace(geometryFactory.toGeometry(universeEnv), config.geometryPrecision);
     }
 
     private void makeAndSetUniverse() {
@@ -237,7 +237,7 @@ public class GeometryProvider implements SpaceProvider {
             Geometry geo = parseGeometry(ups.unparsedSpace);
             
             if (geo != null && geo.isValid() && !geo.isEmpty()) {
-                result.put(ups.uri, new GeometrySpace(geo));
+                result.put(ups.uri, new GeometrySpace(geo, config.geometryPrecision));
 			}
 
             if (verbose) prog.update();
@@ -249,7 +249,7 @@ public class GeometryProvider implements SpaceProvider {
             if (errors > 0) System.out.println("Unable to parse " + errors + " geometries.");
             System.out.println("Parsed " + result.values().size() + " geometries.");
         }
-
+		System.exit(1);
         return result;
     }
 }
