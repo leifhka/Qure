@@ -11,7 +11,7 @@ BEGIN
                   (14), (15), (16), (17), (18), (19), (20), (21), (22), (23), (24), (25)) AS V(n)
         WHERE B1.gid = ' || id_val || ' AND 
               ((B1.block & -2 <= B2.block AND
-                (((1 << (31 - ((B1.block & 63) >> 1)) - 1) | B1.block) >= B2.block)) OR
+                ((((1 << (31 - ((B1.block & 63) >> 1))) - 1) | B1.block) >= B2.block)) OR
                (((B1.block & 63) >> 1) >= V.n AND
                 B2.block >= ((B1.block & ~((1 << ((32 - V.n) - 1)) - 1)) | (V.n<<1)) AND
                 B2.block <= ((B1.block & ~((1 << ((32 - V.n) - 1)) - 1)) | ((V.n<<1)+1))) OR
@@ -27,7 +27,7 @@ BEGIN
        ov AS T3
      WHERE T2.gid != ' || id_val || ' AND T3.gid != ' || id_val || ' AND T2.gid != T3.gid AND
            ((T2.block & -2 <= T3.block AND
-             (((1 << (31 - ((T2.block & 63) >> 1)) - 1) | T2.block) >= T3.block)) OR
+             ((((1 << (31 - ((T2.block & 63) >> 1))) - 1) | T2.block) >= T3.block)) OR
             (((T2.block & 63) >> 1) >= V.n AND
              T3.block >= ((T2.block & ~((1 << ((32 - V.n) - 1)) - 1)) | (V.n<<1)) AND
              T3.block <= ((T2.block & ~((1 << ((32 - V.n) - 1)) - 1)) | ((V.n<<1)+1))) OR
