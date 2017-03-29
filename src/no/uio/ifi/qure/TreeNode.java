@@ -7,7 +7,7 @@ import java.util.Set;
 
 public class TreeNode {
 
-    private Set<Integer> covering; // the URI of spaces covering this node.
+    private Set<SID> covering; // the URI of spaces covering this node.
     private SpaceProvider spaces; // the spaces overlapping this node.
     private int split; // splitting dimension.
     private Block block; // the bintree block of this spaceNode.
@@ -35,11 +35,11 @@ public class TreeNode {
 
     public Progress.Reporter getReporter() { return reporter; }
 
-    public Set<Integer> getOverlappingURIs() { return spaces.keySet(); }
+    public Set<SID> getOverlappingURIs() { return spaces.keySet(); }
 
     public int size() { return spaces.keySet().size(); }
 
-    public Set<Integer> getCovering() { return (covering == null) ? spaces.getCoversUniverse() : covering; }
+    public Set<SID> getCovering() { return (covering == null) ? spaces.getCoversUniverse() : covering; }
 
     public SpaceProvider getSpaceProvider() { return spaces; }
 

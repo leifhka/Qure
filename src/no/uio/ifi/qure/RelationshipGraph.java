@@ -14,29 +14,29 @@ import java.util.Arrays;
 
 public class RelationshipGraph {
 
-    private final Map<Integer, Node> nodes;
-    private final Set<Integer> topmostNodes;
+    private final Map<SID, Node> nodes;
+    private final Set<SID> topmostNodes;
     private int overlapsNodeId; // Always negative, and decreasing
     private final Block block;
-    private final Set<Integer> uris;
+    private final Set<SID> uris;
     private final int overlapsArity;
 
-    public RelationshipGraph(Block block, Set<Integer> uris, int overlapsArity) {
+    public RelationshipGraph(Block block, Set<SID> uris, int overlapsArity) {
         this.block = block;
-        this.uris = new HashSet<Integer>(uris);
+        this.uris = new HashSet<SID>(uris);
         this.overlapsArity = overlapsArity;
 
-        topmostNodes = new HashSet<Integer>(uris); // Init all uris as roots, and remove if set parent of some node
-        nodes = new HashMap<Integer, Node>();
+        topmostNodes = new HashSet<SID>(uris); // Init all uris as roots, and remove if set parent of some node
+        nodes = new HashMap<SID, Node>();
 
-        for (Integer uri : uris)
+        for (SID uri : uris)
             nodes.put(uri, new Node(uri));
 
         overlapsNodeId = 0;
     }
 
-    public void addUris(Set<Integer> newUris) {
-        for (Integer uri : newUris) {
+    public void addUris(Set<SID> newUris) {
+        for (SID uri : newUris) {
             if (!nodes.containsKey(uri)) {
                 uris.add(uri);
                 topmostNodes.add(uri);
@@ -45,24 +45,25 @@ public class RelationshipGraph {
         }
     }
 
-    private int newOverlapsNode() {
+    private SID newOverlapsNode() {
         overlapsNodeId--;
-        nodes.put(overlapsNodeId, new Node(overlapsNodeId));
-        return overlapsNodeId;
+		SID ovSID = new SID(overlapsNodeId);
+        nodes.put(ovSID, new Node(ovSID));
+        return ovSID;
     }
 
-    public boolean isOverlapsNode(int node) { return node < 0; }
+    public boolean isOverlapsNode(SID nodeSID) { return nodeSID.getID() < 0; }
 
-    public Set<Integer> getUris() { return uris; }
+    public Set<SID> getUris() { return uris; }
 
-    public Map<Integer, Node> getNodes() { return nodes; }
+    public Map<SID, Node> getNodes() { return nodes; }
 
     public int size() { return getUris().size(); }
 
     /**
      * Adds a containment-relationship between child and parent if necessary (not already in graph).
      */ 
-    public void addCoveredBy(Integer child, Integer parent) {
+    public void addCoveredBy(SID child, SID parent) {
 
         Node cn = nodes.get(child);
         Node pn = nodes.get(parent);
@@ -81,13 +82,13 @@ public class RelationshipGraph {
         cn.succs.addAll(pn.succs);
         pn.preds.addAll(cn.preds);
 
-        for (Integer parentsParent : pn.succs) {
+        for (SID parentsParent : pn.succs) {
             Node ppn = nodes.get(parentsParent);
             ppn.preds.add(child);
             ppn.preds.addAll(pn.preds);
         }
 
-        for (Integer childsChild : cn.preds) {
+        for (SID childsChild : cn.preds) {
             Node ccn = nodes.get(childsChild);
             ccn.succs.add(parent);
             ccn.succs.addAll(cn.succs);
@@ -97,20 +98,20 @@ public class RelationshipGraph {
     /**
      * Sets child to be contained in all elements of parents.
      */
-    public void addCoveredBy(Integer child, Set<Integer> parents) {
+    public void addCoveredBy(SID child, Set<SID> parents) {
 
-        for (Integer parent : parents)
+        for (SID parent : parents)
             addCoveredBy(child, parent);
     }
 
-    private void addBefore(Integer u1, Integer u2) {
+    private void addBefore(SID u1, SID u2) {
         Node n1 = nodes.get(u1);
         n1.before.add(u2);
     }
 
-    private Integer addOverlapsWithoutRedundancyCheck(Set<Integer> parents) {
+    private SID addOverlapsWithoutRedundancyCheck(Set<SID> parents) {
 
-        Integer child = newOverlapsNode();
+        SID child = newOverlapsNode();
         addCoveredBy(child, parents);
         return child;
     }
@@ -120,12 +121,12 @@ public class RelationshipGraph {
      * as such a node.
      * If new node added, we will remove other nodes that now become redundant.
      */
-    private Integer addOverlapsWithRedundancyCheck(Set<Integer> parents) {
+    private SID addOverlapsWithRedundancyCheck(Set<SID> parents) {
 
         if (parents.isEmpty() || overlaps(parents)) return null;
 
         // We then add the new overlaps.
-        Integer newNode = newOverlapsNode();
+        SID newNode = newOverlapsNode();
         addCoveredBy(newNode, parents);
 
         // Overlaps relationship not already contained. 
@@ -135,26 +136,26 @@ public class RelationshipGraph {
         return newNode;
     }
 
-    private void removeRedundantWRT(Integer uri) {
+    private void removeRedundantWRT(SID uri) {
 
         Node n = nodes.get(uri);
-        Set<Integer> redundant = getRedundantOverlapNodes(n.succs);
+        Set<SID> redundant = getRedundantOverlapNodes(n.succs);
         redundant.remove(uri);
         removeOverlapsNodes(redundant);
     }
 
-    private boolean overlaps(Set<Integer> parents) {
+    private boolean overlaps(Set<SID> parents) {
 
-        for (Integer p : parents) {
+        for (SID p : parents) {
             if (!uris.contains(p) || nodes.get(p).preds.isEmpty())
                 return false;
         }
 
         // We check redundancy by trying to find a common pred (ov. node) for parents.
-        Iterator<Integer> parIter = parents.iterator();
+        Iterator<SID> parIter = parents.iterator();
         Node par = nodes.get(parIter.next());
         // Init commonPreds to contain all overlapsNodes from one parent
-        Set<Integer> commonPreds = new HashSet<Integer>(par.preds);
+        Set<SID> commonPreds = new HashSet<SID>(par.preds);
 
         // We then intersects this set with all preds of rest of parents
         while (parIter.hasNext() && !commonPreds.isEmpty()) {
@@ -165,15 +166,15 @@ public class RelationshipGraph {
         return !commonPreds.isEmpty();
     }
 
-    private Set<Integer> getRedundantOverlapNodes(Set<Integer> parents) {
+    private Set<SID> getRedundantOverlapNodes(Set<SID> parents) {
 
-        Set<Integer> toRemove = new HashSet<Integer>();
+        Set<SID> toRemove = new HashSet<SID>();
 
-        for (Integer parent : parents) {
+        for (SID parent : parents) {
 
             Node pn = nodes.get(parent);
             
-            for (Integer pred : pn.preds) {
+            for (SID pred : pn.preds) {
                 Node ppn = nodes.get(pred);
                 if (isOverlapsNode(pred) && parents.containsAll(ppn.succs))
                     toRemove.add(pred);
@@ -183,11 +184,11 @@ public class RelationshipGraph {
         return toRemove;
     }
 
-    public void removeOverlapsNode(Integer uri) {
+    public void removeOverlapsNode(SID uri) {
 
         Node n = nodes.get(uri);
         
-        for (Integer parent : n.succs) {
+        for (SID parent : n.succs) {
 
             Node pn = nodes.get(parent);
             pn.preds.remove(uri);
@@ -196,14 +197,14 @@ public class RelationshipGraph {
         nodes.remove(uri);
     }
 
-    private void removeOverlapsNodes(Set<Integer> uris) {
-        for (Integer uri : uris)
+    private void removeOverlapsNodes(Set<SID> uris) {
+        for (SID uri : uris)
             removeOverlapsNode(uri);
     }
 
-    private void addOverlaps(Integer ui, Integer uj, Space s, Set<Intersection> intersections,
-                             Map<Integer, Set<Integer>> intMap) {
-        Set<Integer> elems = new HashSet<Integer>(2);
+    private void addOverlaps(SID ui, SID uj, Space s, Set<Intersection> intersections,
+                             Map<SID, Set<SID>> intMap) {
+        Set<SID> elems = new HashSet<SID>(2);
         elems.add(ui);
         elems.add(uj);
         Intersection nin = new Intersection(s, elems);
@@ -220,13 +221,13 @@ public class RelationshipGraph {
     public static RelationshipGraph makeRelationshipGraph(TreeNode spaceNode, int overlapsArity) {
 
         SpaceProvider spaces = spaceNode.getSpaceProvider();
-        Set<Integer> uris = spaceNode.getOverlappingURIs();
+        Set<SID> uris = spaceNode.getOverlappingURIs();
 
-        Map<Integer, Set<Integer>> intMap = new HashMap<Integer, Set<Integer>>();
-        for (Integer uri : uris) intMap.put(uri, new HashSet<Integer>());
+        Map<SID, Set<SID>> intMap = new HashMap<SID, Set<SID>>();
+        for (SID uri : uris) intMap.put(uri, new HashSet<SID>());
         RelationshipGraph graph = new RelationshipGraph(spaceNode.getBlock(), uris, overlapsArity);
 
-        Integer[] urisArr = uris.toArray(new Integer[uris.size()]);
+        SID[] urisArr = uris.toArray(new SID[uris.size()]);
         Set<Intersection> intersections = new HashSet<Intersection>();
 
         graph.computeBinaryRelations(urisArr, spaces, intersections, intMap);
@@ -238,17 +239,17 @@ public class RelationshipGraph {
     // TODO: Let method take extra argument, a set of positive base relations extracted from
     // the relation definitions, and compute these relationships for the spaces, and update the graph
     // accordingly.
-    private void computeBinaryRelations(Integer[] urisArr, SpaceProvider spaces, 
-                                        Set<Intersection> intersections, Map<Integer, Set<Integer>> intMap) {
+    private void computeBinaryRelations(SID[] urisArr, SpaceProvider spaces, 
+                                        Set<Intersection> intersections, Map<SID, Set<SID>> intMap) {
 
         for (int i = 0; i < urisArr.length; i++) { 
 
-            Integer ui = urisArr[i];
+            SID ui = urisArr[i];
             Space si = spaces.get(ui);
 
             for (int j = i+1; j < urisArr.length; j++) {
 
-                Integer uj = urisArr[j];
+                SID uj = urisArr[j];
                 Space sj = spaces.get(uj);
 
                 Relationship rel = si.relate(sj);
@@ -278,11 +279,11 @@ public class RelationshipGraph {
      *         for each of the elements in each set is nonempty, but adding any new element to the set
      *         will give an empty intersection.
      */
-    public void computeKIntersections(Set<Intersection> intersections, Set<Integer> elems,
-                                      SpaceProvider spaces, Map<Integer, Set<Integer>> intMap) {
+    public void computeKIntersections(Set<Intersection> intersections, Set<SID> elems,
+                                      SpaceProvider spaces, Map<SID, Set<SID>> intMap) {
 
         Set<Intersection> ints = new HashSet<Intersection>(intersections);
-        Set<Set<Integer>> added = new HashSet<Set<Integer>>();
+        Set<Set<SID>> added = new HashSet<Set<SID>>();
 
         for (int i = 3; i <= overlapsArity; i++) {
 
@@ -295,9 +296,9 @@ public class RelationshipGraph {
 
                 // Need only check the elements already intersection all elements in nin
                 // so we compute the intersection of all overlapping elements
-                Set<Integer> possible = new HashSet<Integer>();
+                Set<SID> possible = new HashSet<SID>();
                 boolean first = true;
-                for (Integer ine : in.getElements()) {
+                for (SID ine : in.getElements()) {
                     if (first) {
                         possible.addAll(intMap.get(ine));
                         first = false;
@@ -307,7 +308,7 @@ public class RelationshipGraph {
                 }
                 possible.removeAll(in.getElements());
 
-                for (Integer e : possible) {
+                for (SID e : possible) {
 
                     if (ints.contains(new Intersection(null, Utils.add(in.getElements(), e)))) {
                         updated = true;
@@ -334,41 +335,41 @@ public class RelationshipGraph {
             addOverlapsWithRedundancyCheck(in.getElements());
     }
 
-    private Set<Integer> imidiatePreds(Node n) {
+    private Set<SID> imidiatePreds(Node n) {
 
-        Set<Integer> res = new HashSet<Integer>(n.preds);
+        Set<SID> res = new HashSet<SID>(n.preds);
 
-        for (Integer pred : n.preds) 
+        for (SID pred : n.preds) 
             res.removeAll(nodes.get(pred).preds);
 
         return res;
     }
 
-    private int orderNodes(Integer[] order, int i, Integer uri) {
+    private int orderNodes(SID[] order, int i, SID uri) {
 
         Node n = nodes.get(uri);
         if (n.visited) return i;
         else n.visited = true;
 
-        for (Integer preds : sortAccToBefore(imidiatePreds(n)))
+        for (SID preds : sortAccToBefore(imidiatePreds(n)))
             i = orderNodes(order, i, preds);
 
         order[i++] = uri;
         return i;
     }
 
-    private Integer[] sortAccToBefore(Set<Integer> uris) {
+    private SID[] sortAccToBefore(Set<SID> uris) {
 
-        Integer[] order = new Integer[uris.size()];
-        Set<Integer> visited = new HashSet<Integer>();
+        SID[] order = new SID[uris.size()];
+        Set<SID> visited = new HashSet<SID>();
         int i = order.length - 1;
 
-        for (Integer u : uris) {
+        for (SID u : uris) {
 
             if (visited.contains(u)) continue;
             Node n = nodes.get(u);
 
-            for (Integer aftr : n.before) {
+            for (SID aftr : n.before) {
                 if (visited.contains(aftr) || !uris.contains(aftr)) continue;
                 order[i--] = aftr;
                 visited.add(aftr);
@@ -380,17 +381,17 @@ public class RelationshipGraph {
         return order;
     }
 
-    private Integer[] getNodesOrder() {
+    private SID[] getNodesOrder() {
 
-        Integer[] order = new Integer[nodes.keySet().size()];
+        SID[] order = new SID[nodes.keySet().size()];
         int k = 0;
-        for (Integer tm : sortAccToBefore(topmostNodes))
+        for (SID tm : sortAccToBefore(topmostNodes))
             k = orderNodes(order, k, tm);
 
         if (k == order.length) return order;
 
         // We have (topmost) cycles, which are not yet visited
-        for (Integer uri : nodes.keySet()) {
+        for (SID uri : nodes.keySet()) {
             Node n = nodes.get(uri);
             if (n.visited) 
                 continue;
@@ -405,10 +406,10 @@ public class RelationshipGraph {
 
         // Construct sufficient unique parts and order nodes according to infix traversal
         Block[] witnessesArr = Block.makeNDistinct(nodes.keySet().size()+1);
-        Integer[] order = getNodesOrder();
+        SID[] order = getNodesOrder();
 
-        Map<Integer, Bintree> localRep = new HashMap<Integer, Bintree>();
-        Map<Integer, Block> wit = new HashMap<Integer, Block>();
+        Map<SID, Bintree> localRep = new HashMap<SID, Bintree>();
+        Map<SID, Block> wit = new HashMap<SID, Block>();
 
         // Distribute unique parts
         for (int i = 0; i < order.length; i++) {
@@ -418,18 +419,19 @@ public class RelationshipGraph {
         }
 
         // Propagate nodes representations according to containments
-        for (Integer uri : nodes.keySet()) {
+        for (SID uri : nodes.keySet()) {
             Node n = nodes.get(uri);
             Bintree nodeBT = localRep.get(uri);
 
-            for (Integer pred : n.preds)
+            for (SID pred : n.preds)
                 nodeBT = nodeBT.union(localRep.get(pred));
             localRep.put(uri, nodeBT);
         }
 
         // Set unique part-blocks and add to final representation
+		// TODO: Add roles properly to bintree rep.
         Map<Integer, Bintree> urisRep = new HashMap<Integer, Bintree>();
-        for (Integer uri : localRep.keySet()) {
+        for (SID uri : localRep.keySet()) {
             if (!isOverlapsNode(uri)) {
                 Set<Block> bs = localRep.get(uri).normalize().getBlocks();
                 Block w = wit.get(uri);
@@ -440,7 +442,7 @@ public class RelationshipGraph {
                     else
                         cbs.add(b);
                 }
-                urisRep.put(uri, new Bintree(cbs));
+                urisRep.put(uri.getID(), new Bintree(cbs));
             }
         }
 
@@ -449,18 +451,18 @@ public class RelationshipGraph {
 
     class Node {
 
-        Integer uri;
+        SID uri;
         boolean visited; // Used for post-fix ordering of nodes
-        Set<Integer> preds;
-        Set<Integer> succs;
-        Set<Integer> before;
+        Set<SID> preds;
+        Set<SID> succs;
+        Set<SID> before;
 
-        public Node(Integer uri) {
+        public Node(SID uri) {
             this.uri = uri;
             visited = false;
-            preds = new HashSet<Integer>();
-            succs = new HashSet<Integer>();
-            before = new HashSet<Integer>();
+            preds = new HashSet<SID>();
+            succs = new HashSet<SID>();
+            before = new HashSet<SID>();
         }
     }
 }

@@ -10,15 +10,15 @@ public interface SpaceProvider {
 
     public void populateUpdate();
 
-    public Map<Integer, ? extends Space> getSpaces();
+    public Map<SID, ? extends Space> getSpaces();
 
     public Space getUniverse();
 
     public Space makeEmptySpace();
 
-    public Set<Integer> getCoversUniverse();
+    public Set<SID> getCoversUniverse();
 
-    public default Set<Integer> keySet() {
+    public default Set<SID> keySet() {
         return getSpaces().keySet();
     }
 
@@ -30,7 +30,7 @@ public interface SpaceProvider {
         return keySet().size();
     }
 
-    public Space get(Integer uri);
+    public Space get(SID uri);
 
     public void populateWithExternalOverlapping();
 
@@ -44,16 +44,16 @@ public interface SpaceProvider {
         Space[] splitLR = getUniverse().split(split);
         Space splitL = splitLR[0], splitR = splitLR[1];
 
-        Set<Integer> undecided = new HashSet<Integer>(keySet());
-        Set<Integer> intL = new HashSet<Integer>(), intR = new HashSet<Integer>();
-        Set<Integer> intSpL = Utils.getIntersecting(splitL, undecided, getSpaces(), config.numThreads);
-        Set<Integer> intSpR = Utils.getIntersecting(splitR, undecided, getSpaces(), config.numThreads);
+        Set<SID> undecided = new HashSet<SID>(keySet());
+        Set<SID> intL = new HashSet<SID>(), intR = new HashSet<SID>();
+        Set<SID> intSpL = Utils.getIntersecting(splitL, undecided, getSpaces(), config.numThreads);
+        Set<SID> intSpR = Utils.getIntersecting(splitR, undecided, getSpaces(), config.numThreads);
 
         int diff = Math.abs(intSpL.size() - intSpR.size());
         int bestDiff = diff;
 
         Block splitBlock = Block.getTopBlock();
-        Set<Integer> intAllL = intSpL, intAllR = intSpR;
+        Set<SID> intAllL = intSpL, intAllR = intSpR;
         EvenSplit bestSplit = new EvenSplit(splitBlock, intSpL, intSpR);
 
         int i = 0;
@@ -64,7 +64,7 @@ public interface SpaceProvider {
 
                 spL = spL.union(splitL);
                 intL.addAll(intSpL);
-                undecided = new HashSet<Integer>(intSpR);
+                undecided = new HashSet<SID>(intSpR);
 
                 splitLR = splitR.split(split);
                 splitBlock = splitBlock.addOne();
@@ -73,7 +73,7 @@ public interface SpaceProvider {
 
                 spR = spR.union(splitR);
                 intR.addAll(intSpR);
-                undecided = new HashSet<Integer>(intSpL);
+                undecided = new HashSet<SID>(intSpL);
 
                 splitLR = splitL.split(split);
                 splitBlock = splitBlock.addZero();
@@ -90,8 +90,8 @@ public interface SpaceProvider {
             diff = Math.abs(intAllL.size() - intAllR.size());
             if (diff < bestDiff) {
                 bestSplit = new EvenSplit(new Block(splitBlock.getRepresentation()), 
-                                          new HashSet<Integer>(intAllL), 
-                                          new HashSet<Integer>(intAllR));
+                                          new HashSet<SID>(intAllL), 
+                                          new HashSet<SID>(intAllR));
                 bestDiff = diff;
             }
         }

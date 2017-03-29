@@ -50,10 +50,10 @@ public class Qure {
         //rfs.add(new Config("npd",    "upsa", 10, 3, 30, 10));
         //rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
 
-        //rfs.add(new Config("npd",    "upsa", 10, 3, 30, 10));
-        //rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
-        rfs.add(new Config("osm_no", "upsa", 15, 3, 30, 10));
-        //rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
+        //rfs.add(new Config("npd",    "geom_test", 10, 3, 30, 10));
+        rfs.add(new Config("dallas", "geom_test", 13, 3, 30, 10));
+        //rfs.add(new Config("osm_no", "geom_test", 15, 3, 30, 10));
+        //rfs.add(new Config("osm_dk", "geom_test", 15, 3, 30, 10));
 
         //runMany(rfs);
         //writeDBSizes(rfs);

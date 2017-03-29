@@ -6,10 +6,10 @@ import java.util.Set;
 public class EvenSplit {
 
     public Block splitBlock;
-    public Set<Integer> intL;
-    public Set<Integer> intR;
+    public Set<SID> intL;
+    public Set<SID> intR;
 
-    public EvenSplit(Block splitBlock, Set<Integer> intL, Set<Integer> intR) {
+    public EvenSplit(Block splitBlock, Set<SID> intL, Set<SID> intR) {
         this.splitBlock = splitBlock;
         this.intL = intL;
         this.intR = intR;

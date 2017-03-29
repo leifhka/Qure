@@ -11,21 +11,21 @@ import java.util.Collection;
 public class Intersection {
 
     private Space space;
-    private Set<Integer> elems;
+    private Set<SID> elems;
 
-    public Intersection(Space space, Set<Integer> elems) {
+    public Intersection(Space space, Set<SID> elems) {
 
         this.space = space;
         this.elems = elems;
     }
 
-    public Set<Integer> getElements() { return elems; }
+    public Set<SID> getElements() { return elems; }
 
     public Space getSpace() { return space; }
 
     public int hashCode() {
         int res = 0;
-        for (Integer e : elems) res += e.hashCode();
+        for (SID e : elems) res += e.hashCode();
         return res;
     }
 
@@ -38,7 +38,7 @@ public class Intersection {
      * of all elements in this plus the new object e. Returns null
      * if intersection does not exists (is empty).
      */
-    public Intersection add(Integer e, SpaceProvider spaces) {
+    public Intersection add(SID e, SpaceProvider spaces) {
 
         if (elems.contains(e)) return null;
 
@@ -56,7 +56,7 @@ public class Intersection {
         if (nsp.isEmpty())
             return null;
 
-        Set<Integer> nelems = new HashSet<Integer>(elems);
+        Set<SID> nelems = new HashSet<SID>(elems);
         nelems.add(e);
 
         return new Intersection(nsp, nelems);

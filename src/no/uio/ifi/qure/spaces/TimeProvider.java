@@ -14,9 +14,9 @@ import java.util.Iterator;
 
 public class TimeProvider implements SpaceProvider {
 
-    private Map<Integer, TimeSpace> times;
+    private Map<SID, TimeSpace> times;
     private boolean updating;
-    private Set<Integer> coversUniverse;
+    private Set<SID> coversUniverse;
     private TimeSpace universe;
 	private DateTimeFormatter format;
     private RawDataProvider<String> dataProvider;
@@ -25,13 +25,13 @@ public class TimeProvider implements SpaceProvider {
     public TimeProvider(Config config, RawDataProvider<String> dataProvider) {
         this.config = config;
         this.dataProvider = dataProvider;
-        coversUniverse = new HashSet<Integer>();
+        coversUniverse = new HashSet<SID>();
         format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     }
 
     private TimeProvider(Config config, RawDataProvider<String> dataProvider,
-                         TimeSpace universe, Map<Integer, TimeSpace> times, 
-                         Set<Integer> coversUniverse, boolean updating) {
+                         TimeSpace universe, Map<SID, TimeSpace> times, 
+                         Set<SID> coversUniverse, boolean updating) {
         this.config = config;
         this.dataProvider = dataProvider;
         this.universe = universe;
@@ -57,13 +57,13 @@ public class TimeProvider implements SpaceProvider {
         obtainUniverse();
     }
 
-    public Map<Integer, TimeSpace> getSpaces() { return times; }
+    public Map<SID, TimeSpace> getSpaces() { return times; }
 
     public TimeSpace getUniverse() { return universe; }
 
-    public Set<Integer> getCoversUniverse() { return coversUniverse; }
+    public Set<SID> getCoversUniverse() { return coversUniverse; }
 
-    public Set<Integer> keySet() { return getSpaces().keySet(); }
+    public Set<SID> keySet() { return getSpaces().keySet(); }
 
     public TimeSpace makeEmptySpace() { 
          return new TimeSpace(null, null);
@@ -97,28 +97,28 @@ public class TimeProvider implements SpaceProvider {
         if (config.verbose) System.out.println("Universe set to: " + universe.toString());
     }
 
-    public TimeSpace get(Integer uri) { return times.get(uri); }
+    public TimeSpace get(SID uri) { return times.get(uri); }
 
-    private TimeProvider makeSubProvider(TimeSpace uni, Set<Integer> ints) {
+    private TimeProvider makeSubProvider(TimeSpace uni, Set<SID> ints) {
 
-        Set<Integer> coversChildUniverse = new HashSet<Integer>();
-        Map<Integer, TimeSpace> overlappingChildUniverse = new HashMap<Integer, TimeSpace>();
+        Set<SID> coversChildUniverse = new HashSet<SID>();
+        Map<SID, TimeSpace> overlappingChildUniverse = new HashMap<SID, TimeSpace>();
         getIntersections(uni, ints, times, overlappingChildUniverse, coversChildUniverse);
 
         return new TimeProvider(config, dataProvider, uni, overlappingChildUniverse, coversChildUniverse, updating);
     }
 
-    private void getIntersections(TimeSpace uni, Set<Integer> elems,  Map<Integer, TimeSpace> tms,
-                                  Map<Integer, TimeSpace> overlapping, Set<Integer> covers) {
+    private void getIntersections(TimeSpace uni, Set<SID> elems,  Map<SID, TimeSpace> tms,
+                                  Map<SID, TimeSpace> overlapping, Set<SID> covers) {
 
-        Map<Integer, Space> spMap = new HashMap<Integer, Space>();
+        Map<SID, Space> spMap = new HashMap<SID, Space>();
         Utils.getIntersections(uni, elems, tms, config.numThreads, spMap, covers);
 
-        for (Integer uri : spMap.keySet()) overlapping.put(uri, (TimeSpace) spMap.get(uri));
+        for (SID uri : spMap.keySet()) overlapping.put(uri, (TimeSpace) spMap.get(uri));
     }
 
     private TimeProvider[] makeSubProviders(TimeSpace childUniL, TimeSpace childUniR,
-                                            Set<Integer> intL, Set<Integer> intR) {
+                                            Set<SID> intL, Set<SID> intR) {
 
         TimeProvider subPL = makeSubProvider(childUniL, intL);
         TimeProvider subPR = makeSubProvider(childUniR, intR);
@@ -162,8 +162,8 @@ public class TimeProvider implements SpaceProvider {
 
         if (!updating) return; // Do not get external if not in insert mode
         
-        Map<Integer, TimeSpace> external = getExternalOverlapping(universe);
-        for (Integer uri : external.keySet())
+        Map<SID, TimeSpace> external = getExternalOverlapping(universe);
+        for (SID uri : external.keySet())
             times.put(uri, universe.intersection(external.get(uri)));
     }
 
@@ -176,10 +176,10 @@ public class TimeProvider implements SpaceProvider {
         return whereClause;
     }
    
-    public Map<Integer, TimeSpace> getExternalOverlapping(Space s) {
+    public Map<SID, TimeSpace> getExternalOverlapping(Space s) {
 
         UnparsedIterator<String> timeStrs = dataProvider.getExternalOverlapping(extTime());
-        Map<Integer, TimeSpace> res = parseTimes(timeStrs, false);
+        Map<SID, TimeSpace> res = parseTimes(timeStrs, false);
         return res;
     }
 
@@ -198,13 +198,13 @@ public class TimeProvider implements SpaceProvider {
 		return newTime;
 	}	
 
-    private Map<Integer, TimeSpace> parseTimes(UnparsedIterator<String> timeStrs, boolean verbose) {
+    private Map<SID, TimeSpace> parseTimes(UnparsedIterator<String> timeStrs, boolean verbose) {
 
 		int total = timeStrs.size();
         Progress prog = new Progress("Parsing timestamp pairs...", total, 1, "##0");  
         prog.setConvertToLong(true);
 
-        Map<Integer, TimeSpace> result = new HashMap<Integer,TimeSpace>(total);
+        Map<SID, TimeSpace> result = new HashMap<SID,TimeSpace>(total);
 
         if (verbose) prog.init();
 
@@ -214,7 +214,7 @@ public class TimeProvider implements SpaceProvider {
 
             TimeSpace newTime = parseTime(ups.unparsedSpace);
            
-            if (!newTime.isEmpty()) result.put(ups.uri, newTime);
+            if (!newTime.isEmpty()) result.put(new SID(ups.uri), newTime);
             if (verbose) prog.update();
         }
         if (verbose) {

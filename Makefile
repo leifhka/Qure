@@ -25,6 +25,7 @@ CLASSES = \
         Relationship.java \
         RelationshipGraph.java \
         Representation.java \
+        SID.java \
         Space.java \
         SpaceProvider.java \
         SpaceToBintree.java \

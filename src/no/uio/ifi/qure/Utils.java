@@ -9,11 +9,11 @@ import java.util.Set;
 
 public class Utils {
 
-    public static void getIntersectionsSingle(Space uni, Set<Integer> elems,
-                                             Map<Integer, ? extends Space> map,
-                                             Map<Integer, Space> intersections,
-                                             Set<Integer> covering) {
-        for (Integer uri : elems) {
+    public static void getIntersectionsSingle(Space uni, Set<SID> elems,
+                                             Map<SID, ? extends Space> map,
+                                             Map<SID, Space> intersections,
+                                             Set<SID> covering) {
+        for (SID uri : elems) {
 
             Space gs = map.get(uri);
             Space ngs = gs.intersection(uni);
@@ -27,10 +27,10 @@ public class Utils {
         }
     }
 
-    public static void getIntersections(Space uni, Set<Integer> elems,
-                                        Map<Integer, ? extends Space> map, int numThreads,
-                                        Map<Integer, Space> intersections,
-                                        Set<Integer> covering) {
+    public static void getIntersections(Space uni, Set<SID> elems,
+                                        Map<SID, ? extends Space> map, int numThreads,
+                                        Map<SID, Space> intersections,
+                                        Set<SID> covering) {
         
         if (elems.size() < 1000) {
             getIntersectionsSingle(uni, elems, map, intersections, covering);
@@ -39,17 +39,17 @@ public class Utils {
 
         int partitionSize = (int) Math.ceil( ((float) elems.size()) / numThreads );
 
-        Integer[] elemsArr = elems.toArray(new Integer[elems.size()]);
+        SID[] elemsArr = elems.toArray(new SID[elems.size()]);
 
         List<Thread> threads = new ArrayList<Thread>();
-        List<Map<Integer, Space>> intersectionMaps = new ArrayList<Map<Integer, Space>>();
-        List<Set<Integer>> coversSets = new ArrayList<Set<Integer>>();
+        List<Map<SID, Space>> intersectionMaps = new ArrayList<Map<SID, Space>>();
+        List<Set<SID>> coversSets = new ArrayList<Set<SID>>();
         int cur = 0;
 
         for (int i = 0; i < numThreads; i++) {
 
-            Map<Integer, Space> intMap = new HashMap<Integer, Space>();
-            Set<Integer> covSet = new HashSet<Integer>();
+            Map<SID, Space> intMap = new HashMap<SID, Space>();
+            Set<SID> covSet = new HashSet<SID>();
             final int maxInd = Math.min(cur + partitionSize, elemsArr.length);
             final int minInd = cur;
 
@@ -57,7 +57,7 @@ public class Utils {
                 public void run() {
                     for (int j = minInd; j < maxInd; j++) {
 
-                        Integer uri = elemsArr[j];
+                        SID uri = elemsArr[j];
                         Space gs = map.get(uri);
                         Space ngs = gs.intersection(uni);
 
@@ -85,38 +85,38 @@ public class Utils {
             System.exit(1);
         }
 
-        for (Map<Integer, Space> res : intersectionMaps)
+        for (Map<SID, Space> res : intersectionMaps)
             intersections.putAll(res);
 
-        for (Set<Integer> res : coversSets)
+        for (Set<SID> res : coversSets)
             covering.addAll(res);
 
     }
 
-    public static Set<Integer> getIntersecting(Space space, Set<Integer> elems,
-                                               Map<Integer, ? extends Space> map, int numThreads) {
+    public static Set<SID> getIntersecting(Space space, Set<SID> elems,
+                                           Map<SID, ? extends Space> map, int numThreads) {
         
         if (elems.size() < 1000) return getIntersectingSingle(space, elems, map);
 
         int partitionSize = (int) Math.ceil( ((float) elems.size()) / numThreads );
 
-        Integer[] elemsArr = elems.toArray(new Integer[elems.size()]);
+        SID[] elemsArr = elems.toArray(new SID[elems.size()]);
 
         List<Thread> threads = new ArrayList<Thread>();
-        List<Set<Integer>> results = new ArrayList<Set<Integer>>();
+        List<Set<SID>> results = new ArrayList<Set<SID>>();
         int cur = 0;
 
         for (int i = 0; i < numThreads; i++) {
 
-            Set<Integer> res = new HashSet<Integer>();
+            Set<SID> res = new HashSet<SID>();
             final int maxInd = Math.min(cur + partitionSize, elemsArr.length);
             final int minInd = cur;
 
             Thread is = new Thread() {
                 public void run() {
-                    Set<Integer> intersecting = new HashSet<Integer>();
+                    Set<SID> intersecting = new HashSet<SID>();
                     for (int j = minInd; j < maxInd; j++) {
-                        Integer uri = elemsArr[j];
+                        SID uri = elemsArr[j];
                         if (map.get(uri).overlaps(space))
                             res.add(uri);
                     }
@@ -136,19 +136,19 @@ public class Utils {
             System.exit(1);
         }
 
-        Set<Integer> intersecting = new HashSet<Integer>();
-        for (Set<Integer> res : results)
+        Set<SID> intersecting = new HashSet<SID>();
+        for (Set<SID> res : results)
             intersecting.addAll(res);
 
         return intersecting;
     }
 
-    public static Set<Integer> getIntersectingSingle(Space space, Set<Integer> elems,
-                                                     Map<Integer, ? extends Space> map) {
+    public static Set<SID> getIntersectingSingle(Space space, Set<SID> elems,
+                                                     Map<SID, ? extends Space> map) {
 
-        Set<Integer> intersecting = new HashSet<Integer>();
+        Set<SID> intersecting = new HashSet<SID>();
 
-        for (Integer uri : elems) {
+        for (SID uri : elems) {
             if (map.get(uri).overlaps(space))
                 intersecting.add(uri);
         }
