@@ -18,6 +18,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import no.uio.ifi.qure.*;
+import no.uio.ifi.qure.bintree.Block;
 
 public class DBDataProvider implements RawDataProvider<String> {
 

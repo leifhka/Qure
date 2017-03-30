@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Collection;
 import java.util.Set;
 
+import no.uio.ifi.qure.bintree.*;
+
 public class Representation {
 
     private Map<Integer, Bintree> representation;

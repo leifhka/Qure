@@ -3,6 +3,7 @@ package no.uio.ifi.qure.space;
 import no.uio.ifi.qure.*;
 import no.uio.ifi.qure.dataprovider.*;
 import no.uio.ifi.qure.util.*;
+import no.uio.ifi.qure.bintree.Block;
 
 import java.util.List;
 import java.util.Map;

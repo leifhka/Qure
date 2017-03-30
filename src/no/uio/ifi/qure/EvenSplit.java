@@ -3,6 +3,8 @@ package no.uio.ifi.qure;
 import java.util.HashSet;
 import java.util.Set;
 
+import no.uio.ifi.qure.bintree.Block;
+
 public class EvenSplit {
 
 	public Block splitBlock;

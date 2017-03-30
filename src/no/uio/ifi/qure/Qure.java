@@ -25,6 +25,7 @@ import static no.uio.ifi.qure.Relation.*;
 import java.time.LocalDateTime;
 import no.uio.ifi.qure.dataprovider.*;
 import no.uio.ifi.qure.util.*;
+import no.uio.ifi.qure.bintree.*;
 
 public class Qure {
 

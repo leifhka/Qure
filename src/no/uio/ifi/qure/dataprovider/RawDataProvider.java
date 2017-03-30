@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import no.uio.ifi.qure.*;
+import no.uio.ifi.qure.bintree.Block;
 
 public interface RawDataProvider<E> {
 

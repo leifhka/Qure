@@ -1,4 +1,4 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.bintree;
 
 import java.util.Comparator;
 import java.util.Arrays;

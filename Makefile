@@ -10,8 +10,8 @@ java = java -Xmx7600m -cp $(JAVA_CP)
 javac = javac -Xlint:deprecation -Xlint:unchecked -cp $(JAVAC_CP)
 
 CLASSES = \
-        Bintree.java \
-        Block.java \
+        bintree/Bintree.java \
+        bintree/Block.java \
         Config.java \
         dataprovider/DBDataProvider.java \
         EvenSplit.java \

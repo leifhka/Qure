@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import no.uio.ifi.qure.util.*;
+import no.uio.ifi.qure.bintree.*;
 
 public class TreeNode {
 
