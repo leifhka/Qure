@@ -1,6 +1,7 @@
 package no.uio.ifi.qure.space;
 
 import no.uio.ifi.qure.*;
+import no.uio.ifi.qure.traversal.*;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;

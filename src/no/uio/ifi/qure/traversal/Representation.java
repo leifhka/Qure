@@ -1,4 +1,4 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.traversal;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Set;
 
 import no.uio.ifi.qure.bintree.*;
+import no.uio.ifi.qure.space.Space;
 
 public class Representation {
 

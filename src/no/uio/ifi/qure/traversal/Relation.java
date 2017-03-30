@@ -1,4 +1,4 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.traversal;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 import no.uio.ifi.qure.util.*;
+import no.uio.ifi.qure.space.*;
 
 /* Example relations:
  *   new And(new Not(new PartOf(1,2)),

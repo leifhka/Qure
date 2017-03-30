@@ -1,6 +1,8 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.space;
 
 import java.util.Set;
+
+import no.uio.ifi.qure.traversal.Relationship;
 
 public interface Space {
 

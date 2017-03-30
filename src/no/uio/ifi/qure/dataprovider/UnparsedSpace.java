@@ -1,4 +1,4 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.dataprovider;
 
 import java.util.List;
 

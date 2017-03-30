@@ -7,7 +7,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import no.uio.ifi.qure.*;
+import no.uio.ifi.qure.space.Space;
+import no.uio.ifi.qure.traversal.SID;
 
 public class Utils {
 

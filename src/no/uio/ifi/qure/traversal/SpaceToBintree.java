@@ -1,4 +1,4 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.traversal;
 
 import java.util.Set;
 import java.util.Map;
@@ -11,8 +11,10 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.function.Predicate;
 
+import no.uio.ifi.qure.*;
 import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.bintree.*;
+import no.uio.ifi.qure.space.*;
 
 public class SpaceToBintree {
 

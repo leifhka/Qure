@@ -1,4 +1,4 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.traversal;
 
 import java.util.HashSet;
 import java.util.Set;

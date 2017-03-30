@@ -1,4 +1,4 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.traversal;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -13,6 +13,7 @@ import java.util.Comparator;
 import java.util.Arrays;
 
 import no.uio.ifi.qure.util.*;
+import no.uio.ifi.qure.space.*;
 import no.uio.ifi.qure.bintree.*;
 
 public class RelationshipGraph {

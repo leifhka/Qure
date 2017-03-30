@@ -1,11 +1,13 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.space;
 
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 
+import no.uio.ifi.qure.*;
 import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.bintree.*;
+import no.uio.ifi.qure.traversal.*;
 
 public interface SpaceProvider {
 

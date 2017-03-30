@@ -1,11 +1,13 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.traversal;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 
+import no.uio.ifi.qure.Config;
 import no.uio.ifi.qure.util.*;
+import no.uio.ifi.qure.space.*;
 import no.uio.ifi.qure.bintree.*;
 
 public class TreeNode {

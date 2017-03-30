@@ -14,25 +14,25 @@ CLASSES = \
         bintree/Block.java \
         Config.java \
         dataprovider/DBDataProvider.java \
-        EvenSplit.java \
+        traversal/EvenSplit.java \
         space/GeometryProvider.java \
         space/GeometrySpace.java \
-        Intersection.java \
+        traversal/Intersection.java \
         util/Progress.java \
         Qure.java \
         dataprovider/RawDataProvider.java \
-        Relation.java \
-        Relationship.java \
-        RelationshipGraph.java \
-        Representation.java \
+        traversal/Relation.java \
+        traversal/Relationship.java \
+        traversal/RelationshipGraph.java \
+        traversal/Representation.java \
         util/Reporter.java \
-        SID.java \
+        traversal/SID.java \
         space/Space.java \
         space/SpaceProvider.java \
-        SpaceToBintree.java \
+        traversal/SpaceToBintree.java \
         space/TimeProvider.java \
         space/TimeSpace.java  \
-        TreeNode.java \
+        traversal/TreeNode.java \
         dataprovider/UnparsedIterator.java \
         dataprovider/UnparsedSpace.java \
         util/Utils.java

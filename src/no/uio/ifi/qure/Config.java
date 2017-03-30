@@ -3,6 +3,8 @@ package no.uio.ifi.qure;
 import com.vividsolutions.jts.geom.PrecisionModel;
 import java.util.function.Predicate;
 
+import no.uio.ifi.qure.traversal.*;
+
 public class Config {
 	public String rawGeoTableName;
 	public String geoTableName;

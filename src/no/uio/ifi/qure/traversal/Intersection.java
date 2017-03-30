@@ -1,4 +1,4 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.traversal;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
+
+import no.uio.ifi.qure.space.*;
 
 public class Intersection {
 
