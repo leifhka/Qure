@@ -145,7 +145,7 @@ class Overlaps extends Relation {
 	}
 
 	public boolean eval(Space[] spaceArgs) {
-		return spaceArgs[a1].overlaps(spaceArgs[a2]);
+		return spaceArgs[a1].getPart(r1).overlaps(spaceArgs[a2].getPart(r2));
 	}
 
 	public Set<Relation> getPositiveAtomicRels() {
@@ -193,7 +193,7 @@ class PartOf extends Relation {
 	}
 
 	public boolean eval(Space[] spaceArgs) {
-		return spaceArgs[a1].partOf(spaceArgs[a2]);
+		return spaceArgs[a1].getPart(r1).partOf(spaceArgs[a2].getPart(r2));
 	}
 
 	public Set<Relation> getPositiveAtomicRels() {
