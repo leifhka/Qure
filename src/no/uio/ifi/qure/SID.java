@@ -30,4 +30,6 @@ public class SID {
 
 	@Override
 	public int hashCode() { return role + id; }
+
+	public String toString() { return "(" + id + ", " + role + ")"; }
 }
