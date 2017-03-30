@@ -21,8 +21,6 @@ import java.sql.Statement;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import static no.uio.ifi.qure.traversal.Relation.*;
-
 import java.time.LocalDateTime;
 import no.uio.ifi.qure.dataprovider.*;
 import no.uio.ifi.qure.util.*;

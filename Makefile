@@ -21,7 +21,7 @@ CLASSES = \
         util/Progress.java \
         Qure.java \
         dataprovider/RawDataProvider.java \
-        traversal/Relation.java \
+        relation/Relation.java \
         traversal/Relationship.java \
         traversal/RelationshipGraph.java \
         traversal/Representation.java \
