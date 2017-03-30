@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 
+import no.uio.ifi.qure.util.*;
+
 /* Example relations:
  *   new And(new Not(new PartOf(1,2)),
  *		   new Overlaps(1,2))

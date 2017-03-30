@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.Comparator;
 import java.util.Arrays;
 
+import no.uio.ifi.qure.util.*;
+
 public class RelationshipGraph {
 
 	private final Map<SID, Node> nodes;

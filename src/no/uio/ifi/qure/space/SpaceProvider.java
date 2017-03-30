@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 
+import no.uio.ifi.qure.util.*;
+
 public interface SpaceProvider {
 
 	public void populateBulk();

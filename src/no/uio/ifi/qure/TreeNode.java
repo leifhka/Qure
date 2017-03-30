@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 
+import no.uio.ifi.qure.util.*;
+
 public class TreeNode {
 
 	private Set<SID> covering; // the URI of spaces covering this node.
@@ -13,7 +15,7 @@ public class TreeNode {
 	private Block block; // the bintree block of this spaceNode.
 	private Map<Block, Block> evenSplits;
 	private Block evenSplitBlock;
-	private Progress.Reporter reporter;
+	private Reporter reporter;
 	private Config config;
 
 	public TreeNode(Block block, SpaceProvider spaces, Map<Block, Block> evenSplits,
@@ -32,9 +34,9 @@ public class TreeNode {
 
 	public boolean hasEvenSplit() { return evenSplits.containsKey(block); }
 
-	public void setReporter(Progress.Reporter reporter) { this.reporter = reporter; }
+	public void setReporter(Reporter reporter) { this.reporter = reporter; }
 
-	public Progress.Reporter getReporter() { return reporter; }
+	public Reporter getReporter() { return reporter; }
 
 	public Set<SID> getOverlappingURIs() { return spaces.keySet(); }
 

@@ -23,6 +23,8 @@ import java.io.IOException;
 
 import static no.uio.ifi.qure.Relation.*;
 import java.time.LocalDateTime;
+import no.uio.ifi.qure.dataprovider.*;
+import no.uio.ifi.qure.util.*;
 
 public class Qure {
 
@@ -210,7 +212,7 @@ public class Qure {
 
 		if (config.verbose) printConfig(config);
 
-		SpaceProvider geometries = new no.uio.ifi.qure.spaces.GeometryProvider(config, new DBDataProvider(config));
+		SpaceProvider geometries = new no.uio.ifi.qure.space.GeometryProvider(config, new DBDataProvider(config));
 		geometries.populateBulk();
 		SpaceToBintree gtb = new SpaceToBintree(config);
 
@@ -266,7 +268,7 @@ public class Qure {
 		long beforeAll = System.currentTimeMillis();
 
 		RawDataProvider<String> dataProvider = new DBDataProvider(config);
-		SpaceProvider geometries = new no.uio.ifi.qure.spaces.GeometryProvider(config, dataProvider);
+		SpaceProvider geometries = new no.uio.ifi.qure.space.GeometryProvider(config, dataProvider);
 		geometries.populateUpdate();
 		Map<Block, Block> oldSplits = dataProvider.getEvenSplits();
 		SpaceToBintree gtb = new SpaceToBintree(config, oldSplits);

@@ -1,4 +1,4 @@
-package no.uio.ifi.qure.spaces;
+package no.uio.ifi.qure.space;
 
 import no.uio.ifi.qure.*;
 

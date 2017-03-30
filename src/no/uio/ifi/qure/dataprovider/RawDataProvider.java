@@ -1,9 +1,11 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.dataprovider;
 
 import java.util.Map;
 import java.util.List;
 import java.util.Iterator;
 import java.util.Set;
+
+import no.uio.ifi.qure.*;
 
 public interface RawDataProvider<E> {
 

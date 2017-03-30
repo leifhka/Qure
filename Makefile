@@ -13,28 +13,29 @@ CLASSES = \
         Bintree.java \
         Block.java \
         Config.java \
-        dataproviders/DBDataProvider.java \
+        dataprovider/DBDataProvider.java \
         EvenSplit.java \
-        spaces/GeometryProvider.java \
-        spaces/GeometrySpace.java \
+        space/GeometryProvider.java \
+        space/GeometrySpace.java \
         Intersection.java \
-        Progress.java \
+        util/Progress.java \
         Qure.java \
-        RawDataProvider.java \
+        dataprovider/RawDataProvider.java \
         Relation.java \
         Relationship.java \
         RelationshipGraph.java \
         Representation.java \
+        util/Reporter.java \
         SID.java \
-        Space.java \
-        SpaceProvider.java \
+        space/Space.java \
+        space/SpaceProvider.java \
         SpaceToBintree.java \
-        spaces/TimeProvider.java \
-        spaces/TimeSpace.java  \
+        space/TimeProvider.java \
+        space/TimeSpace.java  \
         TreeNode.java \
-        UnparsedIterator.java \
-        UnparsedSpace.java \
-        Utils.java
+        dataprovider/UnparsedIterator.java \
+        dataprovider/UnparsedSpace.java \
+        util/Utils.java
 
 source_files = $(addprefix $(src_prefix), $(addprefix $(package_name), $(CLASSES)))
 

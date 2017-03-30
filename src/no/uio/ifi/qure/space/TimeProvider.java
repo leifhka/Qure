@@ -1,6 +1,8 @@
-package no.uio.ifi.qure.spaces;
+package no.uio.ifi.qure.space;
 
 import no.uio.ifi.qure.*;
+import no.uio.ifi.qure.dataprovider.*;
+import no.uio.ifi.qure.util.*;
 
 import java.time.format.DateTimeParseException;
 import java.time.format.DateTimeFormatter;

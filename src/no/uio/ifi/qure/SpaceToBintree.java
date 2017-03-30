@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.function.Predicate;
 
+import no.uio.ifi.qure.util.*;
+
 public class SpaceToBintree {
 
 	private Config config;

@@ -1,4 +1,4 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.dataprovider;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -17,7 +17,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import no.uio.ifi.qure.UnparsedSpace;
+import no.uio.ifi.qure.*;
 
 public class DBDataProvider implements RawDataProvider<String> {
 

@@ -1,4 +1,4 @@
-package no.uio.ifi.qure;
+package no.uio.ifi.qure.util;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+
+import no.uio.ifi.qure.*;
 
 public class Utils {
 
