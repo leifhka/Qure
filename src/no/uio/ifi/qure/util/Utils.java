@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Iterator;
 
 import no.uio.ifi.qure.space.Space;
 import no.uio.ifi.qure.traversal.SID;
@@ -189,4 +190,29 @@ public class Utils {
 		u.add(e);
 		return u;
 	}
+
+	public static <T> Pair<T,Set<T>> getSome(Set<T> s) {
+		//Set<T> ns = cloneByClass(s);
+		Set<T> ns = new HashSet<T>();
+		Iterator<T> iter = s.iterator();
+		T some = iter.next();
+
+		while (iter.hasNext()) {	
+			ns.add(iter.next());
+		}
+		return new Pair<T, Set<T>>(some, ns);
+	}
+
+// Does not work:
+//	public static <T> T cloneByClass(T i) {
+//		T ni;
+//		try {
+//			Class<T> cls = i.getClass();
+//			ni = cls.newInstance();
+//		} catch (InstantiationException e) {
+//			e.printStackTrace();
+//			System.exit(1);
+//		}
+//		return ni;
+//	}
 }

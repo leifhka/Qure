@@ -10,31 +10,33 @@ java = java -Xmx7600m -cp $(JAVA_CP)
 javac = javac -Xlint:deprecation -Xlint:unchecked -cp $(JAVAC_CP)
 
 CLASSES = \
+        Config.java \
+        Qure.java \
         bintree/Bintree.java \
         bintree/Block.java \
-        Config.java \
         dataprovider/DBDataProvider.java \
-        traversal/EvenSplit.java \
-        space/GeometryProvider.java \
-        space/GeometrySpace.java \
-        traversal/Intersection.java \
-        util/Progress.java \
-        Qure.java \
         dataprovider/RawDataProvider.java \
-        relation/Relation.java \
+        dataprovider/UnparsedIterator.java \
+        dataprovider/UnparsedSpace.java \
+        traversal/EvenSplit.java \
+        traversal/Intersection.java \
         traversal/Relationship.java \
         traversal/RelationshipGraph.java \
         traversal/Representation.java \
-        util/Reporter.java \
         traversal/SID.java \
+        traversal/SpaceToBintree.java \
+        traversal/TreeNode.java \
+        space/GeometryProvider.java \
+        space/GeometrySpace.java \
+        relation/Relation.java \
+        relation/RelationSet.java \
         space/Space.java \
         space/SpaceProvider.java \
-        traversal/SpaceToBintree.java \
         space/TimeProvider.java \
         space/TimeSpace.java  \
-        traversal/TreeNode.java \
-        dataprovider/UnparsedIterator.java \
-        dataprovider/UnparsedSpace.java \
+        util/Progress.java \
+        util/Reporter.java \
+        util/Pair.java \
         util/Utils.java
 
 source_files = $(addprefix $(src_prefix), $(addprefix $(package_name), $(CLASSES)))

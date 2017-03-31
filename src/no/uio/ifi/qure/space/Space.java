@@ -17,6 +17,16 @@ public interface Space {
 	public String toDBString();
 
 	public Relationship relate(Space o);
+
+	public default boolean overlaps(Set<Space> sps) {
+		
+		Space res = this;
+		for (Space s : sps) {
+			res = res.intersection(s);
+		}
+		return res.isEmpty();
+	}
+
 	
 	public boolean overlaps(Space o);
 

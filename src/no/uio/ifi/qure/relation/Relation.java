@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Arrays;
 
 import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.space.*;
@@ -29,11 +30,17 @@ public abstract class Relation {
 
 	public abstract boolean eval(Space[] args);
 
-	public abstract Set<Relation> getPositiveAtomicRels();
+	public abstract Set<Relation> getAtomicRels();
 
-	public abstract Set<Relation> getNegativeAtomicRels();
+	public abstract Set<Integer> getRoles();
 
 	public abstract boolean isConjunctive(boolean insideNgeation);
+
+	@Override
+	public abstract boolean equals(Object o);
+
+	@Override
+	public abstract int hashCode();
 
 	public boolean eval(Space s1, Space s2) { return eval(new Space[]{s1,s2}); }
 
@@ -57,12 +64,18 @@ class And extends Relation {
 		this.conj2 = conj2;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof And)) return false;
 
 		And oand = (And) o;
 		return (conj1.equals(oand.conj1) && conj2.equals(oand.conj2)) ||
 		       (conj1.equals(oand.conj2) && conj2.equals(oand.conj1));
+	}
+
+	@Override
+	public int hashCode() {
+		return conj1.hashCode() * conj2.hashCode();
 	}
 
 	public String toSQL() { //TODO
@@ -73,12 +86,12 @@ class And extends Relation {
 		return conj1.eval(args) && conj2.eval(args);
 	}
 
-	public Set<Relation> getPositiveAtomicRels() {
-		return Utils.union(conj1.getPositiveAtomicRels(), conj2.getPositiveAtomicRels());
+	public Set<Relation> getAtomicRels() {
+		return Utils.union(conj1.getAtomicRels(), conj2.getAtomicRels());
 	}
 
-	public Set<Relation> getNegativeAtomicRels() {
-		return Utils.union(conj1.getNegativeAtomicRels(), conj2.getNegativeAtomicRels());
+	public Set<Integer> getRoles() {
+		return Utils.union(conj1.getRoles(), conj2.getRoles());
 	}
 
 	public boolean isConjunctive(boolean insideNgeation) {
@@ -94,11 +107,17 @@ class Not extends Relation {
 		this.rel = rel;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Not)) return false;
 
 		Not onot = (Not) o;
 		return rel.equals(onot.rel);
+	}
+
+	@Override
+	public int hashCode() {
+		return (-1)*rel.hashCode();
 	}
 
 	public String toSQL() { //TODO
@@ -109,12 +128,12 @@ class Not extends Relation {
 		return !rel.eval(args);
 	}
 
-	public Set<Relation> getPositiveAtomicRels() {
-		return rel.getNegativeAtomicRels();
+	public Set<Relation> getAtomicRels() {
+		return rel.getAtomicRels();
 	}
 
-	public Set<Relation> getNegativeAtomicRels() {
-		return rel.getPositiveAtomicRels();
+	public Set<Integer> getRoles() {
+		return rel.getRoles();
 	}
 
 	public boolean isConjunctive(boolean insideNgeation) {
@@ -127,40 +146,87 @@ class Not extends Relation {
 
 class Overlaps extends Relation {
 
-	private final int a1, a2, r1, r2;
+	private Map<Integer, Set<Integer>> argRoles;
 
 	public Overlaps(int r1, int r2, int a1, int a2) {
-		this.a1 = a1;
-		this.a2 = a2;
-		this.r1 = r1;
-		this.r2 = r2;
+		argRoles= new HashMap<Integer, Set<Integer>>();
+		argRoles.put(a1, new HashSet<Integer>());
+		argRoles.put(a2, new HashSet<Integer>());
+		argRoles.get(a1).add(r1);
+		argRoles.get(a2).add(r2);
 	}
 
+	public Overlaps(int[] rs, int[] as) {
+
+		argRoles = new HashMap<Integer, Set<Integer>>();
+		for (int i = 0; i < rs.length; i++) {
+			argRoles.put(as[i], new HashSet<Integer>());
+		}
+		for (int i = 0; i < rs.length; i++) {
+			argRoles.get(as[i]).add(rs[i]);
+		}
+	}
+
+	public Overlaps(Map<Integer, Set<Integer>> argRoles) {
+		this.argRoles = argRoles;
+	}
+
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Overlaps)) return false;
 
 		Overlaps oov = (Overlaps) o;
-		return (a1 == oov.a1 && a2 == oov.a2) ||
-		       (a1 == oov.a2 && a2 == oov.a1);
+		return argRoles.equals(oov.argRoles);
+	}
+
+	@Override
+	public int hashCode() {
+		int hc = 0;
+		for (Integer r : argRoles.keySet()) {
+			hc += r + argRoles.get(r).hashCode();
+		}
+		return hc;
 	}
 
 	public boolean eval(Space[] spaceArgs) {
-		return spaceArgs[a1].getPart(r1).overlaps(spaceArgs[a2].getPart(r2));
+
+		Set<Space> sps = new HashSet<Space>();
+		for (Integer arg : argRoles.keySet()) {	
+			for (Integer role : argRoles.get(arg)) {
+    			sps.add(spaceArgs[arg].getPart(role));
+			}
+		}
+		Pair<Space, Set<Space>> sm = Utils.getSome(sps);
+		return sm.fst.overlaps(sm.snd);
 	}
 
-	public Set<Relation> getPositiveAtomicRels() {
+	public Set<Relation> getAtomicRels() {
 
-		Set<Relation> rels = new HashSet<Relation>();
-		if (a1 == a2) {
-			rels.add(new Overlaps(r1, r2, 0, 0));
-		} else {
-			rels.add(new Overlaps(r1, r2, 0, 1));
+		Map<Integer, Integer> argNormMap = new HashMap<Integer, Integer>();
+		int i = 0;
+		for (Integer arg : argRoles.keySet()) {
+			if (!argNormMap.containsKey(arg)) {
+				argNormMap.put(arg, i);
+				i++;
+			}
 		}
+		Map<Integer, Set<Integer>> normalizedArgRoles = new HashMap<Integer, Set<Integer>>();
+		for (Integer arg : argRoles.keySet()) {
+			normalizedArgRoles.put(argNormMap.get(arg), argRoles.get(arg));
+		}
+		
+		Set<Relation> rels = new HashSet<Relation>();
+		rels.add(new Overlaps(normalizedArgRoles));
 		return rels;
 	}
 
-	public Set<Relation> getNegativeAtomicRels() {
-		return new HashSet<Relation>();
+	public Set<Integer> getRoles() {
+
+		Set<Integer> rs = new HashSet<Integer>();
+		for (Set<Integer> vrs : argRoles.values()) {
+			rs.addAll(vrs);
+		}
+		return rs;
 	}
 
 	public String toSQL() { //TODO
@@ -185,6 +251,7 @@ class PartOf extends Relation {
 		return "";
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof PartOf)) return false;
 
@@ -192,11 +259,16 @@ class PartOf extends Relation {
 		return a1 == opo.a1 && a2 == opo.a2;
 	}
 
+	@Override
+	public int hashCode() {
+		return (r1+a1) + 2*(r2+a2);
+	}
+
 	public boolean eval(Space[] spaceArgs) {
 		return spaceArgs[a1].getPart(r1).partOf(spaceArgs[a2].getPart(r2));
 	}
 
-	public Set<Relation> getPositiveAtomicRels() {
+	public Set<Relation> getAtomicRels() {
 
 		Set<Relation> rels = new HashSet<Relation>();
 		if (a1 == a2) {
@@ -207,8 +279,11 @@ class PartOf extends Relation {
 		return rels;
 	}
 
-	public Set<Relation> getNegativeAtomicRels() {
-		return new HashSet<Relation>();
+	public Set<Integer> getRoles() {
+		Set<Integer> rs = new HashSet<Integer>();
+		rs.add(r1);
+		rs.add(r2);
+		return rs;
 	}
 
 	public boolean isConjunctive(boolean insideNgeation) { return true; }
