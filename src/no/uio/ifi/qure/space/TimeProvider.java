@@ -1,6 +1,7 @@
 package no.uio.ifi.qure.space;
 
 import no.uio.ifi.qure.*;
+import no.uio.ifi.qure.relation.*;
 import no.uio.ifi.qure.traversal.*;
 import no.uio.ifi.qure.dataprovider.*;
 import no.uio.ifi.qure.util.*;

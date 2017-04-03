@@ -1,6 +1,7 @@
 package no.uio.ifi.qure.space;
 
 import no.uio.ifi.qure.*;
+import no.uio.ifi.qure.relation.*;
 import no.uio.ifi.qure.traversal.*;
 import no.uio.ifi.qure.dataprovider.*;
 import no.uio.ifi.qure.util.*;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import com.vividsolutions.jts.io.WKBReader;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -62,7 +64,7 @@ public class GeometryProvider implements SpaceProvider {
 
 		updating = false;
 		UnparsedIterator<String> wkbs = dataProvider.getSpaces();
-		geometries = parseGeometries(wkbs, config.verbose);
+		geometries = parseGeometries(wkbs, config.relationSet.getRoles(), config.verbose);
 		makeAndSetUniverse();
 	}
 
@@ -71,7 +73,7 @@ public class GeometryProvider implements SpaceProvider {
 		updating = true;
 		Set<Integer> urisToInsert = dataProvider.getInsertURIs();
 		UnparsedIterator<String> wkbs = dataProvider.getSpaces(urisToInsert);
-		geometries = parseGeometries(wkbs, config.verbose);
+		geometries = parseGeometries(wkbs, config.relationSet.getRoles(), config.verbose);
 		obtainUniverse();
 	}
 
@@ -233,6 +235,11 @@ public class GeometryProvider implements SpaceProvider {
 	} 
 
 	private Map<SID, GeometrySpace> parseGeometries(UnparsedIterator<String> wkbs, boolean verbose) {
+		return parseGeometries(wkbs, null, verbose);
+	}
+
+	private Map<SID, GeometrySpace> parseGeometries(UnparsedIterator<String> wkbs,
+	                                                Set<Integer> roles, boolean verbose) {
 
 		int total = wkbs.size();
 		Progress prog = new Progress("Parsing geometries...", total, 1, "##0");  
@@ -248,9 +255,20 @@ public class GeometryProvider implements SpaceProvider {
 			Geometry geo = parseGeometry(ups.unparsedSpace);
 			
 			if (geo != null && geo.isValid() && !geo.isEmpty()) {
-				result.put(new SID(ups.uri), new GeometrySpace(geo, config.geometryPrecision));
-			}
 
+				GeometrySpace gs = new GeometrySpace(geo, config.geometryPrecision);
+
+				if (roles == null) { 
+    				result.put(new SID(ups.uri), gs);
+				} else {
+        			for (Integer role : roles) {
+        				GeometrySpace roledGS = gs.getPart(role);
+        				if (!roledGS.isEmpty()) {
+    						result.put(new SID(ups.uri, role), roledGS);
+        				}
+        			}
+    			}
+			}
 			if (verbose) prog.update();
 		}
 

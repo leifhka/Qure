@@ -8,6 +8,8 @@ import java.util.HashMap;
 import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.space.*;
 
+import static no.uio.ifi.qure.relation.Relation.*;
+
 public class RelationSet {
 
 	Set<Relation> relations;
@@ -40,4 +42,23 @@ public class RelationSet {
 	public Set<Integer> getRoles() { return roles; }
 
 	public Map<Integer, Set<Relation>> getAtomicRels() { return atomicRels; }
+
+	public static RelationSet getRCC8(int i, int b) {
+		
+		Set<Relation> rcc8 = new HashSet<Relation>();
+
+		rcc8.add(not(overlaps(0, 0, 0, 1)));                                                      // DJ
+
+		rcc8.add(overlaps(0, 0, 0, 1).and(not(overlaps(i, i, 0, 1))));                            // EC
+
+		rcc8.add(overlaps(i, i, 0, 1).and(not(partOf(0, 0, 0, 1))).and(not(partOf(0, 0, 1, 0)))); // PO
+
+		rcc8.add(partOf(0, 0, 0, 1).and(partOf(0, 0, 1, 0)));                                     // EQ
+
+		rcc8.add(partOf(0, 0, 0, 1).and(overlaps(b, b, 0, 1)).and(not(partOf(0, 0, 1, 0))));      // TPP
+
+		rcc8.add(partOf(0, 0, 0, 1).and(not(overlaps(b, b, 0, 1))));                              // NTPP
+		
+		return new RelationSet(rcc8);
+	}
 }

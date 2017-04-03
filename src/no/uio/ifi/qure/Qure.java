@@ -55,8 +55,8 @@ public class Qure {
 		//rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
 
 		//rfs.add(new Config("npd",	"geom_test", 10, 3, 30, 10));
-		rfs.add(new Config("dallas", "ns2", 13, 3, 30, 10));
-		//rfs.add(new Config("osm_no", "geom_test", 15, 3, 30, 10));
+		//rfs.add(new Config("dallas", "ns2", 13, 3, 30, 10));
+		rfs.add(new Config("osm_no_smaller", "rcc8_wr", 15, 3, 30, 10));
 		//rfs.add(new Config("osm_dk", "geom_test", 15, 3, 30, 10));
 
 		//runMany(rfs);
@@ -220,7 +220,7 @@ public class Qure {
 
 		long before = System.currentTimeMillis();
 
-		Representation rep = gtb.constructRepresentations(geometries);
+		Representation rep = gtb.constructRepresentations(geometries, config.relationSet);
 
 		long after = System.currentTimeMillis();
 
@@ -277,7 +277,7 @@ public class Qure {
 
 		long before = System.currentTimeMillis();
 
-		Representation rep = gtb.constructRepresentations(geometries);
+		Representation rep = gtb.constructRepresentations(geometries, config.relationSet);
 		
 		long after = System.currentTimeMillis();
 

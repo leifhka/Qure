@@ -100,28 +100,6 @@ public class TimeSpace implements Space {
 		return new TimeSpace[]{ts1, ts2};
 	}
 
-	public Set<Integer> extractRoles(Space o) {
-		if (!(o instanceof TimeSpace)) {
-			return null;
-		}
-
-		TimeSpace ots = (TimeSpace) o;
-		TimeSpace intersection = (TimeSpace) this.intersection(ots);
-
-		Set<Integer> rs = new HashSet<Integer>();
-		
-		if (!intersection.getStart().equals(intersection.getEnd())) {
-			rs.add(INTERIOR);
-		}
-		if ((new TimeSpace(getStart(), getStart())).partOf(intersection)) {
-			rs.add(FIRST);
-		}
-		if ((new TimeSpace(getEnd(), getEnd())).partOf(intersection)) {
-			rs.add(LAST);
-		}
-		return rs;
-	}
-
 	public boolean before(Space o) {
 
 		if (!(o instanceof TimeSpace) || isEmpty() || o.isEmpty()) return false;

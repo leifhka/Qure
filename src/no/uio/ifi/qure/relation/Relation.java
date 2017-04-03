@@ -224,7 +224,11 @@ class Overlaps extends Relation {
 
 		Set<Integer> rs = new HashSet<Integer>();
 		for (Set<Integer> vrs : argRoles.values()) {
-			rs.addAll(vrs);
+			for (Integer role : vrs) {
+				if (role.intValue() != 0) {
+        			rs.add(role);
+				}
+			}
 		}
 		return rs;
 	}
@@ -281,8 +285,12 @@ class PartOf extends Relation {
 
 	public Set<Integer> getRoles() {
 		Set<Integer> rs = new HashSet<Integer>();
-		rs.add(r1);
-		rs.add(r2);
+		if (r1 != 0) {
+    		rs.add(r1);
+		}
+		if (r1 != 0) {
+    		rs.add(r2);
+		}
 		return rs;
 	}
 

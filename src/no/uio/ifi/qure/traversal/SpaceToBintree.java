@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.function.Predicate;
 
 import no.uio.ifi.qure.*;
+import no.uio.ifi.qure.relation.*;
 import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.bintree.*;
 import no.uio.ifi.qure.space.*;
@@ -33,13 +34,14 @@ public class SpaceToBintree {
 		this.evenSplits = evenSplits;
 	}
 
-	public Representation constructRepresentations(SpaceProvider spaces) {
+	public Representation constructRepresentations(SpaceProvider spaces, RelationSet relationSet) {
 
 		Progress prog = new Progress("Traversing tree...", Math.pow(2, config.maxIterDepth+1)-1,
 		                             0.001, "##0.000");
 		if (config.verbose) prog.init();
 
-		Block.setBlockSize(config.blockSize);
+		System.out.println("RelationSet roles: " + relationSet.getRoles().size());
+		Block.setBlockSize(config.blockSize, relationSet.getRoles().size());
 		TreeNode root = new TreeNode(Block.getTopBlock(), spaces, evenSplits, 0, config);
 		root.setReporter(prog.makeReporter());
 		Representation representation = traverseTree(root);

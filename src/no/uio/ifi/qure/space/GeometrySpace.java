@@ -50,6 +50,8 @@ public class GeometrySpace implements Space {
 
 	public Geometry getGeometry() { return geo; }
 
+	public void deleteGeometry() { geo = null; }
+
 	public boolean isEmpty() { return geo.isEmpty(); }
 
 	public GeometrySpace union(Space o) {
@@ -156,21 +158,6 @@ public class GeometrySpace implements Space {
 				return false;
 			}
 		};
-	}
-
-	public Set<Integer> extractRoles(Space o) {
-		if (!(o instanceof GeometrySpace)) return null;
-
-		GeometrySpace ogs = (GeometrySpace) o;
-		Set<Integer> rs = new HashSet<Integer>();
-
-		if (getPart(BOUNDARY).overlaps(ogs)) {
-			rs.add(BOUNDARY);
-		}
-		if (getPart(INTERIOR).overlaps(ogs)) {
-			rs.add(INTERIOR);
-		}
-		return rs;
 	}
 
 	public GeometrySpace getPart(int role) {

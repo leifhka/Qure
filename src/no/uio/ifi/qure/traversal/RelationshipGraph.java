@@ -461,12 +461,16 @@ public class RelationshipGraph {
 				Set<Block> cbs = new HashSet<Block>();
 				for (Block b : bs) {
 					if (w.blockPartOf(b)) {
-						cbs.add(b.setUniquePart(true));
+						cbs.add(b.setUniquePart(true).addRole(uri.getRole()));
 					} else {
-						cbs.add(b);
+						cbs.add(b.addRole(uri.getRole()));
 					}
 				}
-				urisRep.put(uri.getID(), new Bintree(cbs));
+				if (!urisRep.containsKey(uri.getID())) {
+					urisRep.put(uri.getID(), new Bintree(cbs));
+				} else {
+    				urisRep.put(uri.getID(), urisRep.get(uri.getID()).union(new Bintree(cbs)));
+				}
 			}
 		}
 

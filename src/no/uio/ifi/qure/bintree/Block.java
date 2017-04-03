@@ -8,8 +8,14 @@ public class Block {
 	// Total number of bits per block.
 	private static int BLOCK_SIZE = Long.SIZE - 1;
 
-	// Total number of bits for meta information (size + unique part flag)
-	private static int META_SIZE = 1 + (Integer.SIZE - Integer.numberOfLeadingZeros(BLOCK_SIZE));
+	// Total number of bits for size meta information (how many bits needed to store the length of bit-string)
+	private static int SIZE_META_SIZE = Integer.SIZE - Integer.numberOfLeadingZeros(BLOCK_SIZE);
+
+	// Total number of bits for role and unique part flag information, default 1 (only flag)
+	private static int ROLE_META_SIZE = 1;
+
+	// Total number of bits for meta information (default size + unique part flag)
+	private static int META_SIZE = SIZE_META_SIZE + ROLE_META_SIZE;
 
 	// Maximum number of bits reserved for the bit-string.
 	private static int MAX_SIZE = BLOCK_SIZE - META_SIZE;
@@ -20,13 +26,14 @@ public class Block {
 	public static Block EMPTYBLOCK = new Block(0,-1L);
 	public static Block TOPBLOCK = new Block(0,0L);
 
-	public static void setBlockSize(int size) { 
+	public static void setBlockSize(int size, int numRoles) { 
 		BLOCK_SIZE = size;
-		META_SIZE = 1 + (Integer.SIZE - Integer.numberOfLeadingZeros(BLOCK_SIZE));
+		SIZE_META_SIZE = Integer.SIZE - Integer.numberOfLeadingZeros(BLOCK_SIZE);
+		ROLE_META_SIZE = 1 + numRoles;
+		META_SIZE = SIZE_META_SIZE + ROLE_META_SIZE;
 		MAX_SIZE = BLOCK_SIZE - META_SIZE;
 		META_SIZE_ONES = (1L << META_SIZE) - 1;
 	}
-
 
 	// The long-representation of this block.
 	private final long value;
@@ -43,7 +50,11 @@ public class Block {
 		long futVal = bits << (BLOCK_SIZE - size);
 
 		// Store the size in the least significant bits and leave a bit for unique part-flag
-		this.value =  futVal | (size << 1);
+		this.value =  futVal | (size << ROLE_META_SIZE); 
+	}
+
+	public Block addRole(int role) {
+		return new Block(value | (((long) role) << 1)); // Shift past flag-bit
 	}
 
 	public int depth() {
@@ -51,7 +62,7 @@ public class Block {
 	}
 
 	public int getSize() {
-		return (int) ((value & META_SIZE_ONES) >> 1);
+		return (int) ((value & META_SIZE_ONES) >> ROLE_META_SIZE);
 	}
 
 	public long getRepresentation() {
@@ -92,6 +103,10 @@ public class Block {
 
 	public boolean isUniquePart() {
 		return value % 2 != 0;
+	}
+
+	public long getRoles() {
+		return (value & META_SIZE_ONES) >> 1;
 	}
 
 	public int hashCode() {

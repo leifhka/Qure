@@ -38,7 +38,5 @@ public interface Space {
 		return o.partOf(this);
 	}
 
-	public Set<Integer> extractRoles(Space block);
-
 	public Space getPart(int role);
 }

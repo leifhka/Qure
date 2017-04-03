@@ -54,6 +54,6 @@ public class Representation {
 
     public void addCovering(Set<SID> covering, Block block) {
         for (SID uri : covering)
-            representation.put(uri.getID(), Bintree.fromBlock(block.setUniquePart(true))); //TODO: Add role properly
+            representation.put(uri.getID(), Bintree.fromBlock(block.setUniquePart(true).addRole(uri.getRole())));
     }
 }

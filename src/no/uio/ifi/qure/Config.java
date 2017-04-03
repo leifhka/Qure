@@ -4,6 +4,7 @@ import com.vividsolutions.jts.geom.PrecisionModel;
 import java.util.function.Predicate;
 
 import no.uio.ifi.qure.traversal.*;
+import no.uio.ifi.qure.relation.*;
 
 public class Config {
 	public String rawGeoTableName;
@@ -59,6 +60,7 @@ public class Config {
 	};
 
 	public int blockSize = 31;
+	public RelationSet relationSet = RelationSet.getRCC8(1,2);
 	public String dbName = "test";
 	public String dbPWD = "test";
 	public String dbUsername = "leifhka";
