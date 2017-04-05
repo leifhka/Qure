@@ -14,26 +14,25 @@ public class RelationSet {
 
 	Set<Relation> relations;
 	Set<Integer> roles;
-	Map<Integer, Set<Relation>> atomicRels;
+	Set<AtomicRelation> atomicRels;
 
 	public RelationSet(Set<Relation> relations) {
 		this.relations = relations;
 		
 		roles = new HashSet<Integer>();
-		atomicRels = new HashMap<Integer, Set<Relation>>();
+		atomicRels = new HashSet<AtomicRelation>();
 
 		for (Relation r : relations) {
-			for (Relation a : r.getAtomicRels()) {
+			for (AtomicRelation a : r.getAtomicRelations()) {
+				atomicRels.add(a);
 				for (Integer role : a.getRoles()) {
-
 					roles.add(role);
-
-					if (!atomicRels.containsKey(role)) {
-						atomicRels.put(role, new HashSet<Relation>());
-					}
-    				atomicRels.get(role).add(a);
 				}
 			}
+		}
+		// If roles is empty, we add the universal role 0
+		if (roles.isEmpty()) {
+    		roles.add(0);
 		}
 	}
 
@@ -41,7 +40,7 @@ public class RelationSet {
 
 	public Set<Integer> getRoles() { return roles; }
 
-	public Map<Integer, Set<Relation>> getAtomicRels() { return atomicRels; }
+	public Set<AtomicRelation> getAtomicRelations() { return atomicRels; }
 
 	public static RelationSet getRCC8(int i, int b) {
 		

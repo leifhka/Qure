@@ -15,26 +15,33 @@ import java.util.Arrays;
 import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.space.*;
 import no.uio.ifi.qure.bintree.*;
+import no.uio.ifi.qure.relation.*;
 
 public class RelationshipGraph {
 
 	private final Map<SID, Node> nodes;
+	private final Map<Integer, Set<SID>> roleToSID;
 	private final Set<SID> topmostNodes;
 	private int overlapsNodeId; // Always negative, and decreasing
 	private final Block block;
 	private final Set<SID> uris;
-	private final int overlapsArity;
+	private final RelationSet relations;
 
-	public RelationshipGraph(Block block, Set<SID> uris, int overlapsArity) {
+	public RelationshipGraph(Block block, Set<SID> uris, RelationSet relations) {
 		this.block = block;
 		this.uris = new HashSet<SID>(uris);
-		this.overlapsArity = overlapsArity;
+		this.relations = relations;
 
 		topmostNodes = new HashSet<SID>(uris); // Init all uris as roots, and remove if set parent of some node
 		nodes = new HashMap<SID, Node>();
+		roleToSID = new HashMap<Integer, Set<SID>>();
 
+		for (Integer role : relations.getRoles()) {
+    		roleToSID.put(role, new HashSet<SID>());
+		}
 		for (SID uri : uris) {
 			nodes.put(uri, new Node(uri));
+			roleToSID.get(uri.getRole()).add(uri);
 		}
 		overlapsNodeId = 0;
 	}
@@ -224,7 +231,7 @@ public class RelationshipGraph {
 	 * Constructs a relaionship graph based on the relationships between the spaces in spaceNode with
 	 * overlaps-arity up to overlapsArity.
 	 */
-	public static RelationshipGraph makeRelationshipGraph(TreeNode spaceNode, int overlapsArity) {
+	public static RelationshipGraph makeRelationshipGraph(TreeNode spaceNode, RelationSet relations) {
 
 		SpaceProvider spaces = spaceNode.getSpaceProvider();
 		Set<SID> uris = spaceNode.getOverlappingURIs();
@@ -233,53 +240,68 @@ public class RelationshipGraph {
 		for (SID uri : uris) {
 			intMap.put(uri, new HashSet<SID>());
 		}
-		RelationshipGraph graph = new RelationshipGraph(spaceNode.getBlock(), uris, overlapsArity);
+		RelationshipGraph graph = new RelationshipGraph(spaceNode.getBlock(), uris, relations);
 
 		SID[] urisArr = uris.toArray(new SID[uris.size()]);
 		Set<Intersection> intersections = new HashSet<Intersection>();
 
-		graph.computeBinaryRelations(urisArr, spaces, intersections, intMap);
-		graph.computeKIntersections(intersections, uris, spaces, intMap);
+		// graph.computeBinaryRelations(urisArr, spaces, intersections, intMap);
+		// graph.computeKIntersections(intersections, uris, spaces, intMap);
+		graph.computeRelationshipGraph(spaces);
 
 		return graph;
+	}
+
+	private void computeRelationshipGraph(SpaceProvider spaces) {
+
+    	for (AtomicRelation rel : relations.getAtomicRelations()) {
+        	Set<List<SID>> tuples = rel.evalAll(spaces.getSpaces(), roleToSID);
+        	for (List<SID> tuple : tuples) {
+            	if (rel.isOverlaps()) {
+					addOverlapsWithRedundancyCheck(new HashSet<SID>(tuple));
+            	} else {
+					addCoveredBy(tuple.get(0), tuple.get(1));
+            	}
+        	}
+    	}
 	}
 
 	// TODO: Let method take extra argument, a set of positive base relations extracted from
 	// the relation definitions, and compute these relationships for the spaces, and update the graph
 	// accordingly.
-	private void computeBinaryRelations(SID[] urisArr, SpaceProvider spaces, 
-	                                    Set<Intersection> intersections, Map<SID, Set<SID>> intMap) {
-
-		for (int i = 0; i < urisArr.length; i++) { 
-
-			SID ui = urisArr[i];
-			Space si = spaces.get(ui);
-
-			for (int j = i+1; j < urisArr.length; j++) {
-
-				SID uj = urisArr[j];
-				Space sj = spaces.get(uj);
-
-				Relationship rel = si.relate(sj);
-
-				if (rel.isIntersects()) {
-
-					if (rel.isCovers()) {
-						addCoveredBy(uj, ui);
-					}
-					if (rel.isCoveredBy()) {
-						addCoveredBy(ui, uj);
-					}	
-					if (!rel.isCovers() && !rel.isCoveredBy()) { // Overlaps already represented by containment
-						Space s = si.intersection(sj);
-						addOverlaps(ui, uj, s, intersections, intMap);
-					}
-				} else if (rel.isBefore()) {
-					addBefore(ui,uj);
-				}
-			}
-		}
-	}
+//	private void computeBinaryRelations(SID[] urisArr, SpaceProvider spaces, 
+//	                                    Set<Intersection> intersections, Map<SID, Set<SID>> intMap) {
+//
+//		for (int i = 0; i < urisArr.length; i++) { 
+//
+//			SID ui = urisArr[i];
+//			Space si = spaces.get(ui);
+//
+//			for (int j = i+1; j < urisArr.length; j++) {
+//
+//				SID uj = urisArr[j];
+//				Space sj = spaces.get(uj);
+//
+//				Relationship rel = si.relate(sj);
+//
+//				if (rel.isIntersects()) {
+//
+//					if (rel.isCovers()) {
+//						addCoveredBy(uj, ui);
+//					}
+//					if (rel.isCoveredBy()) {
+//						addCoveredBy(ui, uj);
+//					}	
+//					if (!rel.isCovers() && !rel.isCoveredBy()) { // Overlaps already represented by containment
+//						Space s = si.intersection(sj);
+//						addOverlaps(ui, uj, s, intersections, intMap);
+//					}
+//				} else if (rel.isBefore()) {
+//					addBefore(ui,uj);
+//				}
+//			}
+//		}
+//	}
 
 	/**
 	 * Computes the set of maximal overlaps up to arity k, such that the set contains no redundant overlaps.
@@ -287,62 +309,62 @@ public class RelationshipGraph {
 	 *		 for each of the elements in each set is nonempty, but adding any new element to the set
 	 *		 will give an empty intersection.
 	 */
-	public void computeKIntersections(Set<Intersection> intersections, Set<SID> elems,
-	                                  SpaceProvider spaces, Map<SID, Set<SID>> intMap) {
-
-		Set<Intersection> ints = new HashSet<Intersection>(intersections);
-		Set<Set<SID>> added = new HashSet<Set<SID>>();
-
-		for (int i = 3; i <= overlapsArity; i++) {
-
-			Set<Intersection> iterSet = new HashSet<Intersection>(ints);
-			ints = new HashSet<Intersection>(); // Stores next iterations intersections
-
-			for (Intersection in : iterSet) {
-
-				boolean updated = false; // States whether the <in> has become part of a larger intersection
-
-				// Need only check the elements already intersection all elements in nin
-				// so we compute the intersection of all overlapping elements
-				Set<SID> possible = new HashSet<SID>();
-				boolean first = true;
-				for (SID ine : in.getElements()) {
-					if (first) {
-						possible.addAll(intMap.get(ine));
-						first = false;
-					} else {
-						possible.retainAll(intMap.get(ine));
-					}
-				}
-				possible.removeAll(in.getElements());
-
-				for (SID e : possible) {
-
-					if (ints.contains(new Intersection(null, Utils.add(in.getElements(), e)))) {
-						updated = true;
-						continue;
-					}
-
-					Intersection nin = null;
-					nin = in.add(e, spaces);
-
-					if (nin != null) { // Intersection was successfull (i.e. non-empty)
-						updated = true;
-						ints.add(nin); 
-						//addOverlapsWithRedundancyCheck(nin.getElements()); //Redundant
-					}
-				}
-				if (!updated && !added.contains(in.getElements())) {
-					addOverlapsWithRedundancyCheck(in.getElements());
-					added.add(in.getElements());
-				}
-			}
-		}
-
-		for (Intersection in : ints) { // Need to add remaining intersections
-			addOverlapsWithRedundancyCheck(in.getElements());
-		}
-	}
+//	public void computeKIntersections(Set<Intersection> intersections, Set<SID> elems,
+//	                                  SpaceProvider spaces, Map<SID, Set<SID>> intMap) {
+//
+//		Set<Intersection> ints = new HashSet<Intersection>(intersections);
+//		Set<Set<SID>> added = new HashSet<Set<SID>>();
+//
+//		for (int i = 3; i <= overlapsArity; i++) {
+//
+//			Set<Intersection> iterSet = new HashSet<Intersection>(ints);
+//			ints = new HashSet<Intersection>(); // Stores next iterations intersections
+//
+//			for (Intersection in : iterSet) {
+//
+//				boolean updated = false; // States whether the <in> has become part of a larger intersection
+//
+//				// Need only check the elements already intersection all elements in nin
+//				// so we compute the intersection of all overlapping elements
+//				Set<SID> possible = new HashSet<SID>();
+//				boolean first = true;
+//				for (SID ine : in.getElements()) {
+//					if (first) {
+//						possible.addAll(intMap.get(ine));
+//						first = false;
+//					} else {
+//						possible.retainAll(intMap.get(ine));
+//					}
+//				}
+//				possible.removeAll(in.getElements());
+//
+//				for (SID e : possible) {
+//
+//					if (ints.contains(new Intersection(null, Utils.add(in.getElements(), e)))) {
+//						updated = true;
+//						continue;
+//					}
+//
+//					Intersection nin = null;
+//					nin = in.add(e, spaces);
+//
+//					if (nin != null) { // Intersection was successfull (i.e. non-empty)
+//						updated = true;
+//						ints.add(nin); 
+//						//addOverlapsWithRedundancyCheck(nin.getElements()); //Redundant
+//					}
+//				}
+//				if (!updated && !added.contains(in.getElements())) {
+//					addOverlapsWithRedundancyCheck(in.getElements());
+//					added.add(in.getElements());
+//				}
+//			}
+//		}
+//
+//		for (Intersection in : ints) { // Need to add remaining intersections
+//			addOverlapsWithRedundancyCheck(in.getElements());
+//		}
+//	}
 
 	private Set<SID> imidiatePreds(Node n) {
 

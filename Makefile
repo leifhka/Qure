@@ -28,6 +28,7 @@ CLASSES = \
         space/GeometryProvider.java \
         space/GeometrySpace.java \
         relation/Relation.java \
+        relation/AtomicRelation.java \
         relation/RelationSet.java \
         space/Space.java \
         space/SpaceProvider.java \

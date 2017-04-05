@@ -60,7 +60,7 @@ public class Config {
 	};
 
 	public int blockSize = 31;
-	public RelationSet relationSet = RelationSet.getRCC8(1,2);
+	public RelationSet relationSet = RelationSet.getSimple(3);
 	public String dbName = "test";
 	public String dbPWD = "test";
 	public String dbUsername = "leifhka";
@@ -83,6 +83,6 @@ public class Config {
 	public boolean writeBintreesToDB = true;
 
 	public PrecisionModel geometryFactoryPrecision = new PrecisionModel();
-	public PrecisionModel geometryPrecision = new PrecisionModel(Math.pow(10, 10));
+	public PrecisionModel geometryPrecision = new PrecisionModel(Math.pow(10, 14));
 
 }

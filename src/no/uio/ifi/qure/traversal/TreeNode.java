@@ -7,6 +7,7 @@ import java.util.Set;
 
 import no.uio.ifi.qure.Config;
 import no.uio.ifi.qure.util.*;
+import no.uio.ifi.qure.relation.*;
 import no.uio.ifi.qure.space.*;
 import no.uio.ifi.qure.bintree.*;
 
@@ -106,12 +107,12 @@ public class TreeNode {
 		return result;
 	}
 
-	public Representation makeRepresentation(int overlapsArity) {
+	public Representation makeRepresentation(RelationSet rels) {
 
 		if (spaces.isEmpty()) {
 			return new Representation();
 		}
-		RelationshipGraph graph = RelationshipGraph.makeRelationshipGraph(this, overlapsArity);
+		RelationshipGraph graph = RelationshipGraph.makeRelationshipGraph(this, rels);
 		return graph.constructRepresentation();
 	}
 
