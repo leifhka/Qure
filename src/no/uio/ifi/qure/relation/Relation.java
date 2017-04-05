@@ -46,6 +46,8 @@ public abstract class Relation {
 
 	public static Relation overlaps(int r1, int r2, int a1, int a2) { return new Overlaps(r1, r2, a1, a2); }
 
+	public static Relation overlaps(int[] rs, int[] as) { return new Overlaps(rs, as); }
+
 	public static Relation partOf(int r1, int r2, int a1, int a2) { return new PartOf(r1, r2, a1, a2); }
 
 	public Relation and(Relation o) { return new And(this, o); }

@@ -61,4 +61,19 @@ public class RelationSet {
 		
 		return new RelationSet(rcc8);
 	}
+
+	public static RelationSet getSimple(int arity) {
+
+    	Set<Relation> simple = new HashSet<Relation>();
+    	simple.add(partOf(0, 0, 0, 1));
+
+    	for (int i = 2; i <= arity; i++) {
+
+        	int[] noRoles = new int[i];
+        	int[] args = new int[i];
+        	for (int j = 0; j < i; j++) args[j] = j;
+        	simple.add(overlaps(noRoles, args));
+    	}
+    	return new RelationSet(simple);
+	}
 }
