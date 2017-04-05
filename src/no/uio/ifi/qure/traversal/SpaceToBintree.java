@@ -40,7 +40,6 @@ public class SpaceToBintree {
 		                             0.001, "##0.000");
 		if (config.verbose) prog.init();
 
-		System.out.println("RelationSet roles: " + relationSet.getRoles().size());
 		Block.setBlockSize(config.blockSize, relationSet.getRoles().size());
 		TreeNode root = new TreeNode(Block.getTopBlock(), spaces, evenSplits, 0, config);
 		root.setReporter(prog.makeReporter());
