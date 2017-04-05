@@ -246,6 +246,7 @@ public class GeometryProvider implements SpaceProvider {
 		prog.setConvertToLong(true);
 
 		Map<SID, GeometrySpace> result = new HashMap<SID,GeometrySpace>(total);
+		int totalParsed = 0;
 
 		if (verbose) prog.init();
 
@@ -258,7 +259,7 @@ public class GeometryProvider implements SpaceProvider {
 
 				GeometrySpace gs = new GeometrySpace(geo, config.geometryPrecision);
 
-				if (roles == null) { 
+				if (roles == null || roles.isEmpty()) { 
     				result.put(new SID(ups.uri), gs);
 				} else {
         			for (Integer role : roles) {
@@ -269,14 +270,15 @@ public class GeometryProvider implements SpaceProvider {
         			}
     			}
 			}
+			totalParsed++;
 			if (verbose) prog.update();
 		}
 
 		if (verbose) {
 			prog.done();
-			int errors = total - result.values().size();
+			int errors = total - totalParsed;
 			if (errors > 0) System.out.println("Unable to parse " + errors + " geometries.");
-			System.out.println("Parsed " + result.values().size() + " geometries.");
+			System.out.println("Parsed " + totalParsed + " geometries.");
 		}
 		return result;
 	}
