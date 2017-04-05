@@ -1,4 +1,4 @@
-package no.uio.ifi.qure.traversal;
+package no.uio.ifi.qure.space;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import no.uio.ifi.qure.space.*;
+import com.vividsolutions.jts.geom.TopologyException;
+
+import no.uio.ifi.qure.traversal.SID;
 
 public class Intersection {
 
@@ -49,7 +51,7 @@ public class Intersection {
 
 		try {
 			nsp = space.intersection(s);
-		} catch (Exception ex) {
+		} catch (TopologyException ex) {
 			System.err.println(ex.toString());
 			System.err.println("Offending uri: " + e);
 			System.exit(1);

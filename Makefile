@@ -19,7 +19,6 @@ CLASSES = \
         dataprovider/UnparsedIterator.java \
         dataprovider/UnparsedSpace.java \
         traversal/EvenSplit.java \
-        traversal/Intersection.java \
         traversal/Relationship.java \
         traversal/RelationshipGraph.java \
         traversal/Representation.java \
@@ -34,6 +33,7 @@ CLASSES = \
         space/SpaceProvider.java \
         space/TimeProvider.java \
         space/TimeSpace.java  \
+        space/Intersection.java \
         util/Progress.java \
         util/Reporter.java \
         util/Pair.java \
