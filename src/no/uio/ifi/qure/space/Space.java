@@ -24,7 +24,7 @@ public interface Space {
 		for (Space s : sps) {
 			res = res.intersection(s);
 		}
-		return res.isEmpty();
+		return !res.isEmpty();
 	}
 
 	

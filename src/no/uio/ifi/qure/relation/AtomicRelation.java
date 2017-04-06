@@ -126,22 +126,23 @@ class Overlaps extends AtomicRelation {
 	}
 
 	public Set<List<SID>> evalAll(Map<SID, ? extends Space> spaces, Map<Integer, Set<SID>> roleToSID) {
-    	SID[] args = new SID[getArity()];
+    	List<SID> args = new ArrayList<SID>(getArity());
     	Set<List<SID>> tuples = new HashSet<List<SID>>();
-		evalAll(spaces, roleToSID, tuples, args, 0);
+    	Set<Set<SID>> checked = new HashSet<Set<SID>>();
+		evalAll(spaces, checked, roleToSID, tuples, args, 0);
     	return tuples;
 	}
 
-	private void evalAll(Map<SID, ? extends Space> spaces, Map<Integer, Set<SID>> roleToSID, Set<List<SID>> tuples, SID[] args, int i) {
+	private void evalAll(Map<SID, ? extends Space> spaces, Set<Set<SID>> checked, Map<Integer, Set<SID>> roleToSID, Set<List<SID>> tuples, List<SID> tuple, int i) {
 
     	if (i == getArity()) {
-        	List<SID> tuple = Arrays.asList(args);
-			if (!tuples.contains(tuple)) {
-    			Space[] spaceTuple = new Space[args.length];
-    			for (int j = 0; j < args.length; j++) {
-        			spaceTuple[j] = spaces.get(args[j]);
+			if (!checked.contains(new HashSet<SID>(tuple))) {
+    			Space[] spaceTuple = new Space[getArity()];
+    			for (int j = 0; j < getArity(); j++) {
+        			spaceTuple[j] = spaces.get(tuple.get(j));
     			}
 				if (eval(spaceTuple)) tuples.add(tuple);
+				checked.add(new HashSet<SID>(tuple));
 			}
     	} else {
         	// We first need to extract all candidate SIDs that has a non-empty space for each role of i'th arg
@@ -150,10 +151,12 @@ class Overlaps extends AtomicRelation {
         	for (Integer role : someRole.snd) {
             	candidates.retainAll(roleToSID.get(role));
         	}
+        	candidates.removeAll(tuple);
         	// We then try eval-ing with each candidate as i'th argument
         	for (SID sid : candidates) {
-            	args[i] = sid;
-            	evalAll(spaces, roleToSID, tuples, args, i+1);
+            	List<SID> newTuple = new ArrayList<SID>(tuple);
+            	newTuple.add(sid);
+            	evalAll(spaces, checked, roleToSID, tuples, newTuple, i+1);
         	}
     	}
 	}
@@ -233,6 +236,7 @@ class PartOf extends AtomicRelation {
 
     	for (SID sid1 : roleToSID.get(r1)) {
         	for (SID sid2 : roleToSID.get(r2)) {
+            	if (sid1.equals(sid2)) continue;
             	Space[] spaceTuple = new Space[]{spaces.get(sid1), spaces.get(sid2)};
 				if (eval(spaceTuple)) {
     				tuples.add(Arrays.asList(new SID[]{sid1, sid2}));

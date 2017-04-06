@@ -474,7 +474,6 @@ public class RelationshipGraph {
 		}
 
 		// Set unique part-blocks and add to final representation
-		// TODO: Add roles properly to bintree rep.
 		Map<Integer, Bintree> urisRep = new HashMap<Integer, Bintree>();
 		for (SID uri : localRep.keySet()) {
 			if (!isOverlapsNode(uri)) {
@@ -491,7 +490,7 @@ public class RelationshipGraph {
 				if (!urisRep.containsKey(uri.getID())) {
 					urisRep.put(uri.getID(), new Bintree(cbs));
 				} else {
-    				urisRep.put(uri.getID(), urisRep.get(uri.getID()).union(new Bintree(cbs)));
+					urisRep.put(uri.getID(), urisRep.get(uri.getID()).union(new Bintree(cbs)));
 				}
 			}
 		}
