@@ -1,7 +1,7 @@
-\set id_val 2
+\set id_val 103
 \set geo_name geo.small_physical
-\set bt_name qure.small_physical_d15_k3_bc30_ms10_with_simple
-\set len_r 2
+\set bt_name qure.small_physical_d15_k3_bc30_ms10_rcc8_fix
+\set len_r 3
 \set len_s (6+:len_r)
 \set len_v (31-:len_s)
 \set len_b (:len_s + :len_v)

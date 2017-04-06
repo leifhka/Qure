@@ -117,9 +117,7 @@ class Overlaps extends AtomicRelation {
 		Set<Integer> rs = new HashSet<Integer>();
 		for (Set<Integer> vrs : argRoles.values()) {
 			for (Integer role : vrs) {
-				if (role.intValue() != 0) {
-        			rs.add(role);
-				}
+    			rs.add(role);
 			}
 		}
 		return rs;
@@ -221,12 +219,8 @@ class PartOf extends AtomicRelation {
 
 	public Set<Integer> getRoles() {
 		Set<Integer> rs = new HashSet<Integer>();
-		if (r1 != 0) {
-    		rs.add(r1);
-		}
-		if (r1 != 0) {
-    		rs.add(r2);
-		}
+		rs.add(r1);
+		rs.add(r2);
 		return rs;
 	}
 
