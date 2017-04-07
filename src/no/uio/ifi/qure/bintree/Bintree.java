@@ -121,17 +121,17 @@ public class Bintree {
 		Set<Block> bn = new HashSet<Block>();
 	    
 		//Add only non-empty and non-contained blocks to bn
-		for (Block b : bt) {
-			if (!b.isEmpty()) {
+		for (Block b1 : bt) {
+			if (!b1.isEmpty()) {
 				boolean partOf = false;
 				for (Block b2 : bt) {
-					if (!b.equals(b2) && b.blockPartOf(b2)) {
+					if (!b1.equals(b2) && b1.blockPartOf(b2)) {
 						partOf = true;
 						break;
 					}
 				}
 
-				if (!partOf) bn.add(b);
+				if (!partOf) bn.add(b1);
 			}
 		}
 	    

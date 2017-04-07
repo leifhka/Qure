@@ -494,7 +494,6 @@ public class RelationshipGraph {
 				}
 			}
 		}
-
 		return new Representation(urisRep);
 	}
 

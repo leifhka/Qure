@@ -40,6 +40,23 @@ public class RelationSet {
 
 	public Set<Integer> getRoles() { return roles; }
 
+	/**
+	 * Returns the number of atmoic roles, that is, the number of bits needed to represnt all roles.
+	 */
+	public Set<Integer> getAtomicRoles() {
+
+    	Set<Integer> atomicRoles = new HashSet<Integer>();
+
+    	for (Integer role : getRoles()) {
+        	for (int i = 1; i <= role; i = i << 1) {
+            	if ((role & i) != 0) {
+                	atomicRoles.add(i);
+            	}
+        	}
+    	}
+    	return atomicRoles;
+    } 
+
 	public Set<AtomicRelation> getAtomicRelations() { return atomicRels; }
 
 	public static RelationSet getRCC8(int i, int b) {

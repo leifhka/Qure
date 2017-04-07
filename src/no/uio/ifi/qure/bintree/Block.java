@@ -208,7 +208,7 @@ public class Block {
 
 		if (isEmpty())
 			return true;
-		if (b.isEmpty())
+		if (b.isEmpty() || getRoles() != b.getRoles())
 			return false;
 
 		return (b.getRepresentation() & -2) <= getRepresentation() &&
