@@ -226,13 +226,28 @@ public class GeometryProvider implements SpaceProvider {
 		Geometry geo;
 
 		try {
-			geo = reader.read(WKBReader.hexToBytes(wkb.get(0)));
+			geo = reader.read(WKBReader.hexToBytes(wkb.get(0))); // wkbs consist of only one string
 			geo = geoRed.reduce(geo);
 		} catch (Exception e) {
+			e.printStackTrace();
 			return null;
 		}
 		return geo;
 	} 
+
+	private void extractAndPutRoledGeos(int id, GeometrySpace gs, Set<Integer> roles, Map<SID, GeometrySpace> result) {
+
+		if (roles == null || roles.isEmpty()) { 
+			result.put(new SID(id), gs);
+		} else {
+			for (Integer role : roles) {
+				GeometrySpace roledGS = gs.getPart(role);
+				if (!roledGS.isEmpty()) {
+					result.put(new SID(id, role), roledGS);
+				}
+			}
+		}
+	}
 
 	private Map<SID, GeometrySpace> parseGeometries(UnparsedIterator<String> wkbs, boolean verbose) {
 		return parseGeometries(wkbs, null, verbose);
@@ -256,21 +271,9 @@ public class GeometryProvider implements SpaceProvider {
 			Geometry geo = parseGeometry(ups.unparsedSpace);
 			
 			if (geo != null && geo.isValid() && !geo.isEmpty()) {
-
-				GeometrySpace gs = new GeometrySpace(geo, config.geometryPrecision);
-
-				if (roles == null || roles.isEmpty()) { 
-    				result.put(new SID(ups.uri), gs);
-				} else {
-        			for (Integer role : roles) {
-        				GeometrySpace roledGS = gs.getPart(role);
-        				if (!roledGS.isEmpty()) {
-    						result.put(new SID(ups.uri, role), roledGS);
-        				}
-        			}
-    			}
+				extractAndPutRoledGeos(ups.uri, new GeometrySpace(geo, config.geometryPrecision), roles, result);
+    			totalParsed++;
 			}
-			totalParsed++;
 			if (verbose) prog.update();
 		}
 
