@@ -3,6 +3,7 @@ package no.uio.ifi.qure;
 import com.vividsolutions.jts.geom.PrecisionModel;
 import java.util.function.Predicate;
 
+import no.uio.ifi.qure.space.*;
 import no.uio.ifi.qure.traversal.*;
 import no.uio.ifi.qure.relation.*;
 
@@ -26,6 +27,9 @@ public class Config {
 	//public int maxDiff = 25;
 	public double minRatio = 0.9;
 	public int maxSplits = 7;
+
+	//public RelationSet relationSet = RelationSet.getSimple(3);
+	public RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
  
 	public Config(String table, String suff, int representationDepth, int overlapsArity, 
 				  int blockMemberCount, int maxSplits) {
@@ -39,7 +43,7 @@ public class Config {
 		geoTableName = "geo." + rawGeoTableName;
 		//geoTableName = rawGeoTableName;
 
-		rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_k" + overlapsArity + "_bc" + blockMemberCount + "_ms" + maxSplits + "_" + suff;
+		rawBTTableName = rawGeoTableName + "_d" + representationDepth + "_" + relationSet.getName() + "_bc" + blockMemberCount + "_ms" + maxSplits + "_" + suff;
 		schemaName = "qure";
 		btTableName = schemaName + "." + rawBTTableName;
 
@@ -59,8 +63,7 @@ public class Config {
 		}
 	};
 
-	public int blockSize = 31;
-	public RelationSet relationSet = RelationSet.getSimple(3);
+	public int blockSize = 63;
 	public String dbName = "test";
 	public String dbPWD = "test";
 	public String dbUsername = "leifhka";
@@ -83,6 +86,6 @@ public class Config {
 	public boolean writeBintreesToDB = true;
 
 	public PrecisionModel geometryFactoryPrecision = new PrecisionModel();
-	public PrecisionModel geometryPrecision = new PrecisionModel(Math.pow(10, 14));
+	public PrecisionModel geometryPrecision = new PrecisionModel(Math.pow(10, 10));
 
 }

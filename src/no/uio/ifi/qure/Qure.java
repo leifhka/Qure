@@ -55,8 +55,8 @@ public class Qure {
 		//rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
 
 		//rfs.add(new Config("npd",	"geom_test", 10, 3, 30, 10));
-		//rfs.add(new Config("dallas", "ns2", 13, 3, 30, 10));
-		rfs.add(new Config("small_physical", "with_simple", 15, 3, 30, 10));
+		rfs.add(new Config("dallas", "rcc8", 15, 3, 30, 10));
+		//rfs.add(new Config("small_physical", "with_simple", 15, 3, 30, 10));
 		//rfs.add(new Config("osm_dk", "geom_test", 15, 3, 30, 10));
 
 		//runMany(rfs);
@@ -205,7 +205,7 @@ public class Qure {
 		System.out.println(" # Geo. table: " + config.geoTableName);
 		System.out.println(" # Max depth: " + config.maxIterDepth);
 		System.out.println(" # Block member count: " + config.blockMemberCount);
-		System.out.println(" # Overlaps arity: " + config.overlapsArity);
+		System.out.println(" # Reltion set: " + config.relationSet.getName());
 		System.out.println(" # Write to: " + config.btTableName);
 		System.out.println("--------------------------------------");
 	}

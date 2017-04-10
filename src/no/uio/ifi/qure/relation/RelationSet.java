@@ -12,13 +12,23 @@ import static no.uio.ifi.qure.relation.Relation.*;
 
 public class RelationSet {
 
-	Set<Relation> relations;
-	Set<Integer> roles;
-	Set<AtomicRelation> atomicRels;
+	private Set<Relation> relations;
+	private Set<Integer> roles;
+	private Set<AtomicRelation> atomicRels;
+	private String name;
 
 	public RelationSet(Set<Relation> relations) {
 		this.relations = relations;
-		
+		initRolesAndAtomic();
+	}
+
+	public RelationSet(Set<Relation> relations, String name) {
+		this.relations = relations;
+		this.name = name;
+		initRolesAndAtomic();
+	}
+
+	private void initRolesAndAtomic() {
 		roles = new HashSet<Integer>();
 		atomicRels = new HashSet<AtomicRelation>();
 
@@ -35,6 +45,8 @@ public class RelationSet {
     		roles.add(0);
 		}
 	}
+
+	public String getName() { return name; }
 
 	public Set<Relation> getRelations() { return relations; }
 
@@ -75,7 +87,7 @@ public class RelationSet {
 
 		rcc8.add(partOf(0, 0, 0, 1).and(not(overlaps(b, b, 0, 1))));                              // NTPP
 		
-		return new RelationSet(rcc8);
+		return new RelationSet(rcc8, "RCC8");
 	}
 
 	public static RelationSet getSimple(int arity) {
@@ -90,6 +102,6 @@ public class RelationSet {
         	for (int j = 0; j < i; j++) args[j] = j;
         	simple.add(overlaps(noRoles, args));
     	}
-    	return new RelationSet(simple);
+    	return new RelationSet(simple, "simple-" + arity);
 	}
 }
