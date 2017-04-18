@@ -65,8 +65,9 @@ public interface SpaceProvider {
 		EvenSplit bestSplit = new EvenSplit(splitBlock, intSpL, intSpR);
 
 		int i = 0;
+		double ratio = config.minRatio;
 
-		while (i++ < config.maxSplits && ((double) Math.min(intAllR.size(), intAllL.size())) / Math.max(intAllR.size(), intAllL.size()) < config.minRatio) {
+		while (i++ < config.maxSplits && ratio < config.minRatio) {
 
 			if (intAllR.size() > intAllL.size()) {
 
@@ -103,6 +104,8 @@ public interface SpaceProvider {
 				                          new HashSet<SID>(intAllR));
 				bestDiff = diff;
 			}
+
+			ratio = ((double) Math.min(intAllR.size(), intAllL.size())) / Math.max(intAllR.size(), intAllL.size());
 		}
 		return bestSplit;
 	}
