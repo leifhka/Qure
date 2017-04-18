@@ -147,7 +147,7 @@ public class Qure {
 		long totalSec;
 
 		if (!ms) {
-			totalSec = (long) Math.round(((after - before) / 1000.0));
+			totalSec = Math.round(((after - before) / 1000.0));
 			long mins = (long) Math.floor(totalSec / 60.0);
 			long restSec = totalSec - (mins*60);
 			timeStr = what + ": " + totalSec + "s" + " = " + mins + "m" + restSec + "s";

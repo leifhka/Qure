@@ -74,6 +74,8 @@ public class TimeSpace implements Space {
 
 	public boolean isEmpty() { return start == null || end == null; }
 
+	public int hashCode() { return start.hashCode() + 2*end.hashCode(); }
+
 	public boolean equals(Object o) {
 
 		if (!(o instanceof TimeSpace)) return false;
@@ -161,7 +163,7 @@ public class TimeSpace implements Space {
 
 		TimeSpace ots = (TimeSpace) o;
 
-		TimeSpace intersection = (TimeSpace) this.intersection(ots);
+		TimeSpace intersection = this.intersection(ots);
 
 		boolean intersects = !intersection.isEmpty();
 		boolean isCovers = intersection.equals(ots);

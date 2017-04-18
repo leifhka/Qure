@@ -201,7 +201,7 @@ public class GeometryProvider implements SpaceProvider {
 
    public String extGeo() {
 
-		GeometrySpace geo = (GeometrySpace) getUniverse();
+		GeometrySpace geo = getUniverse();
 		String gs = geo.getGeometry().toString();
 		String whereClause = "ST_intersects(geom, ST_GeomFromText('" + gs + "')) AND ";
 		whereClause += "NOT ST_contains(geom, ST_GeomFromText('" + gs + "'))";

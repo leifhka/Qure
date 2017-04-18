@@ -174,7 +174,7 @@ public class TimeProvider implements SpaceProvider {
 
    public String extTime() {
 
-		TimeSpace uni = (TimeSpace) getUniverse();
+		TimeSpace uni = getUniverse();
 		String start = uni.getStart().toString();
 		String stop = uni.getEnd().toString();
 		String whereClause = "('" + start + "', '" + stop + "') OVERLAPS (starttime, stoptime) AND ";
