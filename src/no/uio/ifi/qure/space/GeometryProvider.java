@@ -127,8 +127,9 @@ public class GeometryProvider implements SpaceProvider {
 		return geometries.get(uri);
 	}
 
-	private GeometryProvider makeSubProvider(GeometrySpace uni, Set<SID> ints) {
+	public GeometryProvider makeSubProvider(Space spUni, Set<SID> ints) {
 
+		GeometrySpace uni = (GeometrySpace) spUni;
 		Set<SID> coversChildUniverse = new HashSet<SID>();
 		Map<SID, GeometrySpace> overlappingChildUniverse = new HashMap<SID, GeometrySpace>();
 		getIntersections(uni, ints, geometries, overlappingChildUniverse, coversChildUniverse);
@@ -146,47 +147,6 @@ public class GeometryProvider implements SpaceProvider {
 		for (SID uri : spMap.keySet()) {
 			overlapping.put(uri, (GeometrySpace) spMap.get(uri));
 		}
-	}
-
-	private GeometryProvider[] makeSubProviders(GeometrySpace childUniL, GeometrySpace childUniR,
-	                                            Set<SID> intL, Set<SID> intR) {
-
-		GeometryProvider subPL = makeSubProvider(childUniL, intL);
-		GeometryProvider subPR = makeSubProvider(childUniR, intR);
-
-		return new GeometryProvider[]{subPL, subPR};
-	}
-
-	public GeometryProvider[] splitProvider(int split) {
-
-		GeometrySpace[] childUniverseres = universe.split(split);
-		return makeSubProviders(childUniverseres[0], childUniverseres[1], keySet(), keySet());
-	}
-
-	public GeometryProvider[] splitProvider(int split, EvenSplit evenSplit) {
-
-		Block splitBlock = evenSplit.splitBlock;
-		GeometrySpace spL = makeEmptySpace(), spR = makeEmptySpace();
-		GeometrySpace[] splitLR = getUniverse().split(split);
-		GeometrySpace splitL = splitLR[0], splitR = splitLR[1];
-
-		for (int i = 0; i < splitBlock.depth(); i++) {
-
-			if (splitBlock.getBit(i) == 1L) {
-				spL = spL.union(splitL);
-				splitLR = splitR.split(split);
-				splitL = splitLR[0];
-				splitR = splitLR[1];
-			} else {
-				spR = spR.union(splitR);
-				splitLR = splitL.split(split);
-				splitL = splitLR[0];
-				splitR = splitLR[1];
-			}
-		}
-
-		return makeSubProviders(spL.union(splitL), spR.union(splitR),
-		                        evenSplit.intL, evenSplit.intR);
 	}
 
 	public void populateWithExternalOverlapping() {

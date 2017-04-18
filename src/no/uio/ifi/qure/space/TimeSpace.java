@@ -1,6 +1,6 @@
 package no.uio.ifi.qure.space;
 
-import no.uio.ifi.qure.*;
+import no.uio.ifi.qure.util.Pair;
 import no.uio.ifi.qure.traversal.*;
 
 import java.time.LocalDateTime;
@@ -31,6 +31,10 @@ public class TimeSpace implements Space {
 	public LocalDateTime getStart() { return start; }
 
 	public LocalDateTime getEnd() { return end; }
+
+	public TimeSpace clone() {
+		return new TimeSpace(start, end);
+	}
 
 	public static TimeSpace makeEmpty() { return new TimeSpace(null, null); }
 
@@ -91,7 +95,7 @@ public class TimeSpace implements Space {
 		}
 	}
 
-	public TimeSpace[] split(int dim) {
+	public Pair<TimeSpace, TimeSpace> split(int dim) {
 		
 		long halfDiffInSec = Math.round( ((double) start.until(end, ChronoUnit.SECONDS))/2.0 );
 		LocalDateTime mid = getStart().plusSeconds(halfDiffInSec);
@@ -99,7 +103,7 @@ public class TimeSpace implements Space {
 		TimeSpace ts1 = new TimeSpace(getStart(), mid);
 		TimeSpace ts2 = new TimeSpace(mid, getEnd());
 
-		return new TimeSpace[]{ts1, ts2};
+		return new Pair<TimeSpace, TimeSpace>(ts1, ts2);
 	}
 
 	public boolean before(Space o) {

@@ -3,6 +3,8 @@ package no.uio.ifi.qure.bintree;
 import java.util.Comparator;
 import java.util.Arrays;
 
+import no.uio.ifi.qure.util.Pair;
+
 public class Block {
 
 	// Total number of bits per block.
@@ -171,12 +173,12 @@ public class Block {
 		return new Block(getSize(), neiVal);
 	}
 
-	public Block[] split() {
+	public Pair<Block, Block> split() {
 
 		Block l = addZero();
 		Block r = addOne();
 
-		return new Block[]{l, r};
+		return new Pair<Block,Block>(l, r);
 	}
 	
 	public boolean isNeighbours(Block b) {

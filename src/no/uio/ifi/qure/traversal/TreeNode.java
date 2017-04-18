@@ -56,24 +56,24 @@ public class TreeNode {
 
 	public int depth() { return block.depth(); }
 
-	public TreeNode[] splitNodeEvenly() {
+	public Pair<TreeNode, TreeNode> splitNodeEvenly() {
 
-		EvenSplit evenSplit;
+		Pair<? extends SpaceProvider, ? extends SpaceProvider> sps;
+
 		if (evenSplits.containsKey(block)) {
-			evenSplit = new EvenSplit(evenSplits.get(block), getOverlappingURIs(), getOverlappingURIs());
+			sps = getSpaceProvider().splitProvider(split,evenSplits.get(block), getOverlappingURIs());
 		} else {
-			evenSplit = getSpaceProvider().getEvenSplit(split, config);
+			EvenSplit evenSplit = getSpaceProvider().getEvenSplit(split, config);
 			evenSplitBlock = evenSplit.splitBlock; // Save for representation, will be written to DB
+			sps = getSpaceProvider().splitProvider(split, evenSplit);
 		}
-
-		SpaceProvider[] sps = getSpaceProvider().splitProvider(split, evenSplit);
 
 		return makeChildNodes(sps);
 	}
 
-	public TreeNode[] splitNodeRegularly() {
+	public Pair<TreeNode, TreeNode> splitNodeRegularly() {
 
-		SpaceProvider[] sps = getSpaceProvider().splitProvider(split);
+		Pair<? extends SpaceProvider, ? extends SpaceProvider> sps = getSpaceProvider().splitProvider(split);
 		return makeChildNodes(sps);
 	}
 
@@ -88,23 +88,25 @@ public class TreeNode {
 		return m;
 	}
 
-	private TreeNode[] makeChildNodes(SpaceProvider[] sps) {
+	private TreeNode makeChildNode(Block b, SpaceProvider sp) {
 
-		Block[] bs = block.split();
-		TreeNode[] result = new TreeNode[sps.length];
-
-		for (int i = 0; i < sps.length; i++) {
-			result[i] = new TreeNode(bs[i], sps[i], getSplitBlocks(bs[i]), (split+1) % config.dim, config);
-			if (!sps[i].isEmpty() && !result[i].hasEvenSplit()) {
-				sps[i].populateWithExternalOverlapping();
-			}
+		TreeNode child = new TreeNode(b, sp, getSplitBlocks(b), (split+1) % config.dim, config);
+		if (!sp.isEmpty() && !child.hasEvenSplit()) {
+			sp.populateWithExternalOverlapping();
 		}
 
-		result[0].setReporter(reporter);
-		for (int i = 1; i < result.length; i++) {
-			result[i].setReporter(reporter.newReporter());
-		}
-		return result;
+		return child;
+	}
+
+	private Pair<TreeNode, TreeNode> makeChildNodes(Pair<? extends SpaceProvider, ? extends SpaceProvider> sps) {
+
+		Pair<Block, Block> bs = block.split();
+		TreeNode childL = makeChildNode(bs.fst, sps.fst);
+		TreeNode childR = makeChildNode(bs.snd, sps.snd);
+
+		childL.setReporter(reporter);
+		childR.setReporter(reporter.newReporter());
+		return new Pair<TreeNode, TreeNode>(childL, childR);
 	}
 
 	public Representation makeRepresentation(RelationSet rels) {

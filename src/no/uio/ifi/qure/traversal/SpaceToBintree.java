@@ -61,13 +61,11 @@ public class SpaceToBintree {
 				node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
 			}
 		} else {
-			TreeNode[] nodes = node.splitNodeEvenly();
+			Pair<TreeNode, TreeNode> nodes = node.splitNodeEvenly();
 			node.deleteSpaces(); // Free memory
-			TreeNode leftNode = nodes[0];
-			TreeNode rightNode = nodes[1];
  
-			Representation newLeftRep = traverseTree(leftNode);
-			Representation newRightRep = traverseTree(rightNode);
+			Representation newLeftRep = traverseTree(nodes.fst);
+			Representation newRightRep = traverseTree(nodes.snd);
 		
 			representation = newLeftRep.merge(newRightRep);
 

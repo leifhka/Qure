@@ -41,16 +41,59 @@ public interface SpaceProvider {
 
 	public void populateWithExternalOverlapping();
 
-	public SpaceProvider[] splitProvider(int split);
+	public SpaceProvider makeSubProvider(Space uni, Set<SID> sids);
 
-	public SpaceProvider[] splitProvider(int split, EvenSplit evenSplit);
+	public default Pair<SpaceProvider, SpaceProvider> makeSubProviders(Space childUniL, Space childUniR,
+	                                                                   Set<SID> intL, Set<SID> intR) {
+		SpaceProvider subPL = makeSubProvider(childUniL, intL);
+		SpaceProvider subPR = makeSubProvider(childUniR, intR);
+		return new Pair<SpaceProvider, SpaceProvider>(subPL, subPR);
+	}
+
+	public default Pair<SpaceProvider, SpaceProvider> splitProvider(int split) {
+		Pair<? extends Space, ? extends Space> childUniverseres = getUniverse().split(split);
+		return makeSubProviders(childUniverseres.fst, childUniverseres.snd, keySet(), keySet());
+	}
+
+	public default Pair<SpaceProvider, SpaceProvider> splitProvider(int split, Block splitBlock, Set<SID> sids) {
+		Pair<? extends Space, ? extends Space> splitSpaces = computeSpacesFromSplit(splitBlock, split);
+		return makeSubProviders(splitSpaces.fst, splitSpaces.snd, sids, sids);
+	}
+
+	public default Pair<SpaceProvider, SpaceProvider> splitProvider(int split, EvenSplit evenSplit) {
+		return makeSubProviders(evenSplit.uniL, evenSplit.uniR, evenSplit.intL, evenSplit.intR);
+	}
+
+	public default Pair<? extends Space, ? extends Space> computeSpacesFromSplit(Block splitBlock, int split) {
+
+		Space spL = makeEmptySpace(), spR = makeEmptySpace();
+		Pair<? extends Space, ? extends Space> splitLR = getUniverse().split(split);
+		Space splitL = splitLR.fst, splitR = splitLR.snd;
+
+		for (int i = 0; i < splitBlock.depth(); i++) {
+
+			if (splitBlock.getBit(i) == 1L) {
+				spL = spL.union(splitL);
+				splitLR = splitR.split(split);
+				splitL = splitLR.fst;
+				splitR = splitLR.snd;
+			} else {
+				spR = spR.union(splitR);
+				splitLR = splitL.split(split);
+				splitL = splitLR.fst;
+				splitR = splitLR.snd;
+			}
+		}
+
+		return new Pair<Space, Space>(spL.union(splitL), spR.union(splitR));
+	}
 
 	// TODO: Long method, split into smaller 
 	public default EvenSplit getEvenSplit(int split, Config config) {
 
 		Space spL = makeEmptySpace(), spR = makeEmptySpace();
-		Space[] splitLR = getUniverse().split(split);
-		Space splitL = splitLR[0], splitR = splitLR[1];
+		Pair<? extends Space, ? extends Space> splitLR = getUniverse().split(split);
+		Space splitL = splitLR.fst, splitR = splitLR.snd;
 
 		Set<SID> undecided = new HashSet<SID>(keySet());
 		Set<SID> intL = new HashSet<SID>(), intR = new HashSet<SID>();
@@ -62,7 +105,7 @@ public interface SpaceProvider {
 
 		Block splitBlock = Block.getTopBlock();
 		Set<SID> intAllL = intSpL, intAllR = intSpR;
-		EvenSplit bestSplit = new EvenSplit(splitBlock, intSpL, intSpR);
+		EvenSplit bestSplit = new EvenSplit(splitBlock, intSpL, intSpR, splitL, splitR);
 
 		int i = 0;
 		double ratio = config.minRatio;
@@ -88,8 +131,8 @@ public interface SpaceProvider {
 				splitBlock = splitBlock.addZero();
 			}
 
-			splitL = splitLR[0];
-			splitR = splitLR[1];
+			splitL = splitLR.fst;
+			splitR = splitLR.snd;
 
 			intSpL = Utils.getIntersecting(splitL, undecided, getSpaces(), config.numThreads);
 			intSpR = Utils.getIntersecting(splitR, undecided, getSpaces(), config.numThreads);
@@ -101,7 +144,8 @@ public interface SpaceProvider {
 			if (diff < bestDiff) {
 				bestSplit = new EvenSplit(new Block(splitBlock.getRepresentation()), 
 				                          new HashSet<SID>(intAllL), 
-				                          new HashSet<SID>(intAllR));
+				                          new HashSet<SID>(intAllR),
+				                          splitL.clone(), splitR.clone());
 				bestDiff = diff;
 			}
 

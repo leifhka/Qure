@@ -576,12 +576,12 @@ public class Qure {
 		}
 		
 		// Need to split last block, as bs only contains blocks that were split
-		Block[] lr = smallest.split();
+		Pair<Block, Block> lr = smallest.split();
 
-		if (block.blockPartOf(lr[0])) {
-			return lr[0];
-		} else if (block.blockPartOf(lr[1])) {
-			return lr[1];
+		if (block.blockPartOf(lr.fst)) {
+			return lr.fst;
+		} else if (block.blockPartOf(lr.snd)) {
+			return lr.snd;
 		} else {
 			return null;
 		}

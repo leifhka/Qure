@@ -1,6 +1,7 @@
 package no.uio.ifi.qure.space;
 
 import no.uio.ifi.qure.traversal.*;
+import no.uio.ifi.qure.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,10 @@ public class GeometrySpace implements Space {
 
 	public Geometry getGeometry() { return geo; }
 
+	public GeometrySpace clone() {
+		return new GeometrySpace(geo, precModel);
+	}
+
 	public void deleteGeometry() { geo = null; }
 
 	public boolean isEmpty() { return geo.isEmpty(); }
@@ -69,7 +74,7 @@ public class GeometrySpace implements Space {
 	 * Splits the argument envelope into two partition envelopes. The split is along the x-axis if xSplit,
 	 * and along the y-axis otherwise.
 	 */
-	private Envelope[] splitEnvelope(Envelope e, boolean xSplit) {
+	private Pair<Envelope, Envelope> splitEnvelope(Envelope e, boolean xSplit) {
 
 		Envelope e1,e2;
 
@@ -83,19 +88,19 @@ public class GeometrySpace implements Space {
 			e2 = new Envelope(e.getMinX(), e.getMaxX(), ymid, e.getMaxY());
 		}
 
-		return new Envelope[]{e1, e2};
+		return new Pair<Envelope, Envelope>(e1, e2);
 	}
 
-	public GeometrySpace[] split(int dim) {
+	public Pair<GeometrySpace, GeometrySpace> split(int dim) {
 
 		Envelope te = geo.getEnvelopeInternal();
 
-		Envelope[] es = splitEnvelope(te, dim == 0);
+		Pair<Envelope, Envelope> es = splitEnvelope(te, dim == 0);
 		GeometryFactory gf = geo.getFactory();
-		GeometrySpace gs1 = new GeometrySpace(gf.toGeometry(es[0]), precModel);
-		GeometrySpace gs2 = new GeometrySpace(gf.toGeometry(es[1]), precModel);
+		GeometrySpace gs1 = new GeometrySpace(gf.toGeometry(es.fst), precModel);
+		GeometrySpace gs2 = new GeometrySpace(gf.toGeometry(es.snd), precModel);
 
-		return new GeometrySpace[]{gs1, gs2};
+		return new Pair<GeometrySpace, GeometrySpace>(gs1, gs2);
 	}
 
 	public String toDBString() {

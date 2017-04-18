@@ -3,8 +3,11 @@ package no.uio.ifi.qure.space;
 import java.util.Set;
 
 import no.uio.ifi.qure.traversal.Relationship;
+import no.uio.ifi.qure.util.Pair;
 
 public interface Space {
+
+	public Space clone();
 
 	public Space intersection(Space o);
 
@@ -12,7 +15,7 @@ public interface Space {
 
 	public boolean isEmpty();
 
-	public Space[] split(int dim);
+	public Pair<? extends Space, ? extends Space> split(int dim);
 
 	public String toDBString();
 
