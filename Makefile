@@ -7,7 +7,8 @@ bin_prefix = bin/
 package_name = no/uio/ifi/qure/
 
 java = java -Xmx7600m -cp $(JAVA_CP)
-javac = javac -Xlint:deprecation -Xlint:unchecked -cp $(JAVAC_CP)
+#javac = javac -Xlint:deprecation -Xlint:unchecked -cp $(JAVAC_CP)
+javac = javac -Xlint:all -cp $(JAVAC_CP)
 
 CLASSES = \
         Config.java \
@@ -28,6 +29,8 @@ CLASSES = \
         space/GeometryProvider.java \
         space/GeometrySpace.java \
         relation/Relation.java \
+        relation/Overlaps.java \
+        relation/PartOf.java \
         relation/AtomicRelation.java \
         relation/RelationSet.java \
         space/Space.java \
