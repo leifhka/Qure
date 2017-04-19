@@ -29,6 +29,41 @@ public class PartOf extends AtomicRelation {
 		return "";
 	}
 
+	public boolean isValid() {
+		return a1 == a2 && Utils.bitContains(r1, r2);
+	}
+
+	public boolean impliesNonEmpty(AtomicRelation r) {
+
+		if (r.isValid()) {
+			return true;
+		} else if (isValid()) {
+			return false;
+		} else if (r.isOverlaps()) {
+			Overlaps ovr = (Overlaps) r;
+			if (r.getArity() > 2) { // The case of arity=1 is handled by r.isvalid()
+				return false;
+			} else {
+				// First argument must overlap one of the arguments, and
+				// second argument must contain the other argument.
+    			return (Utils.bitContainmentRelatedOne(r1, ovr.getArgRoles(a1)) &&
+				        Utils.bitContainedByOne(r2, ovr.getArgRoles(a2))) ||
+				       (Utils.bitContainmentRelatedOne(r1, ovr.getArgRoles(a2)) &&
+				        Utils.bitContainedByOne(r2, ovr.getArgRoles(a1)));
+			}
+		} else {
+			PartOf pr = (PartOf) r;
+			// First argument must overlap one of the arguments, and
+			// second argument must contain the other argument.
+			return a1 == pr.a1 && Utils.bitContainedBy(r1, pr.r1) &&
+			       a2 == pr.a2 && Utils.bitContains(r2, pr.r2);
+		}
+	}
+
+	public boolean impliedByNonEmpty(AtomicRelation r) {
+		return r.impliesNonEmpty(this);
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof PartOf)) return false;

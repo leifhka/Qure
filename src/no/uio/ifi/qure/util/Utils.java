@@ -13,6 +13,48 @@ import no.uio.ifi.qure.traversal.SID;
 
 public class Utils {
 
+	public static boolean bitContains(int i, int j) {
+		return (i & j) == j;
+	}
+
+	public static boolean bitContainedBy(int i, int j) {
+		return (i & j) == i;
+	}
+
+	public static boolean bitContainmentRelated(int i, int j) {
+		return bitContains(i, j) || bitContainedBy(i, j);
+	}
+
+	public static boolean bitContainmentRelatedOne(int i, Set<Integer> ints) {
+
+		if (ints == null) return false;
+
+		for (int j : ints) {
+			if (bitContains(i, j) || bitContainedBy(i, j)) return true;
+		}
+		return false;
+	}
+
+	public static boolean bitContainsOne(int i, Set<Integer> ints) {
+
+		if (ints == null) return false;
+
+		for (int j : ints) {
+			if (bitContains(i, j)) return true;
+		}
+		return false;
+	}
+
+	public static boolean bitContainedByOne(int i, Set<Integer> ints) {
+
+		if (ints == null) return false;
+
+		for (int j : ints) {
+			if (bitContainedBy(i, j)) return true;
+		}
+		return false;
+	}
+
 	public static void getIntersectionsSingle(Space uni, Set<SID> elems,
 	                                          Map<SID, ? extends Space> map,
 	                                          Map<SID, Space> intersections,

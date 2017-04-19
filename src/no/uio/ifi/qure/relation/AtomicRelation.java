@@ -15,6 +15,12 @@ import no.uio.ifi.qure.space.*;
 
 public abstract class AtomicRelation extends Relation {
 
+	public abstract boolean impliesNonEmpty(AtomicRelation r);
+
+	public abstract boolean impliedByNonEmpty(AtomicRelation r);
+
+	public abstract boolean isValid();
+
 	public abstract int getArity();
 
     public abstract boolean isOverlaps();
