@@ -17,6 +17,8 @@ public class RelationSet {
 	private Set<AtomicRelation> atomicRels;
 	private String name;
 
+	private Set<AtomicRelation> roots; // Used for implication graph
+
 	public RelationSet(Set<Relation> relations) {
 		this.relations = relations;
 		initRolesAndAtomic();
@@ -44,7 +46,43 @@ public class RelationSet {
 		if (roles.isEmpty()) {
     		roles.add(0);
 		}
+
+		computeImplicationGraph();
 	}
+
+	private void computeImplicationGraph() {
+
+		roots = new HashSet<AtomicRelation>();
+
+		// Naive computation of all implications, with transitive closure
+		// As the set of atomic relations has a low cardinality, a naive solution suffices
+		for (AtomicRelation rel1 : atomicRels) {
+			for (AtomicRelation rel2 : atomicRels) {
+				if (rel1.equals(rel2)) continue;
+			
+				if (rel1.impliesNonEmpty(rel2)) {
+					rel1.addImplies(rel2);
+					rel2.addImpliedBy(rel1);
+				}
+			}
+		}
+
+		// Remove transitive closure to obtain minimal implication graph and find all roots
+		for (AtomicRelation rel : atomicRels) {
+			if (rel.getImpliedByRelations().isEmpty()) {
+				roots.add(rel);
+				removeTransitiveClosure(rel);
+			}
+		}
+	}
+
+	private void removeTransitiveClosure(AtomicRelation rel) {
+		
+		for (AtomicRelation child : new HashSet<AtomicRelation>(rel.getImpliedRelations())) {
+			rel.getImpliedRelations().removeAll(child.getImpliedByRelations());
+			removeTransitiveClosure(child);
+		}
+	}	
 
 	public String getName() { return name; }
 

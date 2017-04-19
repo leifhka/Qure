@@ -15,6 +15,17 @@ import no.uio.ifi.qure.space.*;
 
 public abstract class AtomicRelation extends Relation {
 
+	// Used for implication graph
+	private Set<AtomicRelation> implies = new HashSet<AtomicRelation>();
+	private Set<AtomicRelation> impliedBy = new HashSet<AtomicRelation>();	
+
+	public void addImplies(AtomicRelation rel) { implies.add(rel); }
+	public void addImpliedBy(AtomicRelation rel) { impliedBy.add(rel); }
+	public Set<AtomicRelation> getImpliedRelations() { return implies; }
+	public Set<AtomicRelation> getImpliedByRelations() { return impliedBy; }
+
+
+	// Rest of methods
 	public abstract boolean impliesNonEmpty(AtomicRelation r);
 
 	public abstract boolean impliedByNonEmpty(AtomicRelation r);
