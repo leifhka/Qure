@@ -26,12 +26,22 @@ public abstract class AtomicRelation extends Relation {
 
 
 	// Rest of methods
+
+	/**
+	 * Returns true iff this relation implies r for anny instantiation of the arguments with non-empty spaces.
+	 */
 	public abstract boolean impliesNonEmpty(AtomicRelation r);
 
+	/**
+	 * Returns true iff this relation is implied by r for any instantiation of the arguments with non-empty spaces.
+	 */
 	public boolean impliedByNonEmpty(AtomicRelation r) {
 		return r.impliesNonEmpty(this);
 	}
 
+	/**
+	 * Returns true iff this relation holds for any instantiation of the arguments with non-empty spaces.
+	 */
 	public abstract boolean isValid();
 
 	public abstract int getArity();

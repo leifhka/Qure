@@ -30,6 +30,10 @@ public class RelationSet {
 		initRolesAndAtomic();
 	}
 
+	public RelationSet union(RelationSet rels) {
+		return new RelationSet(Utils.union(relations, rels.getRelations()));
+	}
+
 	private void initRolesAndAtomic() {
 		roles = new HashSet<Integer>();
 		atomicRels = new HashSet<AtomicRelation>();

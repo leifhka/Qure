@@ -40,6 +40,8 @@ public abstract class Relation {
 
 	public static Relation partOf(int r1, int r2, int a1, int a2) { return new PartOf(r1, r2, a1, a2); }
 
+	public static Relation before(int r1, int r2, int a1, int a2) { return new Before(r1, r2, a1, a2); }
+
 	public Relation and(Relation o) { return new And(this, o); }
 
 	public static Relation not(Relation o) { return new Not(o); }

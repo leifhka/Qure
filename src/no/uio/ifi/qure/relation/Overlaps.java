@@ -14,7 +14,6 @@ import no.uio.ifi.qure.space.*;
 public class Overlaps extends AtomicRelation {
 
 	private Map<Integer, Set<Integer>> argRoles;
-	private final int arity;
 
 	public Overlaps(int r1, int r2, int a1, int a2) {
 
@@ -24,7 +23,6 @@ public class Overlaps extends AtomicRelation {
 		argRoles.get(a1).add(r1);
 		argRoles.get(a2).add(r2);
 		
-		arity = computeArity();
 	}
 
 	public Overlaps(int[] rs, int[] as) {
@@ -36,14 +34,10 @@ public class Overlaps extends AtomicRelation {
 		for (int i = 0; i < as.length; i++) {
 			argRoles.get(as[i]).add(rs[i]);
 		}
-		
-		arity = computeArity();
 	}
 
 	public Overlaps(Map<Integer, Set<Integer>> argRoles) {
-
 		this.argRoles = argRoles;
-		arity = computeArity();
 	}
 
 	public String toString() {
@@ -58,23 +52,14 @@ public class Overlaps extends AtomicRelation {
 		return res + ")";
 	}
 
-	private int computeArity() {
-		int a = 0;
-
-		for (int arg : argRoles.keySet()) {
-			a += argRoles.get(arg).size();
-		}
-		return a;
-	}				
-
 	protected Set<Integer> getArgRoles(int arg) { return argRoles.get(arg); }
 
 	public int getArity() {
-		return arity;
+		return argRoles.keySet().size();
 	}
 
 	public boolean isValid() {
-		return getArity() == 1;
+		return getArity() == 1 && argRoles.values().size() == 1;
 	}
 
 	public boolean impliesNonEmpty(AtomicRelation r) {
@@ -85,14 +70,11 @@ public class Overlaps extends AtomicRelation {
 			return false;
 		} else {
 			Overlaps ovr = (Overlaps) r;
-			if (r.getArity() > getArity()) {
-				return false;
-			} else {
-				for (int arg : ovr.argRoles.keySet()) {
-					for (int role : ovr.argRoles.get(arg)) {
-						if (!oneStricter(role, argRoles.get(arg))) {
-							return false;
-						}
+			// TODO: fix this. Not correct in e.g. ov(<1,0>, <2,0>, <3,1>). Need to unify (complex!)
+			for (int arg : ovr.argRoles.keySet()) {
+				for (int role : ovr.argRoles.get(arg)) {
+					if (!oneStricter(role, argRoles.get(arg))) {
+						return false;
 					}
 				}
 				return true;
@@ -143,6 +125,7 @@ public class Overlaps extends AtomicRelation {
 
 	public Set<AtomicRelation> getAtomicRelations() {
 
+		// TODO: Normalize argument-variables' order according to number of roles
 		Map<Integer, Integer> argNormMap = new HashMap<Integer, Integer>();
 		int i = 0;
 		for (Integer arg : argRoles.keySet()) {
