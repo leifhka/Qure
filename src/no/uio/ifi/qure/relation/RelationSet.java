@@ -66,7 +66,6 @@ public class RelationSet {
 				}
 			}
 		}
-
 		// Remove transitive closure to obtain minimal implication graph and find all roots
 		for (AtomicRelation rel : atomicRels) {
 			if (rel.getImpliedByRelations().isEmpty()) {
@@ -79,7 +78,7 @@ public class RelationSet {
 	private void removeTransitiveClosure(AtomicRelation rel) {
 		
 		for (AtomicRelation child : new HashSet<AtomicRelation>(rel.getImpliedRelations())) {
-			rel.getImpliedRelations().removeAll(child.getImpliedByRelations());
+			rel.getImpliedRelations().removeAll(child.getImpliedRelations());
 			removeTransitiveClosure(child);
 		}
 	}	
@@ -89,6 +88,8 @@ public class RelationSet {
 	public Set<Relation> getRelations() { return relations; }
 
 	public Set<Integer> getRoles() { return roles; }
+
+	public Set<AtomicRelation> getImplicationGraphRoots() { return roots; }
 
 	/**
 	 * Returns the number of atmoic roles, that is, the number of bits needed to represnt all roles.

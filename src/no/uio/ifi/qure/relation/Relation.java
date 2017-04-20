@@ -60,6 +60,45 @@ public abstract class Relation {
 	public static Relation not(Relation o) { return new Not(o); }
 
 	public boolean isConjunctive() { return isConjunctive(false); }
+
+
+	public static boolean stricterRole(int i, int j) {
+		return (i & j) == j;
+	}
+
+	public static boolean strictnessRelated(int i, int j) {
+		return stricterRole(i, j) || stricterRole(j, i);
+	}
+
+	public static boolean oneStrictnessRelated(int i, Set<Integer> ints) {
+
+		if (ints == null) return false;
+
+		for (int j : ints) {
+			if (strictnessRelated(i, j)) return true;
+		}
+		return false;
+	}
+
+	public static boolean oneStricter(int i, Set<Integer> ints) {
+
+		if (ints == null) return false;
+
+		for (int j : ints) {
+			if (stricterRole(j, i)) return true;
+		}
+		return false;
+	}
+
+	public static boolean oneLessStrict(int i, Set<Integer> ints) {
+
+		if (ints == null) return false;
+
+		for (int j : ints) {
+			if (stricterRole(i, j)) return true;
+		}
+		return false;
+	}
 }
 
 class And extends Relation {
@@ -83,6 +122,10 @@ class And extends Relation {
 	@Override
 	public int hashCode() {
 		return conj1.hashCode() * conj2.hashCode();
+	}
+
+	public String toString() {
+		return conj1.toString() + " /\\ " + conj2.toString();
 	}
 
 	public String toSQL() { //TODO
@@ -129,6 +172,10 @@ class Not extends Relation {
 	@Override
 	public int hashCode() {
 		return (-1)*rel.hashCode();
+	}
+
+	public String toString() {
+		return "~" + rel.toString();
 	}
 
 	public String toSQL() { //TODO

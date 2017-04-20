@@ -25,12 +25,16 @@ public class PartOf extends AtomicRelation {
 
 	public int getArity() { return 2; }
 
+	public String toString() {
+		return "po(<" + r1 + "," + a1 + ">, <" + r2 + "," + a2 + ">)";
+	}
+
 	public String toSQL() { //TODO
 		return "";
 	}
 
 	public boolean isValid() {
-		return a1 == a2 && Utils.bitContains(r1, r2);
+		return a1 == a2 && stricterRole(r1, r2);
 	}
 
 	public boolean impliesNonEmpty(AtomicRelation r) {
@@ -46,17 +50,17 @@ public class PartOf extends AtomicRelation {
 			} else {
 				// First argument must overlap one of the arguments, and
 				// second argument must contain the other argument.
-    			return (Utils.bitContainmentRelatedOne(r1, ovr.getArgRoles(a1)) &&
-				        Utils.bitContainedByOne(r2, ovr.getArgRoles(a2))) ||
-				       (Utils.bitContainmentRelatedOne(r1, ovr.getArgRoles(a2)) &&
-				        Utils.bitContainedByOne(r2, ovr.getArgRoles(a1)));
+    			return (oneStrictnessRelated(r1, ovr.getArgRoles(a1)) &&
+				        oneLessStrict(r2, ovr.getArgRoles(a2))) ||
+				       (oneStrictnessRelated(r1, ovr.getArgRoles(a2)) &&
+				        oneLessStrict(r2, ovr.getArgRoles(a1)));
 			}
 		} else {
 			PartOf pr = (PartOf) r;
 			// First argument must overlap one of the arguments, and
 			// second argument must contain the other argument.
-			return a1 == pr.a1 && Utils.bitContainedBy(r1, pr.r1) &&
-			       a2 == pr.a2 && Utils.bitContains(r2, pr.r2);
+			return a1 == pr.a1 && stricterRole(pr.r1, r1) &&
+			       a2 == pr.a2 && stricterRole(r2, pr.r2);
 		}
 	}
 
@@ -69,7 +73,7 @@ public class PartOf extends AtomicRelation {
 		if (!(o instanceof PartOf)) return false;
 
 		PartOf opo = (PartOf) o;
-		return a1 == opo.a1 && a2 == opo.a2;
+		return a1 == opo.a1 && a2 == opo.a2 && r1 == opo.r1 && r2 == opo.r2;
 	}
 
 	@Override

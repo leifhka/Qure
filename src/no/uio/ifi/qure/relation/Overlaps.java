@@ -14,7 +14,7 @@ import no.uio.ifi.qure.space.*;
 public class Overlaps extends AtomicRelation {
 
 	private Map<Integer, Set<Integer>> argRoles;
-	private int arity;
+	private final int arity;
 
 	public Overlaps(int r1, int r2, int a1, int a2) {
 
@@ -30,14 +30,32 @@ public class Overlaps extends AtomicRelation {
 	public Overlaps(int[] rs, int[] as) {
 
 		argRoles = new HashMap<Integer, Set<Integer>>();
-		for (int i = 0; i < rs.length; i++) {
+		for (int i = 0; i < as.length; i++) {
 			argRoles.put(as[i], new HashSet<Integer>());
 		}
-		for (int i = 0; i < rs.length; i++) {
+		for (int i = 0; i < as.length; i++) {
 			argRoles.get(as[i]).add(rs[i]);
 		}
 		
 		arity = computeArity();
+	}
+
+	public Overlaps(Map<Integer, Set<Integer>> argRoles) {
+
+		this.argRoles = argRoles;
+		arity = computeArity();
+	}
+
+	public String toString() {
+		String res = "ov(";
+		String delim = "";
+		for (int arg : argRoles.keySet()) {
+			for (int role : argRoles.get(arg)) {
+				res += delim + "<" + role + "," + arg + ">";
+				if (delim.equals("")) delim = ", ";
+			}
+		}
+		return res + ")";
 	}
 
 	private int computeArity() {
@@ -50,10 +68,6 @@ public class Overlaps extends AtomicRelation {
 	}				
 
 	protected Set<Integer> getArgRoles(int arg) { return argRoles.get(arg); }
-
-	public Overlaps(Map<Integer, Set<Integer>> argRoles) {
-		this.argRoles = argRoles;
-	}
 
 	public int getArity() {
 		return arity;
@@ -76,7 +90,7 @@ public class Overlaps extends AtomicRelation {
 			} else {
 				for (int arg : ovr.argRoles.keySet()) {
 					for (int role : ovr.argRoles.get(arg)) {
-						if (!Utils.bitContainedByOne(role, argRoles.get(arg))) {
+						if (!oneStricter(role, argRoles.get(arg))) {
 							return false;
 						}
 					}
