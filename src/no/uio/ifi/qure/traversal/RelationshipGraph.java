@@ -257,11 +257,13 @@ public class RelationshipGraph {
     	for (AtomicRelation rel : relations.getAtomicRelations()) {
         	Set<List<SID>> tuples = rel.evalAll(spaces.getSpaces(), roleToSID);
         	for (List<SID> tuple : tuples) {
-            	if (rel.isOverlaps()) {
+            	if (rel instanceof Overlaps) {
 					addOverlapsWithRedundancyCheck(new HashSet<SID>(tuple));
-            	} else {
+            	} else if (rel instanceof PartOf) {
 					addCoveredBy(tuple.get(0), tuple.get(1));
-            	}
+            	} else {
+					addBefore(tuple.get(0), tuple.get(1));
+				}
         	}
     	}
 	}

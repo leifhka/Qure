@@ -31,6 +31,7 @@ CLASSES = \
         relation/Relation.java \
         relation/Overlaps.java \
         relation/PartOf.java \
+        relation/Before.java \
         relation/AtomicRelation.java \
         relation/RelationSet.java \
         space/Space.java \

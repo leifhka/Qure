@@ -81,7 +81,7 @@ public class Overlaps extends AtomicRelation {
 
 		if (r.isValid()) {
 			return true;
-		} else if (isValid() || !r.isOverlaps()) {
+		} else if (isValid() || !(r instanceof Overlaps)) {
 			return false;
 		} else {
 			Overlaps ovr = (Overlaps) r;
@@ -98,10 +98,6 @@ public class Overlaps extends AtomicRelation {
 				return true;
 			}
 		}
-	}
-
-	public boolean impliedByNonEmpty(AtomicRelation r) {
-		return r.impliesNonEmpty(this);
 	}
 
 	@Override
@@ -224,7 +220,5 @@ public class Overlaps extends AtomicRelation {
 	}
 
 	public boolean isConjunctive(boolean insideNgeation) { return true; }
-
-	public boolean isOverlaps() { return true; }
 }
 

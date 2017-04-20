@@ -28,14 +28,15 @@ public abstract class AtomicRelation extends Relation {
 	// Rest of methods
 	public abstract boolean impliesNonEmpty(AtomicRelation r);
 
-	public abstract boolean impliedByNonEmpty(AtomicRelation r);
+	public boolean impliedByNonEmpty(AtomicRelation r) {
+		return r.impliesNonEmpty(this);
+	}
 
 	public abstract boolean isValid();
 
 	public abstract int getArity();
 
-    public abstract boolean isOverlaps();
-
 	public abstract Set<List<SID>> evalAll(Map<SID, ? extends Space> spaces, Map<Integer, Set<SID>> roleToSID);
+
 }
 
