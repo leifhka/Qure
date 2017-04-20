@@ -242,11 +242,11 @@ public class RelationshipGraph {
 		}
 		RelationshipGraph graph = new RelationshipGraph(spaceNode.getBlock(), uris, relations);
 
-		SID[] urisArr = uris.toArray(new SID[uris.size()]);
-		Set<Intersection> intersections = new HashSet<Intersection>();
-
+		// SID[] urisArr = uris.toArray(new SID[uris.size()]);
+		// Set<Intersection> intersections = new HashSet<Intersection>();
 		// graph.computeBinaryRelations(urisArr, spaces, intersections, intMap);
 		// graph.computeKIntersections(intersections, uris, spaces, intMap);
+
 		graph.computeRelationshipGraph(spaces);
 
 		return graph;
@@ -266,9 +266,6 @@ public class RelationshipGraph {
     	}
 	}
 
-	// TODO: Let method take extra argument, a set of positive base relations extracted from
-	// the relation definitions, and compute these relationships for the spaces, and update the graph
-	// accordingly.
 //	private void computeBinaryRelations(SID[] urisArr, SpaceProvider spaces, 
 //	                                    Set<Intersection> intersections, Map<SID, Set<SID>> intMap) {
 //

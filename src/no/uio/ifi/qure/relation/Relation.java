@@ -12,21 +12,6 @@ import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.traversal.*;
 import no.uio.ifi.qure.space.*;
 
-/* Example relations:
- *   new And(new Not(new PartOf(1,2)),
- *		   new Overlaps(1,2))
- * or
- *   not(partOf(1,2)).and(overlaps(1,2))
- *
- * --------------------------------------
- *
- *   new And(new PartOf(1,2),
- *		   new And(new Overlaps(2,3),
- *			   new Not(new PartOf(1,3))))
- * or
- *   partOf(1,2).and(overlaps(2,3)).and(not(partOf(1,3)))
- */
-
 public abstract class Relation {
 
 	public abstract String toSQL();

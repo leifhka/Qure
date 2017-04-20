@@ -17,7 +17,7 @@ public class RelationSet {
 	private Set<AtomicRelation> atomicRels;
 	private String name;
 
-	private Set<AtomicRelation> roots; // Used for implication graph
+	private Set<AtomicRelation> leaves; // Used for implication graph
 
 	public RelationSet(Set<Relation> relations) {
 		this.relations = relations;
@@ -52,8 +52,6 @@ public class RelationSet {
 
 	private void computeImplicationGraph() {
 
-		roots = new HashSet<AtomicRelation>();
-
 		// Naive computation of all implications, with transitive closure
 		// As the set of atomic relations has a low cardinality, a naive solution suffices
 		for (AtomicRelation rel1 : atomicRels) {
@@ -66,11 +64,15 @@ public class RelationSet {
 				}
 			}
 		}
+
+		leaves = new HashSet<AtomicRelation>();
 		// Remove transitive closure to obtain minimal implication graph and find all roots
 		for (AtomicRelation rel : atomicRels) {
 			if (rel.getImpliedByRelations().isEmpty()) {
-				roots.add(rel);
 				removeTransitiveClosure(rel);
+			}
+			if (rel.getImpliedRelations().isEmpty()) {
+				leaves.add(rel);
 			}
 		}
 	}
@@ -89,7 +91,7 @@ public class RelationSet {
 
 	public Set<Integer> getRoles() { return roles; }
 
-	public Set<AtomicRelation> getImplicationGraphRoots() { return roots; }
+	public Set<AtomicRelation> getImplicationGraphLeaves() { return leaves; }
 
 	/**
 	 * Returns the number of atmoic roles, that is, the number of bits needed to represnt all roles.
