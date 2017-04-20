@@ -252,6 +252,7 @@ public class RelationshipGraph {
 		return graph;
 	}
 
+	// TODO: Compute binary overlaps of most general roles first, and use as index for general graph computation.
 	private void computeRelationshipGraph(SpaceProvider spaces) {
 
     	for (AtomicRelation rel : relations.getAtomicRelations()) {

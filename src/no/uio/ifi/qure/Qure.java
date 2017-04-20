@@ -27,6 +27,9 @@ import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.bintree.*;
 import no.uio.ifi.qure.space.*;
 import no.uio.ifi.qure.traversal.*;
+import no.uio.ifi.qure.relation.*;
+
+import static no.uio.ifi.qure.relation.Relation.*;
 
 public class Qure {
 
@@ -39,60 +42,18 @@ public class Qure {
 
 	public static void main(String[] args) {
 
-		// Relation r = partOf(0,0,0,1).and(not(partOf(0,0,0,2))).and(overlaps(0,0,1,2));
-		// System.out.println(r.eval(new Space[]{new TimeSpace(LocalDateTime.of(2016, 10, 1, 0, 0),
-		//													 LocalDateTime.of(2016, 11, 1, 0, 0)),
-		//									   new TimeSpace(LocalDateTime.of(2016, 9, 1, 0, 0),
-		//													 LocalDateTime.of(2016, 11, 11, 11, 11)),
-		//									   new TimeSpace(LocalDateTime.of(2016, 8, 10, 10, 10),
-		//													 LocalDateTime.of(2016, 9, 12, 11, 11))
-		//									  }));
-
-		ArrayList<Config> rfs = new ArrayList<Config>();
+		RelationSet rels = RelationSet.getRCC8(1,2).union(RelationSet.getSimple(10));
+		for (AtomicRelation rel : rels.getAtomicRelations()) {
+			System.out.println(rel.toString() + " => " + rel.getImpliedRelations().toString());
+		}
+		System.out.println("Leaves: " + rels.getImplicationGraphLeaves().toString());
+		//ArrayList<Config> rfs = new ArrayList<Config>();
 		//rfs.add(new Config("dallas", "f3", 13, 3, 30, 10));
 		//rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
 		//rfs.add(new Config("npd",	"upsa", 10, 3, 30, 10));
 		//rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
 
-		//rfs.add(new Config("npd",	"geom_test", 10, 3, 30, 10));
-		rfs.add(new Config("dallas", "rcc8", 15, 3, 30, 10));
-		//rfs.add(new Config("small_physical", "with_simple", 15, 3, 30, 10));
-		//rfs.add(new Config("osm_dk", "geom_test", 15, 3, 30, 10));
-
 		//runMany(rfs);
-		//writeDBSizes(rfs);
-
-		//ArrayList<Config> configs = new ArrayList<Config>();
-
-		//configs.add(new Config("osm_no", "full", 15, 4, 30, 10));
-		//configs.add(new Config("dallas", "full", 15, 4, 30, 10));
-		//configs.add(new Config("osm_dk", "full", 15, 3, 30, 10));
-		//configs.add(new Config("npd",	"full", 13, 3, 30, 10));
-
-		//configs.add(new Config("dallas", "full", 17, 3, 30, 10));
-		//configs.add(new Config("osm_no", "full", 17, 3, 30, 10));
-		//configs.add(new Config("osm_dk", "full", 13, 3, 30, 10));
-		//configs.add(new Config("npd",	"full", 10, 3, 30, 10));
-
-		//Config o1 = new Config("dallas", "unbal", 13, 3, 30, 0);
-		//o1.blockSize = 63;
-		//configs.add(o1);
-		//Config o2 = new Config("osm_no", "unbal", 15, 3, 30, 0);
-		//o2.blockSize = 63;
-		//configs.add(o2);
-		//Config o3 = new Config("osm_dk", "unbal", 15, 3, 30, 0);
-		//o3.blockSize = 63;
-		//configs.add(o3);
-
-		//configs2.add(new Config("npd",   "unbal", 10, 3, 30, 0));
-
-		//configs.add(new Config("dallas", "full", 10, 3, 30, 10));
-		//configs.add(new Config("osm_no", "full", 10, 3, 30, 10));
-		//configs.add(new Config("osm_dk", "full", 10, 3, 30, 10));
-		//configs.add(new Config("npd",	"full", 8, 3, 30, 10));
-
-		
-		runMany(rfs);
 		//writeDBSizes(rfs);
 		//times = new HashMap<String, Long>();
 		//runManyQueryBM(rfs);
