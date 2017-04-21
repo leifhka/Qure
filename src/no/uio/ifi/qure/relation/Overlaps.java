@@ -13,53 +13,52 @@ import no.uio.ifi.qure.space.*;
 
 public class Overlaps extends AtomicRelation {
 
-	private Map<Integer, Set<Integer>> argRoles;
+	private Map<Integer, Integer> argRole;
 
 	public Overlaps(int r1, int r2, int a1, int a2) {
 
-		argRoles= new HashMap<Integer, Set<Integer>>();
-		argRoles.put(a1, new HashSet<Integer>());
-		argRoles.put(a2, new HashSet<Integer>());
-		argRoles.get(a1).add(r1);
-		argRoles.get(a2).add(r2);
-		
+		argRole= new HashMap<Integer, Integer>();
+		if (a1 == a2) {
+    		argRole.put(a1, (r1 | r2));
+		} else {
+        	argRole.put(a1, r1);
+    		argRole.put(a2, r2);
+    	}		
 	}
 
 	public Overlaps(int[] rs, int[] as) {
 
-		argRoles = new HashMap<Integer, Set<Integer>>();
+		argRole = new HashMap<Integer, Integer>();
 		for (int i = 0; i < as.length; i++) {
-			argRoles.put(as[i], new HashSet<Integer>());
+			argRole.put(as[i], 0);
 		}
 		for (int i = 0; i < as.length; i++) {
-			argRoles.get(as[i]).add(rs[i]);
+			argRole.put(as[i], argRole.get(as[i]) | rs[i]);
 		}
 	}
 
-	public Overlaps(Map<Integer, Set<Integer>> argRoles) {
-		this.argRoles = argRoles;
+	public Overlaps(Map<Integer, Integer> argRole) {
+		this.argRole = argRole;
 	}
 
 	public String toString() {
 		String res = "ov(";
 		String delim = "";
-		for (int arg : argRoles.keySet()) {
-			for (int role : argRoles.get(arg)) {
-				res += delim + "<" + role + "," + arg + ">";
-				if (delim.equals("")) delim = ", ";
-			}
+		for (int arg : argRole.keySet()) {
+			res += delim + "<" + argRole.get(arg) + "," + arg + ">";
+			if (delim.equals("")) delim = ", ";
 		}
 		return res + ")";
 	}
 
-	protected Set<Integer> getArgRoles(int arg) { return argRoles.get(arg); }
+	protected Integer getArgRole(int arg) { return argRole.get(arg); }
 
 	public int getArity() {
-		return argRoles.keySet().size();
+		return argRole.keySet().size();
 	}
 
 	public boolean isValid() {
-		return getArity() == 1 && argRoles.values().size() == 1;
+		return getArity() == 1; // Assuming non-empty argument for argument role
 	}
 
 	public boolean impliesNonEmpty(AtomicRelation r) {
@@ -69,17 +68,33 @@ public class Overlaps extends AtomicRelation {
 		} else if (isValid() || !(r instanceof Overlaps)) {
 			return false;
 		} else {
+    		if (getArity() < r.getArity()) return false;
+
 			Overlaps ovr = (Overlaps) r;
-			// TODO: fix this. Not correct in e.g. ov(<1,0>, <2,0>, <3,1>). Need to unify (complex!)
-			for (int arg : ovr.argRoles.keySet()) {
-				for (int role : ovr.argRoles.get(arg)) {
-					if (!oneStricter(role, argRoles.get(arg))) {
-						return false;
-					}
-				}
-				return true;
-			}
+			Set<Integer> rArgs = new HashSet<Integer>(ovr.argRole.keySet());
+			Set<Integer> tArgs = new HashSet<Integer>(argRole.keySet());
+			return unifyOverlaps(tArgs, rArgs, ovr);
 		}
+	}
+
+	private boolean unifyOverlaps(Set<Integer> tArgs, Set<Integer> rArgs, Overlaps r) {
+    	if (rArgs.isEmpty()) return true;
+
+    	Set<Integer> possible = new HashSet<Integer>();
+    	Pair<Integer, Set<Integer>> oneArg = Utils.getSome(rArgs);
+    	Integer rArg = oneArg.fst;
+
+    	for (Integer tArg : tArgs) {
+        	if (stricterRole(argRole.get(tArg), r.argRole.get(rArg))) {
+            	possible.add(tArg);
+        	}
+    	}
+    	for (Integer tArg : possible) {
+        	Set<Integer> tArgsNew = new HashSet<Integer>(tArgs);
+        	tArgsNew.remove(tArg);
+        	if (unifyOverlaps(tArgsNew, oneArg.snd, r)) return true;
+    	}
+    	return false;
 	}
 
 	@Override
@@ -87,14 +102,14 @@ public class Overlaps extends AtomicRelation {
 		if (!(o instanceof Overlaps)) return false;
 
 		Overlaps oov = (Overlaps) o;
-		return argRoles.equals(oov.argRoles);
+		return argRole.equals(oov.argRole);
 	}
 
 	@Override
 	public int hashCode() {
 		int hc = 0;
-		for (Integer r : argRoles.keySet()) {
-			hc += r + argRoles.get(r).hashCode();
+		for (Integer r : argRole.keySet()) {
+			hc += r + argRole.get(r).hashCode();
 		}
 		return hc;
 	}
@@ -102,10 +117,8 @@ public class Overlaps extends AtomicRelation {
 	public boolean evalRoled(Space[] spaceArgs) {
 
 		Set<Space> sps = new HashSet<Space>();
-		for (Integer arg : argRoles.keySet()) {	
-			for (Integer role : argRoles.get(arg)) {
-    			sps.add(spaceArgs[arg].getPart(role));
-			}
+		for (Integer arg : argRole.keySet()) {	
+    			sps.add(spaceArgs[arg].getPart(argRole.get(arg)));
 		}
 		Pair<Space, Set<Space>> sm = Utils.getSome(sps);
 		return sm.fst.overlaps(sm.snd);
@@ -114,10 +127,8 @@ public class Overlaps extends AtomicRelation {
 	public boolean eval(Space[] spaceArgs) {
 
 		Set<Space> sps = new HashSet<Space>();
-		for (Integer arg : argRoles.keySet()) {	
-			for (Integer role : argRoles.get(arg)) {
-    			sps.add(spaceArgs[arg]);
-			}
+		for (Integer arg : argRole.keySet()) {	
+			sps.add(spaceArgs[arg]);
 		}
 		Pair<Space, Set<Space>> sm = Utils.getSome(sps);
 		return sm.fst.overlaps(sm.snd);
@@ -128,29 +139,27 @@ public class Overlaps extends AtomicRelation {
 		// TODO: Normalize argument-variables' order according to number of roles
 		Map<Integer, Integer> argNormMap = new HashMap<Integer, Integer>();
 		int i = 0;
-		for (Integer arg : argRoles.keySet()) {
+		for (Integer arg : argRole.keySet()) {
 			if (!argNormMap.containsKey(arg)) {
 				argNormMap.put(arg, i);
 				i++;
 			}
 		}
-		Map<Integer, Set<Integer>> normalizedArgRoles = new HashMap<Integer, Set<Integer>>();
-		for (Integer arg : argRoles.keySet()) {
-			normalizedArgRoles.put(argNormMap.get(arg), argRoles.get(arg));
+		Map<Integer, Integer> normalizedArgRole = new HashMap<Integer, Integer>();
+		for (Integer arg : argRole.keySet()) {
+			normalizedArgRole.put(argNormMap.get(arg), argRole.get(arg));
 		}
 		
 		Set<AtomicRelation> rels = new HashSet<AtomicRelation>();
-		rels.add(new Overlaps(normalizedArgRoles));
+		rels.add(new Overlaps(normalizedArgRole));
 		return rels;
 	}
 
 	public Set<Integer> getRoles() {
 
 		Set<Integer> rs = new HashSet<Integer>();
-		for (Set<Integer> vrs : argRoles.values()) {
-			for (Integer role : vrs) {
-    			rs.add(role);
-			}
+		for (Integer role : argRole.values()) {
+			rs.add(role);
 		}
 		return rs;
 	}
@@ -180,11 +189,11 @@ public class Overlaps extends AtomicRelation {
 			}
     	} else {
         	// We first need to extract all candidate SIDs that has a non-empty space for each role of i'th arg
-        	Pair<Integer, Set<Integer>> someRole = Utils.getSome(argRoles.get(i));
-        	Set<SID> candidates = new HashSet<SID>(roleToSID.get(someRole.fst));
+        	Set<Integer> stricterRoles = getStricter(roleToSID.keySet(), argRole.get(i));
+        	Set<SID> candidates = new HashSet<SID>();
 
-        	for (Integer role : someRole.snd) {
-            	candidates.retainAll(roleToSID.get(role));
+        	for (Integer role : stricterRoles) {
+            	candidates.addAll(roleToSID.get(role));
         	}
 
         	candidates.removeAll(tuple);

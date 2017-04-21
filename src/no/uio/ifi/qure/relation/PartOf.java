@@ -48,13 +48,12 @@ public class PartOf extends AtomicRelation {
 			if (r.getArity() > 2) { // The case of arity=1 is handled by r.isvalid()
 				return false;
 			} else {
-    			// TODO: fix this. Not correct in e.g. ov(<1,0>, <2,0>, <3,1>). Need to unify (complex!)
 				// First argument must overlap one of the arguments, and
 				// second argument must contain the other argument.
-    			return (oneStrictnessRelated(r1, ovr.getArgRoles(a1)) &&
-				        oneLessStrict(r2, ovr.getArgRoles(a2))) ||
-				       (oneStrictnessRelated(r1, ovr.getArgRoles(a2)) &&
-				        oneLessStrict(r2, ovr.getArgRoles(a1)));
+    			return (strictnessRelated(r1, ovr.getArgRole(a1)) &&
+				        stricterRole(ovr.getArgRole(a2), r2)) ||
+				       (strictnessRelated(r1, ovr.getArgRole(a2)) &&
+				        stricterRole(ovr.getArgRole(a1), r2));
 			}
 		} else {
 			PartOf pr = (PartOf) r;

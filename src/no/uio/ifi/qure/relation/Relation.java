@@ -57,34 +57,13 @@ public abstract class Relation {
 		return stricterRole(i, j) || stricterRole(j, i);
 	}
 
-	public static boolean oneStrictnessRelated(int i, Set<Integer> ints) {
+	public static Set<Integer> getStricter(Set<Integer> possible, int role) {
 
-		if (ints == null) return false;
-
-		for (int j : ints) {
-			if (strictnessRelated(i, j)) return true;
-		}
-		return false;
-	}
-
-	public static boolean oneStricter(int i, Set<Integer> ints) {
-
-		if (ints == null) return false;
-
-		for (int j : ints) {
-			if (stricterRole(j, i)) return true;
-		}
-		return false;
-	}
-
-	public static boolean oneLessStrict(int i, Set<Integer> ints) {
-
-		if (ints == null) return false;
-
-		for (int j : ints) {
-			if (stricterRole(i, j)) return true;
-		}
-		return false;
+    	Set<Integer> stricter = new HashSet<Integer>();
+    	for (int pos : possible) {
+        	if (stricterRole(pos, role)) stricter.add(pos);
+    	}
+    	return stricter;
 	}
 }
 
