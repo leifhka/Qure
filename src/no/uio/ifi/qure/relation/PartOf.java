@@ -51,9 +51,9 @@ public class PartOf extends AtomicRelation {
 				// First argument must overlap one of the arguments, and
 				// second argument must contain the other argument.
     			return (strictnessRelated(r1, ovr.getArgRole(a1)) &&
-				        stricterRole(ovr.getArgRole(a2), r2)) ||
+				        stricterRole(r2, ovr.getArgRole(a2))) ||
 				       (strictnessRelated(r1, ovr.getArgRole(a2)) &&
-				        stricterRole(ovr.getArgRole(a1), r2));
+				        stricterRole(r2, ovr.getArgRole(a1)));
 			}
 		} else {
 			PartOf pr = (PartOf) r;
