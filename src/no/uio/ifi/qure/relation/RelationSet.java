@@ -30,6 +30,12 @@ public class RelationSet {
 		initRolesAndAtomic();
 	}
 
+	public RelationSet add(Relation rel) {
+    	Set<Relation> newRels = new HashSet<Relation>(relations);
+    	newRels.add(rel);
+    	return new RelationSet(newRels);
+	}
+
 	public RelationSet union(RelationSet rels) {
 		return new RelationSet(Utils.union(relations, rels.getRelations()));
 	}
@@ -155,6 +161,29 @@ public class RelationSet {
 		rcc8.add(partOf(0, 0, 0, 1).and(not(overlaps(b, b, 0, 1))));                              // NTPP
 		
 		return new RelationSet(rcc8, "RCC8");
+	}
+
+	public static RelationSet getAllensIntervalAlgebra(int f, int i, int l) {
+
+    	Set<Relation> allen = new HashSet<Relation>();
+
+    	allen.add(before(f, l, 0, 1));                                                             // before
+
+    	allen.add(partOf(f, l, 0, 1).and(partOf(l, f, 1, 0)));                                     // meets
+
+    	allen.add(overlaps(i, i, 0, 1).and(not(partOf(0, 0, 0, 1))).and(not(partOf(0, 0, 1, 0)))); // overlaps
+
+    	allen.add(partOf(0, 0, 0, 1).and(partOf(0, 0, 1, 0)));                                     // equal
+
+    	allen.add(partOf(l, l, 0, 1).and(partOf(l, l, 1, 0)).and(partOf(f, i, 0, 1)));             // starts
+
+    	allen.add(partOf(l, i, 0, 1).and(partOf(f, i, 0, 1)));                                     // during
+
+    	allen.add(partOf(f, f, 0, 1).and(partOf(f, f, 1, 0)).and(partOf(l, i, 0, 1)));             // ends
+
+    	allen.add(before(f, l, 1, 0));                                                             // after
+
+		return new RelationSet(allen, "allen");
 	}
 
 	public static RelationSet getSimple(int arity) {
