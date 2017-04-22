@@ -51,7 +51,29 @@ public class RelationSet {
     		roles.add(0);
 		}
 
+		removeRedundantAtomicRelations();
 		computeImplicationGraph();
+	}
+
+	private void removeRedundantAtomicRelations() {
+
+    	Set<AtomicRelation> removed = new HashSet<AtomicRelation>();
+
+    	for (AtomicRelation r1 : new HashSet<AtomicRelation>(atomicRels)) {
+        	if (removed.contains(r1)) {
+            	continue;
+        	}
+        	if (r1.isValid()) {
+            	atomicRels.remove(r1);
+            	continue;
+        	}
+        	for (AtomicRelation r2 : new HashSet<AtomicRelation>(atomicRels)) {
+            	if (!r1.equals(r2) && r1.impliesNonEmpty(r2) && r2.impliesNonEmpty(r1)) {
+                	atomicRels.remove(r2);
+                	removed.add(r2);
+            	}
+        	}
+    	}
 	}
 
 	private void computeImplicationGraph() {
@@ -69,8 +91,8 @@ public class RelationSet {
 			}
 		}
 
+		// Remove transitive closure to obtain minimal implication graph and find all leaves
 		leaves = new HashSet<AtomicRelation>();
-		// Remove transitive closure to obtain minimal implication graph and find all roots
 		for (AtomicRelation rel : atomicRels) {
 			if (rel.getImpliedByRelations().isEmpty()) {
 				removeTransitiveClosure(rel);
