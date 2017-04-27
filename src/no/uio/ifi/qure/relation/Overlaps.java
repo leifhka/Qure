@@ -156,12 +156,7 @@ public class Overlaps extends AtomicRelation {
 	}
 
 	public Set<Integer> getRoles() {
-
-		Set<Integer> rs = new HashSet<Integer>();
-		for (Integer role : argRole.values()) {
-			rs.add(role);
-		}
-		return rs;
+		return new HashSet<Integer>(argRole.values());
 	}
 
 	public Set<List<SID>> evalAll(Map<SID, ? extends Space> spaces, Map<Integer, Set<SID>> roleToSID) {
