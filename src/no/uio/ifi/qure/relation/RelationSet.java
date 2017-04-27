@@ -16,6 +16,7 @@ public class RelationSet {
 	private Set<Integer> roles;
 	private Set<AtomicRelation> atomicRels;
 	private String name;
+	private int highestArity;
 
 	private Set<AtomicRelation> leaves; // Used for implication graph
 
@@ -43,12 +44,16 @@ public class RelationSet {
 	private void initRolesAndAtomic() {
 		roles = new HashSet<Integer>();
 		atomicRels = new HashSet<AtomicRelation>();
+		highestArity = 0;
 
 		for (Relation r : relations) {
 			for (AtomicRelation a : r.getAtomicRelations()) {
 				atomicRels.add(a);
 				for (Integer role : a.getRoles()) {
 					roles.add(role);
+				}
+				if (a.getArity() > highestArity) {
+					highestArity = a.getArity();
 				}
 			}
 		}
@@ -141,6 +146,29 @@ public class RelationSet {
     	}
     	return atomicRoles;
     } 
+
+    public static int getHighestArity(Set<AtomicRelation> rels) {
+		int maxArr = 0;
+		for (AtomicRelation rel : rels) {
+			if (rel.getArity() > maxArr) maxArr = rel.getArity();
+		}
+		return maxArr;
+    }
+
+	public static Set<AtomicRelation> getRelationsWithHighestArity(Set<AtomicRelation> rels) {
+		return getRelationsWithArity(getHighestArity(rels), rels);
+	}
+
+	public static Set<AtomicRelation> getRelationsWithArity(int arr, Set<AtomicRelation> rels) {
+		Set<AtomicRelation> result = new HashSet<AtomicRelation>();
+		
+		for (AtomicRelation rel : rels) {
+			if (rel.getArity() == arr) result.add(rel);
+		}
+		return result;
+	}
+
+	public int getHighestArity() { return highestArity; }
 
 	public Set<AtomicRelation> getAtomicRelations() { return atomicRels; }
 

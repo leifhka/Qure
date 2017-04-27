@@ -167,6 +167,15 @@ public class Overlaps extends AtomicRelation {
     	return tuples;
 	}
 
+	public Set<List<SID>> evalAll(Map<SID, ? extends Space> spaces, Set<List<SID>> possible, Map<Integer, Set<SID>> roleToSID) {
+    	Set<List<SID>> tuples = new HashSet<List<SID>>();
+    	Set<Set<SID>> checked = new HashSet<Set<SID>>();
+    	for (List<SID> posTup : possible) {
+			evalAll(spaces, checked, roleToSID, tuples, posTup, posTup.size());
+    	}
+    	return tuples;
+	}
+
 	private void evalAll(Map<SID, ? extends Space> spaces, Set<Set<SID>> checked,
 	                     Map<Integer, Set<SID>> roleToSID, Set<List<SID>> tuples, List<SID> tuple, int i) {
 
@@ -179,7 +188,9 @@ public class Overlaps extends AtomicRelation {
         			spaceTuple[j] = spaces.get(tuple.get(j));
     			}
 
-				if (eval(spaceTuple)) tuples.add(tuple);
+				if (eval(spaceTuple)) {
+					tuples.add(tuple);
+				}
 				checked.add(new HashSet<SID>(tuple));
 			}
     	} else {

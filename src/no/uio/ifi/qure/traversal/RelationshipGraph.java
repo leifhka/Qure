@@ -252,6 +252,56 @@ public class RelationshipGraph {
 		return graph;
 	}
 
+	private void addRelationshipToGraph(AtomicRelation rel, List<SID> tuple) {
+		
+		if (rel instanceof Overlaps) {
+			addOverlapsWithRedundancyCheck(new HashSet<SID>(tuple));
+		} else if (rel instanceof PartOf) {
+			addCoveredBy(tuple.get(0), tuple.get(1));
+		} else {
+			addBefore(tuple.get(0), tuple.get(1));
+		}
+	}
+		
+
+	private void addRelationshipsToGraph(Map<AtomicRelation, Set<List<SID>>> tuples) {
+
+		for (int i = RelationSet.getHighestArity(tuples.keySet()); i > 0; i--) {
+			for (AtomicRelation rel : RelationSet.getRelationsWithArity(i, tuples.keySet())) {
+				for (List<SID> tuple : tuples.get(rel)) {
+					addRelationshipToGraph(rel, tuple);
+				}
+			}
+		}
+	}
+
+	private void computeRelationshipGraphOpt(SpaceProvider spaces) {
+
+		Map<AtomicRelation, Set<List<SID>>> tuples = new HashMap<AtomicRelation, Set<List<SID>>>();
+		Set<AtomicRelation> nextRels = new HashSet<AtomicRelation>(relations.getImplicationGraphLeaves());
+		
+		while (!nextRels.isEmpty()) {
+			
+			for (AtomicRelation rel : new HashSet<AtomicRelation>(nextRels)) {
+
+				Set<AtomicRelation> relsWHighestArity = RelationSet.getRelationsWithHighestArity(rel.getImpliedRelations());
+				Pair<AtomicRelation, Set<AtomicRelation>> someRel = Utils.getSome(relsWHighestArity);
+				Set<List<SID>> possibleTuples = new HashSet<List<SID>>(tuples.get(someRel.fst));
+				
+				for (AtomicRelation impliesRel : someRel.snd) {
+					possibleTuples.retainAll(tuples.get(impliesRel));
+				}
+				
+				tuples.putIfAbsent(rel, new HashSet<List<SID>>());
+				tuples.get(rel).addAll(rel.evalAll(spaces.getSpaces(), possibleTuples, roleToSID));
+
+				nextRels.addAll(rel.getImpliedByRelations());
+			}
+		}
+		addRelationshipsToGraph(tuples);
+	}
+
+
 	// TODO: Compute binary overlaps of most general roles first, and use as index for general graph computation.
 	private void computeRelationshipGraph(SpaceProvider spaces) {
 

@@ -109,12 +109,43 @@ public class PartOf extends AtomicRelation {
 
     	for (SID sid1 : roleToSID.get(r1)) {
         	for (SID sid2 : roleToSID.get(r2)) {
-            	if (sid1.equals(sid2)) continue;
+            	if (sid1.equals(sid2)) {
+	            	continue;
+            	}
+            	
             	Space[] spaceTuple = new Space[]{spaces.get(sid1), spaces.get(sid2)};
 				if (eval(spaceTuple)) {
     				tuples.add(Arrays.asList(new SID[]{sid1, sid2}));
 				}
         	}
+    	}
+    	return tuples;
+	}
+	
+	public Set<List<SID>> evalAll(Map<SID, ? extends Space> spaces, Set<List<SID>> possible, Map<Integer, Set<SID>> roleToSID) {
+
+		Set<List<SID>> tuples = new HashSet<List<SID>>();
+
+    	for (List<SID> posTup : possible) {
+	    	SID sid1 = posTup.get(0);
+	    	if (posTup.size() < 2) {
+	        	for (SID sid2 : roleToSID.get(r2)) {
+	            	if (sid1.equals(sid2)) {
+		            	continue;
+	            	}
+            	
+	            	Space[] spaceTuple = new Space[]{spaces.get(sid1), spaces.get(sid2)};
+					if (eval(spaceTuple)) {
+						tuples.add(Arrays.asList(new SID[]{sid1, sid2}));
+					}
+	        	}
+	    	} else {
+		    	SID sid2 = posTup.get(1);
+            	Space[] spaceTuple = new Space[]{spaces.get(sid1), spaces.get(sid2)};
+				if (eval(spaceTuple)) {
+					tuples.add(Arrays.asList(new SID[]{sid1, sid2}));
+				}
+	    	}
     	}
     	return tuples;
 	}
