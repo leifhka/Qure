@@ -124,6 +124,8 @@ public class RelationSet {
 
 	public String getName() { return name; }
 
+	public void setName(String newName) { name = newName; }
+
 	public Set<Relation> getRelations() { return relations; }
 
 	public Set<Integer> getRoles() { return roles; }
@@ -226,6 +228,6 @@ public class RelationSet {
         	for (int j = 0; j < i; j++) args[j] = j;
         	simple.add(overlaps(noRoles, args));
     	}
-    	return new RelationSet(simple, "simple-" + arity);
+    	return new RelationSet(simple, "simple" + arity);
 	}
 }

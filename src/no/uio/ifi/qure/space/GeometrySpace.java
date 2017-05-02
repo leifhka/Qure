@@ -67,7 +67,7 @@ public class GeometrySpace implements Space {
 	public GeometrySpace intersection(Space o) {
 		Geometry go = ((GeometrySpace) o).getGeometry();
 		return new GeometrySpace(geo.intersection(go), precModel);
-		//return new GeometrySpace(EnhancedPrecisionOp.intersection(geo, go));
+		//return new GeometrySpace(EnhancedPrecisionOp.intersection(geo, go), precModel);
 	}
 
 	/**

@@ -42,18 +42,20 @@ public class Qure {
 
 	public static void main(String[] args) {
 
-		RelationSet rels = RelationSet.getRCC8(1,2).union(RelationSet.getSimple(10));
-		for (AtomicRelation rel : rels.getAtomicRelations()) {
-			System.out.println(rel.toString() + " => " + rel.getImpliedRelations().toString());
-		}
-		System.out.println("Leaves: " + rels.getImplicationGraphLeaves().toString());
-		//ArrayList<Config> rfs = new ArrayList<Config>();
+		// RelationSet rels = RelationSet.getSimple(5); //getRCC8(1, 2); //AllensIntervalAlgebra(1,2,4);
+		// for (AtomicRelation rel : rels.getAtomicRelations()) {
+		// 	System.out.println(rel.toString() + " => " + rel.getImpliedRelations().toString());
+		// }
+		// System.out.println("Leaves: " + rels.getImplicationGraphLeaves().toString());
+
+		ArrayList<Config> rfs = new ArrayList<Config>();
+		rfs.add(new Config("small_physical", "impl", 10, 3, 30, 10));
 		//rfs.add(new Config("dallas", "f3", 13, 3, 30, 10));
 		//rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
 		//rfs.add(new Config("npd",	"upsa", 10, 3, 30, 10));
 		//rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
 
-		//runMany(rfs);
+		runMany(rfs);
 		//writeDBSizes(rfs);
 		//times = new HashMap<String, Long>();
 		//runManyQueryBM(rfs);

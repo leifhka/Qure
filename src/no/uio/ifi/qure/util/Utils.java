@@ -32,6 +32,7 @@ public class Utils {
 		}
 	}
 
+	// TODO: Handle exceptions when intersecting
 	public static void getIntersections(Space uni, Set<SID> elems,
 	                                    Map<SID, ? extends Space> map, int numThreads,
 	                                    Map<SID, Space> intersections,
@@ -100,6 +101,7 @@ public class Utils {
 		}
 	}
 
+	// TODO: Handle exceptions when intersecting
 	public static Set<SID> getIntersecting(Space space, Set<SID> elems,
 	                                       Map<SID, ? extends Space> map, int numThreads) {
 		
@@ -195,6 +197,11 @@ public class Utils {
 		//Set<T> ns = cloneByClass(s);
 		Set<T> ns = new HashSet<T>();
 		Iterator<T> iter = s.iterator();
+
+		if (!iter.hasNext()) {
+    		return null;
+		}
+
 		T some = iter.next();
 
 		while (iter.hasNext()) {	

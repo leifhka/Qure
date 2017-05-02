@@ -247,7 +247,7 @@ public class RelationshipGraph {
 		// graph.computeBinaryRelations(urisArr, spaces, intersections, intMap);
 		// graph.computeKIntersections(intersections, uris, spaces, intMap);
 
-		graph.computeRelationshipGraph(spaces);
+		graph.computeRelationshipGraphOpt(spaces);
 
 		return graph;
 	}
@@ -279,22 +279,27 @@ public class RelationshipGraph {
 
 		Map<AtomicRelation, Set<List<SID>>> tuples = new HashMap<AtomicRelation, Set<List<SID>>>();
 		Set<AtomicRelation> nextRels = new HashSet<AtomicRelation>(relations.getImplicationGraphLeaves());
-		
+
+		// TODO: Fix iteration - now doing DFS, rather do BFS (add all impliedBy first, then iter.
 		while (!nextRels.isEmpty()) {
 			
 			for (AtomicRelation rel : new HashSet<AtomicRelation>(nextRels)) {
 
-				Set<AtomicRelation> relsWHighestArity = RelationSet.getRelationsWithHighestArity(rel.getImpliedRelations());
-				Pair<AtomicRelation, Set<AtomicRelation>> someRel = Utils.getSome(relsWHighestArity);
-				Set<List<SID>> possibleTuples = new HashSet<List<SID>>(tuples.get(someRel.fst));
-				
-				for (AtomicRelation impliesRel : someRel.snd) {
-					possibleTuples.retainAll(tuples.get(impliesRel));
-				}
-				
 				tuples.putIfAbsent(rel, new HashSet<List<SID>>());
-				tuples.get(rel).addAll(rel.evalAll(spaces.getSpaces(), possibleTuples, roleToSID));
 
+				if (!rel.getImpliedRelations().isEmpty()) {
+    				Set<AtomicRelation> relsWHighestArity = RelationSet.getRelationsWithHighestArity(rel.getImpliedRelations());
+    				Pair<AtomicRelation, Set<AtomicRelation>> someRel = Utils.getSome(relsWHighestArity);
+    				Set<List<SID>> possibleTuples = new HashSet<List<SID>>(tuples.get(someRel.fst));
+				
+    				for (AtomicRelation impliesRel : someRel.snd) {
+    					possibleTuples.retainAll(tuples.get(impliesRel));
+    				}
+    				tuples.get(rel).addAll(rel.evalAll(spaces.getSpaces(), possibleTuples, roleToSID));
+				} else {
+					tuples.get(rel).addAll(rel.evalAll(spaces.getSpaces(), roleToSID));
+				}
+				nextRels.remove(rel);
 				nextRels.addAll(rel.getImpliedByRelations());
 			}
 		}

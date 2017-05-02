@@ -28,8 +28,8 @@ public class Config {
 	public double minRatio = 0.9;
 	public int maxSplits = 7;
 
-	//public RelationSet relationSet = RelationSet.getSimple(3);
-	public RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
+	public RelationSet relationSet = RelationSet.getSimple(3);
+	//public RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
  
 	public Config(String table, String suff, int representationDepth, int overlapsArity, 
 				  int blockMemberCount, int maxSplits) {
@@ -85,7 +85,7 @@ public class Config {
 	public int percentStep = 1;
 	public boolean writeBintreesToDB = true;
 
-	public PrecisionModel geometryFactoryPrecision = new PrecisionModel();
+	public PrecisionModel geometryFactoryPrecision = new PrecisionModel(Math.pow(20, 10));
 	public PrecisionModel geometryPrecision = new PrecisionModel(Math.pow(10, 10));
 
 }
