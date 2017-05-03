@@ -24,6 +24,15 @@ public abstract class AtomicRelation extends Relation {
 	public Set<AtomicRelation> getImpliedRelations() { return implies; }
 	public Set<AtomicRelation> getImpliedByRelations() { return impliedBy; }
 
+	public Set<AtomicRelation> getImpliedByWithOnlyVisitedChildren(Set<AtomicRelation> visited) {
+		Set<AtomicRelation> rels = new HashSet<AtomicRelation>();
+		for (AtomicRelation rel : impliedBy) {
+			if (visited.containsAll(rel.implies)) {
+				rels.add(rel);
+			}
+		}
+		return rels;
+	}
 
 	// Rest of methods
 

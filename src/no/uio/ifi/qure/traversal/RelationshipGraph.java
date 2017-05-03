@@ -275,19 +275,33 @@ public class RelationshipGraph {
 		}
 	}
 
+	/**
+	 * Constructs the relationship graph between the SIDs by traversing the implication graph between
+	 * the relationships topologically. It computes all satisfying tuples in each layer based on possible tuples
+	 * from the highest-arity relation from the lower level.
+	 */
 	private void computeRelationshipGraphOpt(SpaceProvider spaces) {
 
+		// tuples contains map from relation to tuples/lists satisfying that relation
 		Map<AtomicRelation, Set<List<SID>>> tuples = new HashMap<AtomicRelation, Set<List<SID>>>();
+		// nexRels contains all relations to visit next according to implication graph. Start at leaves.
 		Set<AtomicRelation> nextRels = new HashSet<AtomicRelation>(relations.getImplicationGraphLeaves());
+		// currentRels will contain the relations to visit this iteration, taken from previou's nextRels.
+		Set<AtomicRelation> currentRels;
+		Set<AtomicRelation> visited = new HashSet<AtomicRelation>();
 
-		// TODO: Fix iteration - now doing DFS, rather do BFS (add all impliedBy first, then iter.
 		while (!nextRels.isEmpty()) {
+
+			currentRels = new HashSet<AtomicRelation>(nextRels);
+			nextRels.clear();
 			
-			for (AtomicRelation rel : new HashSet<AtomicRelation>(nextRels)) {
+			for (AtomicRelation rel : currentRels) {
 
 				tuples.putIfAbsent(rel, new HashSet<List<SID>>());
 
 				if (!rel.getImpliedRelations().isEmpty()) {
+					// We only have to check tuples that occur in intersection of possible tuples of lower levels.
+					// However, they might have different arity, so we only take the tuples of highest arity.
     				Set<AtomicRelation> relsWHighestArity = RelationSet.getRelationsWithHighestArity(rel.getImpliedRelations());
     				Pair<AtomicRelation, Set<AtomicRelation>> someRel = Utils.getSome(relsWHighestArity);
     				Set<List<SID>> possibleTuples = new HashSet<List<SID>>(tuples.get(someRel.fst));
@@ -297,17 +311,17 @@ public class RelationshipGraph {
     				}
     				tuples.get(rel).addAll(rel.evalAll(spaces.getSpaces(), possibleTuples, roleToSID));
 				} else {
+					// Leaf-relation, thus we need to check all constructable tuples from spaces
 					tuples.get(rel).addAll(rel.evalAll(spaces.getSpaces(), roleToSID));
 				}
-				nextRels.remove(rel);
-				nextRels.addAll(rel.getImpliedByRelations());
+				visited.add(rel);
+				nextRels.addAll(rel.getImpliedByWithOnlyVisitedChildren(visited));
 			}
 		}
 		addRelationshipsToGraph(tuples);
 	}
 
 
-	// TODO: Compute binary overlaps of most general roles first, and use as index for general graph computation.
 	private void computeRelationshipGraph(SpaceProvider spaces) {
 
     	for (AtomicRelation rel : relations.getAtomicRelations()) {
@@ -421,79 +435,120 @@ public class RelationshipGraph {
 //		}
 //	}
 
-	private Set<SID> imidiatePreds(Node n) {
-
-		Set<SID> res = new HashSet<SID>(n.preds);
-
-		for (SID pred : n.preds) {
-			res.removeAll(nodes.get(pred).preds);
-		}
-		return res;
-	}
-
-	private int orderNodes(SID[] order, int i, SID uri) {
-
-		Node n = nodes.get(uri);
-		if (n.visited) {
-			return i;
-		} else {
-			n.visited = true;
-		}
-		for (SID preds : sortAccToBefore(imidiatePreds(n))) {
-			i = orderNodes(order, i, preds);
-		}
-		order[i++] = uri;
-		return i;
-	}
-
-	private SID[] sortAccToBefore(Set<SID> uris) {
-
-		SID[] order = new SID[uris.size()];
-		Set<SID> visited = new HashSet<SID>();
-		int i = order.length - 1;
-
-		for (SID u : uris) {
-
-			if (visited.contains(u)) {
-				continue;
+	private boolean sameBefore(SID sid1, Set<SID> sids) {
+		Node n1 = nodes.get(sid1);
+		for (SID sid2 : sids) {
+			Node n2 = nodes.get(sid2);
+			if (!n1.before.equals(n2.before)) {
+				return false;
 			}
-			Node n = nodes.get(u);
-
-			for (SID aftr : n.before) {
-				if (visited.contains(aftr) || !uris.contains(aftr)) continue;
-				order[i--] = aftr;
-				visited.add(aftr);
-			}
-			order[i--] = u;
-			visited.add(u);
 		}
-
-		return order;
+		return true;
 	}
 
+	private boolean beforeAll(SID sid1, Set<SID> sids) {
+		
+		Node n1 = nodes.get(sid1);
+		for (SID sid2 : sids) {
+			if (!n1.before.contains(sid2)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	private void updateClasses(SID toAdd, List<Set<SID>> equivs) {
+		
+		for (int i = 0; i < equivs.size(); i++) {
+			Set<SID> eqClass = equivs.get(i);
+			if (sameBefore(toAdd, eqClass)) {
+				eqClass.add(toAdd);
+				return;
+			} else if (beforeAll(toAdd, eqClass)) {
+				Set<SID> newClass = new HashSet<SID>();
+				newClass.add(toAdd);
+				equivs.add(i, newClass); // Add to end of equivs
+				return;
+			}
+		}
+		// Not added, so we add it as a new class
+		Set<SID> newClass = new HashSet<SID>();
+		newClass.add(toAdd);
+		equivs.add(newClass); // Add to end of equivs
+	}
+	
+	private List<Set<SID>> computeBFClasses() {
+
+		List<Set<SID>> equivs = new ArrayList<Set<SID>>();
+
+		for (SID toAdd : nodes.keySet()) {
+			updateClasses(toAdd, equivs);
+		}
+		return equivs;
+	}
+
+	// TODO: Make more optimal ordering based on partOf-relationships
 	private SID[] getNodesOrder() {
-
 		SID[] order = new SID[nodes.keySet().size()];
-		int k = 0;
-		for (SID tm : sortAccToBefore(topmostNodes)) {
-			k = orderNodes(order, k, tm);
-		}
 
-		if (k == order.length) {
-			return order;
-		}
-
-		// We have (topmost) cycles, which are not yet visited
-		for (SID uri : nodes.keySet()) {
-			Node n = nodes.get(uri);
-			if (n.visited) {
-				continue;
-			} else {
-				k = orderNodes(order, k, uri);
+		int i = 0;
+		for (Set<SID> bfc : computeBFClasses()) {
+			for (SID sid : bfc) {
+				order[i] = sid;
+				i++;
 			}
 		}
 		return order;
 	}
+
+//	private Set<SID> imidiatePreds(Node n) {
+//
+//		Set<SID> res = new HashSet<SID>(n.preds);
+//
+//		for (SID pred : n.preds) {
+//			res.removeAll(nodes.get(pred).preds);
+//		}
+//		return res;
+//	}
+//
+//	private int orderNodes(SID[] order, int i, SID uri) {
+//
+//		Node n = nodes.get(uri);
+//		if (n.visited) {
+//			return i;
+//		} else {
+//			n.visited = true;
+//		}
+//		for (SID preds : imidiatePreds(n)) {
+//			i = orderNodes(order, i, preds);
+//		}
+//		order[i++] = uri;
+//		return i;
+//	}
+//
+//	private SID[] getNodesOrder() {
+//
+//		SID[] order = new SID[nodes.keySet().size()];
+//		int k = 0;
+//		for (SID tm : sortAccToBefore(topmostNodes)) {
+//			k = orderNodes(order, k, tm);
+//		}
+//
+//		if (k == order.length) {
+//			return order;
+//		}
+//
+//		// We have (topmost) cycles, which are not yet visited
+//		for (SID uri : nodes.keySet()) {
+//			Node n = nodes.get(uri);
+//			if (n.visited) {
+//				continue;
+//			} else {
+//				k = orderNodes(order, k, uri);
+//			}
+//		}
+//		return order;
+//	}
 
 	// TODO: Long method, split into smaller!
 	public Representation constructRepresentation() { 

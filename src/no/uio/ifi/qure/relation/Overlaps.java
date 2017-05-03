@@ -163,7 +163,7 @@ public class Overlaps extends AtomicRelation {
     	List<SID> args = new ArrayList<SID>(getArity());
     	Set<List<SID>> tuples = new HashSet<List<SID>>();
     	Set<Set<SID>> checked = new HashSet<Set<SID>>();
-		evalAll(spaces, checked, roleToSID, tuples, args, 0);
+		evalAll(spaces, checked, roleToSID, tuples, args);
     	return tuples;
 	}
 
@@ -171,31 +171,29 @@ public class Overlaps extends AtomicRelation {
     	Set<List<SID>> tuples = new HashSet<List<SID>>();
     	Set<Set<SID>> checked = new HashSet<Set<SID>>();
     	for (List<SID> posTup : possible) {
-			evalAll(spaces, checked, roleToSID, tuples, posTup, posTup.size());
+			evalAll(spaces, checked, roleToSID, tuples, posTup);
     	}
     	return tuples;
 	}
 
 	private void evalAll(Map<SID, ? extends Space> spaces, Set<Set<SID>> checked,
-	                     Map<Integer, Set<SID>> roleToSID, Set<List<SID>> tuples, List<SID> tuple, int i) {
+	                     Map<Integer, Set<SID>> roleToSID, Set<List<SID>> tuples, List<SID> tuple) {
 
-    	if (i == getArity()) {
+    	if (tuple.size() == getArity()) {
 			// Found one potensial tuple, so we now eval that if not checked before
-			if (!checked.contains(new HashSet<SID>(tuple))) {
-    			Space[] spaceTuple = new Space[getArity()];
+			Space[] spaceTuple = new Space[getArity()];
 
-    			for (int j = 0; j < getArity(); j++) {
-        			spaceTuple[j] = spaces.get(tuple.get(j));
-    			}
-
-				if (eval(spaceTuple)) {
-					tuples.add(tuple);
-				}
-				checked.add(new HashSet<SID>(tuple));
+			for (int j = 0; j < getArity(); j++) {
+    			spaceTuple[j] = spaces.get(tuple.get(j));
 			}
+
+			if (eval(spaceTuple)) {
+				tuples.add(tuple);
+			}
+			checked.add(new HashSet<SID>(tuple));
     	} else {
         	// We first need to extract all candidate SIDs that has a non-empty space for each role of i'th arg
-        	Set<Integer> stricterRoles = getStricter(roleToSID.keySet(), argRole.get(i));
+        	Set<Integer> stricterRoles = getStricter(roleToSID.keySet(), argRole.get(tuple.size()));
         	Set<SID> candidates = new HashSet<SID>();
 
         	for (Integer role : stricterRoles) {
@@ -208,8 +206,11 @@ public class Overlaps extends AtomicRelation {
         	for (SID sid : candidates) {
             	List<SID> newTuple = new ArrayList<SID>(tuple);
             	newTuple.add(sid);
-            	evalAll(spaces, checked, roleToSID, tuples, newTuple, i+1);
+            	if (!checked.contains(new HashSet<SID>(newTuple))) {
+	            	evalAll(spaces, checked, roleToSID, tuples, newTuple);
+            	}
         	}
+        	checked.add(new HashSet<SID>(tuple));
     	}
 	}
 
