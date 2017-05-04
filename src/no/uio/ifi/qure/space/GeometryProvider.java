@@ -60,6 +60,14 @@ public class GeometryProvider implements SpaceProvider {
 		this.updating = updating;
 	}
 
+	public void clear() {
+    	geometries.clear();
+    	geometries = null;
+		coversUniverse.clear();
+		coversUniverse = null;
+		dataProvider = null;
+	}
+
 	public void populateBulk() {
 
 		updating = false;
@@ -241,7 +249,7 @@ public class GeometryProvider implements SpaceProvider {
 			prog.done();
 			int errors = total - totalParsed;
 			if (errors > 0) System.out.println("Unable to parse " + errors + " geometries.");
-			System.out.println("Parsed " + totalParsed + " geometries.");
+			System.out.println("Parsed " + totalParsed + " geometries, split into " + result.keySet().size() + " roled geometries.");
 		}
 		return result;
 	}

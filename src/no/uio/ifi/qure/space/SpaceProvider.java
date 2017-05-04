@@ -13,6 +13,8 @@ import no.uio.ifi.qure.traversal.*;
 
 public interface SpaceProvider {
 
+	public void clear();
+
 	public void populateBulk();
 
 	public void populateUpdate();

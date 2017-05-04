@@ -276,7 +276,9 @@ public class DBDataProvider implements RawDataProvider<String> {
 				}
 			}
 
-			return batch.next();
+			UnparsedSpace<String> next = batch.next();
+			batch.remove();
+			return next;
 		}
 
 		public int size() { return total; }

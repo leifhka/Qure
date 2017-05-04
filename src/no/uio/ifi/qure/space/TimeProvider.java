@@ -45,6 +45,14 @@ public class TimeProvider implements SpaceProvider {
 		this.updating = updating;
 	}
 
+	public void clear() {
+    	times.clear();
+    	times = null;
+    	coversUniverse.clear();
+    	coversUniverse = null;
+    	dataProvider = null;
+	}
+
 	public void populateBulk() {
 
 		updating = false;

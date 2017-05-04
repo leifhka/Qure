@@ -120,6 +120,7 @@ public class TreeNode {
 
 	public void deleteSpaces() {
 		covering = spaces.getCoversUniverse();
+		spaces.clear();
 		spaces = null;
 	}
 }

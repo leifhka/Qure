@@ -60,6 +60,7 @@ public class SpaceToBintree {
 			if (config.verbose) {
 				node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
 			}
+			node.deleteSpaces();
 		} else {
 			Pair<TreeNode, TreeNode> nodes = node.splitNodeEvenly();
 			node.deleteSpaces(); // Free memory
