@@ -29,7 +29,7 @@ public class SID {
 	}
 
 	@Override
-	public int hashCode() { return role + id; }
+	public int hashCode() { return id; } // Only a very small constant number of roles, so not included in hash
 
 	public String toString() { return "(" + id + ", " + role + ")"; }
 }
