@@ -209,6 +209,7 @@ public class Overlaps extends AtomicRelation {
             	if (!checked.contains(new HashSet<SID>(newTuple))) {
 	            	evalAll(spaces, checked, roleToSID, tuples, newTuple);
             	}
+		    	checked.add(new HashSet<SID>(newTuple));
         	}
         	checked.add(new HashSet<SID>(tuple));
     	}
