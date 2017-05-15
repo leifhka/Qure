@@ -75,7 +75,7 @@ public class Block {
 	 * Returns the i'th bit in the bit-string, where the 0'th bit is the most significant, that is,
 	 * the bit representing the first split.
 	 */
-	public long getBit(int i) { return (getRawBitsShifted() >> (getSize()-(i+1))) & 1; }
+	public long getBit(int i) { return (getRawBitsShifted() >> (getSize()-(i+1))) & 1L; }
 
 	/**
 	 * Returns the long containing only the raw bitstring, unshifted.

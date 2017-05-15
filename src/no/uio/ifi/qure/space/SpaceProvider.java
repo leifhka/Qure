@@ -110,7 +110,7 @@ public interface SpaceProvider {
 		EvenSplit bestSplit = new EvenSplit(splitBlock, intSpL, intSpR, splitL, splitR);
 
 		int i = 0;
-		double ratio = config.minRatio;
+		double ratio = ((double) Math.min(intSpR.size(), intSpL.size())) / Math.max(intSpR.size(), intSpL.size());
 
 		while (i++ < config.maxSplits && ratio < config.minRatio) {
 
@@ -147,11 +147,15 @@ public interface SpaceProvider {
 				bestSplit = new EvenSplit(new Block(splitBlock.getRepresentation()), 
 				                          new HashSet<SID>(intAllL), 
 				                          new HashSet<SID>(intAllR),
-				                          splitL.clone(), splitR.clone());
+				                          spL.union(splitL), spR.union(splitR));
 				bestDiff = diff;
 			}
 
 			ratio = ((double) Math.min(intAllR.size(), intAllL.size())) / Math.max(intAllR.size(), intAllL.size());
+		}
+		if (getSpaces().size() >= 1000) {
+    		Pair<? extends Space, ? extends Space> e = computeSpacesFromSplit(bestSplit.splitBlock, split);
+    		System.out.println("Split: " + e.fst.equals(bestSplit.uniR) + " - " + e.snd.equals(bestSplit.uniL)); // TODO: Error - Returns false
 		}
 		return bestSplit;
 	}
