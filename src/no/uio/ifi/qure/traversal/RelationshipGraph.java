@@ -264,12 +264,12 @@ public class RelationshipGraph {
 	}
 		
 
-	private void addRelationshipsToGraph(Map<AtomicRelation, Set<List<SID>>> tuples) {
+	private void addRelationshipsToGraph(Map<AtomicRelation, Set<Pair<List<SID>, Space>>> tuples) {
 
 		for (int i = RelationSet.getHighestArity(tuples.keySet()); i > 0; i--) {
 			for (AtomicRelation rel : RelationSet.getRelationsWithArity(i, tuples.keySet())) {
-				for (List<SID> tuple : tuples.get(rel)) {
-					addRelationshipToGraph(rel, tuple);
+				for (Pair<List<SID>, Space> tuple : tuples.get(rel)) {
+					addRelationshipToGraph(rel, tuple.fst);
 				}
 			}
 		}
@@ -282,8 +282,10 @@ public class RelationshipGraph {
 	 */
 	private void computeRelationshipGraphOpt(SpaceProvider spaces) {
 
-		// tuples contains map from relation to tuples/lists satisfying that relation
-		Map<AtomicRelation, Set<List<SID>>> tuples = new HashMap<AtomicRelation, Set<List<SID>>>();
+		// tuples contains map from relation to tuples/lists (with witness space) satisfying that relation
+		// The witness space is the intersection of the spaces in the list, and can be used to optimize computation
+		// of other more specific relationships (e.g. higher arity overlaps or part-of)
+		Map<AtomicRelation, Set<Pair<List<SID>, Space>>> tuples = new HashMap<AtomicRelation, Set<Pair<List<SID>, Space>>>();
 		// nexRels contains all relations to visit next according to implication graph. Start at leaves.
 		Set<AtomicRelation> nextRels = new HashSet<AtomicRelation>(relations.getImplicationGraphLeaves());
 		// currentRels will contain the relations to visit this iteration, taken from previou's nextRels.
@@ -297,14 +299,14 @@ public class RelationshipGraph {
 			
 			for (AtomicRelation rel : currentRels) {
 
-				tuples.putIfAbsent(rel, new HashSet<List<SID>>());
+				tuples.putIfAbsent(rel, new HashSet<Pair<List<SID>, Space>>());
 
 				if (!rel.getImpliedRelations().isEmpty()) {
 					// We only have to check tuples that occur in intersection of possible tuples of lower levels.
 					// However, they might have different arity, so we only take the tuples of highest arity.
     				Set<AtomicRelation> relsWHighestArity = RelationSet.getRelationsWithHighestArity(rel.getImpliedRelations());
     				Pair<AtomicRelation, Set<AtomicRelation>> someRel = Utils.getSome(relsWHighestArity);
-    				Set<List<SID>> possibleTuples = new HashSet<List<SID>>(tuples.get(someRel.fst));
+    				Set<Pair<List<SID>, Space>> possibleTuples = new HashSet<Pair<List<SID>, Space>>(tuples.get(someRel.fst));
 				
     				for (AtomicRelation impliesRel : someRel.snd) {
     					possibleTuples.retainAll(tuples.get(impliesRel));

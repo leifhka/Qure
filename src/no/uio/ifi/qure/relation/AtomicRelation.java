@@ -55,9 +55,11 @@ public abstract class AtomicRelation extends Relation {
 
 	public abstract int getArity();
 
-	public abstract Set<List<SID>> evalAll(Map<SID, ? extends Space> spaces, Map<Integer, Set<SID>> roleToSID);
+	public abstract Set<Pair<List<SID>, Space>> evalAll(Map<SID, ? extends Space> spaces, Map<Integer, Set<SID>> roleToSID);
 
-	public abstract Set<List<SID>> evalAll(Map<SID, ? extends Space> spaces, Set<List<SID>> tuples, Map<Integer, Set<SID>> roleToSID);
+	public abstract Set<Pair<List<SID>, Space>> evalAll(Map<SID, ? extends Space> spaces,
+	                                                    Set<Pair<List<SID>, Space>> tuples,
+	                                                    Map<Integer, Set<SID>> roleToSID);
 
 }
 
