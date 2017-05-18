@@ -59,6 +59,12 @@ public class GeometrySpace implements Space {
 
 	public boolean isEmpty() { return geo.isEmpty(); }
 
+	public GeometrySpace toUniverse() {
+		Envelope newUni = geo.getEnvelopeInternal();
+		Geometry newUniG = geo.getFactory().toGeometry(newUni);
+		return new GeometrySpace(newUniG, precModel);
+	}
+
 	public GeometrySpace union(Space o) {
 		Geometry go = ((GeometrySpace) o).getGeometry();
 		return new GeometrySpace(geo.union(go), precModel);

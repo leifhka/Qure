@@ -66,7 +66,6 @@ public class TreeNode {
 			EvenSplit evenSplit = getSpaceProvider().getEvenSplit(split, config);
 			evenSplitBlock = evenSplit.splitBlock; // Save for representation, will be written to DB
 			sps = getSpaceProvider().splitProvider(split, evenSplit);
-			if (spaces.size() >= 1000) System.out.println("Actual split: " + sps.fst.size() + ", " + sps.snd.size());
 		}
 
 		return makeChildNodes(sps);

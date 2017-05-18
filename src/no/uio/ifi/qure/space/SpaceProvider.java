@@ -95,7 +95,7 @@ public interface SpaceProvider {
 
 		Space spL = makeEmptySpace(), spR = makeEmptySpace();
 		Pair<? extends Space, ? extends Space> splitLR = getUniverse().split(split);
-		Space splitL = splitLR.fst, splitR = splitLR.snd;
+		Space splitL = splitLR.fst.toUniverse(), splitR = splitLR.snd.toUniverse();
 
 		Set<SID> undecided = new HashSet<SID>(keySet());
 		Set<SID> intL = new HashSet<SID>(), intR = new HashSet<SID>();
@@ -116,7 +116,7 @@ public interface SpaceProvider {
 
 			if (intAllR.size() > intAllL.size()) {
 
-				spL = spL.union(splitL);
+				spL = spL.union(splitL).toUniverse();
 				intL.addAll(intSpL);
 				undecided = new HashSet<SID>(intSpR);
 
@@ -125,7 +125,7 @@ public interface SpaceProvider {
 
 			} else {
 
-				spR = spR.union(splitR);
+				spR = spR.union(splitR).toUniverse();
 				intR.addAll(intSpR);
 				undecided = new HashSet<SID>(intSpL);
 
@@ -133,8 +133,8 @@ public interface SpaceProvider {
 				splitBlock = splitBlock.addZero();
 			}
 
-			splitL = splitLR.fst;
-			splitR = splitLR.snd;
+			splitL = splitLR.fst.toUniverse();
+			splitR = splitLR.snd.toUniverse();
 
 			intSpL = Utils.getIntersecting(splitL, undecided, getSpaces(), config.numThreads);
 			intSpR = Utils.getIntersecting(splitR, undecided, getSpaces(), config.numThreads);
@@ -147,15 +147,12 @@ public interface SpaceProvider {
 				bestSplit = new EvenSplit(new Block(splitBlock.getRepresentation()), 
 				                          new HashSet<SID>(intAllL), 
 				                          new HashSet<SID>(intAllR),
-				                          spL.union(splitL), spR.union(splitR));
+				                          spL.union(splitL).toUniverse(),
+				                          spR.union(splitR).toUniverse());
 				bestDiff = diff;
 			}
 
 			ratio = ((double) Math.min(intAllR.size(), intAllL.size())) / Math.max(intAllR.size(), intAllL.size());
-		}
-		if (getSpaces().size() >= 1000) {
-    		Pair<? extends Space, ? extends Space> e = computeSpacesFromSplit(bestSplit.splitBlock, split);
-    		System.out.println("Split: " + e.fst.equals(bestSplit.uniR) + " - " + e.snd.equals(bestSplit.uniL)); // TODO: Error - Returns false
 		}
 		return bestSplit;
 	}

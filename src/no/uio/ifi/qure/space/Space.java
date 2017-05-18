@@ -15,6 +15,8 @@ public interface Space {
 
 	public boolean isEmpty();
 
+	public Space toUniverse();
+	
 	public Pair<? extends Space, ? extends Space> split(int dim);
 
 	public String toDBString();

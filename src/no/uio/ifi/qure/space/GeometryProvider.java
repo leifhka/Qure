@@ -53,10 +53,10 @@ public class GeometryProvider implements SpaceProvider {
 	                         boolean updating) {
 		this.config = config;
 		this.dataProvider = dataProvider;
-		this.universe = universe;
-		this.geometries = geometries;
 		this.coversUniverse = coversUniverse;
 		this.geometryFactory = geometryFactory;
+		this.geometries = geometries;
+		this.universe = universe;
 		this.updating = updating;
 	}
 

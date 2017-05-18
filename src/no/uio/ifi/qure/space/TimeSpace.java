@@ -38,6 +38,8 @@ public class TimeSpace implements Space {
 
 	public static TimeSpace makeEmpty() { return new TimeSpace(null, null); }
 
+	public TimeSpace toUniverse() { return this; }
+
 	public TimeSpace intersection(Space o) {
 		
 		if (!(o instanceof TimeSpace)) {
