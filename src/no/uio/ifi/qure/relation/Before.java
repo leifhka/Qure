@@ -90,9 +90,9 @@ public class Before extends AtomicRelation {
 		return rs;
 	}
 
-	public Set<List<SID>> evalAll(Map<SID, ? extends Space> spaces, Map<Integer, Set<SID>> roleToSID) {
+	public Set<Tuple> evalAll(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID) {
 
-		Set<List<SID>> tuples = new HashSet<List<SID>>();
+		Set<Tuple> tuples = new HashSet<Tuple>();
 
     	for (SID sid1 : roleToSID.get(r1)) {
         	for (SID sid2 : roleToSID.get(r2)) {
@@ -102,20 +102,22 @@ public class Before extends AtomicRelation {
             	
             	Space[] spaceTuple = new Space[]{spaces.get(sid1), spaces.get(sid2)};
 				if (eval(spaceTuple)) {
-    				tuples.add(Arrays.asList(new SID[]{sid1, sid2}));
+    				tuples.add(new Tuple(Arrays.asList(new SID[]{sid1, sid2})));
 				}
         	}
     	}
     	return tuples;
 	}
 	
-	public Set<List<SID>> evalAll(Map<SID, ? extends Space> spaces, Set<List<SID>> possible, Map<Integer, Set<SID>> roleToSID) {
+	public Set<Tuple> evalAll(SpaceProvider spaces, Set<Tuple> possible, Map<Integer, Set<SID>> roleToSID) {
 
-		Set<List<SID>> tuples = new HashSet<List<SID>>();
+		Set<Tuple> tuples = new HashSet<Tuple>();
 
-    	for (List<SID> posTup : possible) {
-	    	SID sid1 = posTup.get(0);
-	    	if (posTup.size() < 2) {
+    	for (List<SID> pos : tuplesToLists(possible)) {
+
+        	SID sid1 = pos.get(0);
+
+	    	if (pos.size() < 2) {
 	        	for (SID sid2 : roleToSID.get(r2)) {
 	            	if (sid1.equals(sid2)) {
 		            	continue;
@@ -123,14 +125,14 @@ public class Before extends AtomicRelation {
             	
 	            	Space[] spaceTuple = new Space[]{spaces.get(sid1), spaces.get(sid2)};
 					if (eval(spaceTuple)) {
-						tuples.add(Arrays.asList(new SID[]{sid1, sid2}));
+						tuples.add(new Tuple(Arrays.asList(new SID[]{sid1, sid2})));
 					}
 	        	}
 	    	} else {
-		    	SID sid2 = posTup.get(1);
+		    	SID sid2 = pos.get(1);
             	Space[] spaceTuple = new Space[]{spaces.get(sid1), spaces.get(sid2)};
 				if (eval(spaceTuple)) {
-					tuples.add(Arrays.asList(new SID[]{sid1, sid2}));
+					tuples.add(new Tuple(Arrays.asList(new SID[]{sid1, sid2})));
 				}
 	    	}
     	}

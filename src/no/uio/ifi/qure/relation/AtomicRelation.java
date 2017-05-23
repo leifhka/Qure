@@ -55,11 +55,42 @@ public abstract class AtomicRelation extends Relation {
 
 	public abstract int getArity();
 
-	public abstract Set<Pair<List<SID>, Space>> evalAll(Map<SID, ? extends Space> spaces, Map<Integer, Set<SID>> roleToSID);
+	public abstract Set<Tuple> evalAll(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID);
 
-	public abstract Set<Pair<List<SID>, Space>> evalAll(Map<SID, ? extends Space> spaces,
-	                                                    Set<Pair<List<SID>, Space>> tuples,
-	                                                    Map<Integer, Set<SID>> roleToSID);
+	public abstract Set<Tuple> evalAll(SpaceProvider spaces, Set<Tuple> tuples, Map<Integer, Set<SID>> roleToSID);
+
+	public Set<List<SID>> tuplesToLists(Set<Tuple> tuples) {
+
+    	Set<List<SID>> lists = new HashSet<List<SID>>(tuples.size());
+
+    	for (Tuple tuple : tuples) {
+
+        	if (tuple.getElements() instanceof List) {
+
+            	lists.add((List<SID>) tuple.getElements());
+
+        	} else {
+            	Set<SID> elems = (Set<SID>) tuple.getElements();
+
+            	if (elems.size() <= 1) {
+                	lists.add(new ArrayList<SID>(elems));
+            	} else {
+                	SID[] arr = elems.toArray(new SID[2]);
+
+					List<SID> l1 = new ArrayList<SID>();
+					l1.add(arr[0]);
+					l1.add(arr[1]);
+					lists.add(l1);
+
+					List<SID> l2 = new ArrayList<SID>();
+					l2.add(arr[1]);
+					l2.add(arr[0]);
+					lists.add(l1);
+            	}
+        	}
+    	}
+    	return lists;
+	}
 
 }
 

@@ -6,7 +6,7 @@ src_prefix = src/
 bin_prefix = bin/
 package_name = no/uio/ifi/qure/
 
-java = java -Xmx7600m -cp $(JAVA_CP)
+java = java -Xmx14600m -cp $(JAVA_CP)
 #javac = javac -Xlint:deprecation -Xlint:unchecked -cp $(JAVAC_CP)
 javac = javac -Xlint:all -cp $(JAVAC_CP)
 
@@ -26,19 +26,19 @@ CLASSES = \
         traversal/SID.java \
         traversal/SpaceToBintree.java \
         traversal/TreeNode.java \
-        space/GeometryProvider.java \
-        space/GeometrySpace.java \
         relation/Relation.java \
         relation/Overlaps.java \
         relation/PartOf.java \
         relation/Before.java \
         relation/AtomicRelation.java \
         relation/RelationSet.java \
+        relation/Tuple.java \
+        space/GeometryProvider.java \
+        space/GeometrySpace.java \
         space/Space.java \
         space/SpaceProvider.java \
         space/TimeProvider.java \
         space/TimeSpace.java  \
-        space/Intersection.java \
         util/Progress.java \
         util/Reporter.java \
         util/Pair.java \

@@ -215,18 +215,6 @@ public class RelationshipGraph {
 		}
 	}
 
-	private void addOverlaps(SID ui, SID uj, Space s, Set<Intersection> intersections,
-							 Map<SID, Set<SID>> intMap) {
-		Set<SID> elems = new HashSet<SID>(2);
-		elems.add(ui);
-		elems.add(uj);
-		Intersection nin = new Intersection(s, elems);
-		intersections.add(nin);
-		intMap.get(ui).add(uj);
-		intMap.get(uj).add(ui);
-		//addOverlapsWithoutRedundancyCheck(elems); // Redundant
-	}
-
 	/**
 	 * Constructs a relaionship graph based on the relationships between the spaces in spaceNode with
 	 * overlaps-arity up to overlapsArity.
@@ -252,24 +240,26 @@ public class RelationshipGraph {
 		return graph;
 	}
 
-	private void addRelationshipToGraph(AtomicRelation rel, List<SID> tuple) {
+	private void addRelationshipToGraph(AtomicRelation rel, Collection<SID> tuple) {
 		
 		if (rel instanceof Overlaps) {
 			addOverlapsWithRedundancyCheck(new HashSet<SID>(tuple));
 		} else if (rel instanceof PartOf) {
-			addCoveredBy(tuple.get(0), tuple.get(1));
+			List<SID> tupleLst = (List<SID>) tuple;
+			addCoveredBy(tupleLst.get(0), tupleLst.get(1));
 		} else {
-			addBefore(tuple.get(0), tuple.get(1));
+			List<SID> tupleLst = (List<SID>) tuple;
+			addBefore(tupleLst.get(0), tupleLst.get(1));
 		}
 	}
 		
 
-	private void addRelationshipsToGraph(Map<AtomicRelation, Set<Pair<List<SID>, Space>>> tuples) {
+	private void addRelationshipsToGraph(Map<AtomicRelation, Set<Tuple>> tuples) {
 
 		for (int i = RelationSet.getHighestArity(tuples.keySet()); i > 0; i--) {
 			for (AtomicRelation rel : RelationSet.getRelationsWithArity(i, tuples.keySet())) {
-				for (Pair<List<SID>, Space> tuple : tuples.get(rel)) {
-					addRelationshipToGraph(rel, tuple.fst);
+				for (Tuple tuple : tuples.get(rel)) {
+					addRelationshipToGraph(rel, tuple.getElements());
 				}
 			}
 		}
@@ -285,7 +275,7 @@ public class RelationshipGraph {
 		// tuples contains map from relation to tuples/lists (with witness space) satisfying that relation
 		// The witness space is the intersection of the spaces in the list, and can be used to optimize computation
 		// of other more specific relationships (e.g. higher arity overlaps or part-of)
-		Map<AtomicRelation, Set<Pair<List<SID>, Space>>> tuples = new HashMap<AtomicRelation, Set<Pair<List<SID>, Space>>>();
+		Map<AtomicRelation, Set<Tuple>> tuples = new HashMap<AtomicRelation, Set<Tuple>>();
 		// nexRels contains all relations to visit next according to implication graph. Start at leaves.
 		Set<AtomicRelation> nextRels = new HashSet<AtomicRelation>(relations.getImplicationGraphLeaves());
 		// currentRels will contain the relations to visit this iteration, taken from previou's nextRels.
@@ -299,22 +289,22 @@ public class RelationshipGraph {
 			
 			for (AtomicRelation rel : currentRels) {
 
-				tuples.putIfAbsent(rel, new HashSet<Pair<List<SID>, Space>>());
+				tuples.putIfAbsent(rel, new HashSet<Tuple>());
 
 				if (!rel.getImpliedRelations().isEmpty()) {
 					// We only have to check tuples that occur in intersection of possible tuples of lower levels.
 					// However, they might have different arity, so we only take the tuples of highest arity.
     				Set<AtomicRelation> relsWHighestArity = RelationSet.getRelationsWithHighestArity(rel.getImpliedRelations());
     				Pair<AtomicRelation, Set<AtomicRelation>> someRel = Utils.getSome(relsWHighestArity);
-    				Set<Pair<List<SID>, Space>> possibleTuples = new HashSet<Pair<List<SID>, Space>>(tuples.get(someRel.fst));
+    				Set<Tuple> possibleTuples = new HashSet<Tuple>(tuples.get(someRel.fst));
 				
     				for (AtomicRelation impliesRel : someRel.snd) {
     					possibleTuples.retainAll(tuples.get(impliesRel));
     				}
-    				tuples.get(rel).addAll(rel.evalAll(spaces.getSpaces(), possibleTuples, roleToSID));
+    				tuples.get(rel).addAll(rel.evalAll(spaces, possibleTuples, roleToSID));
 				} else {
 					// Leaf-relation, thus we need to check all constructable tuples from spaces
-					tuples.get(rel).addAll(rel.evalAll(spaces.getSpaces(), roleToSID));
+					tuples.get(rel).addAll(rel.evalAll(spaces, roleToSID));
 				}
 				visited.add(rel);
 				nextRels.addAll(rel.getImpliedByWithOnlyVisitedChildren(visited));
@@ -327,19 +317,33 @@ public class RelationshipGraph {
 	private void computeRelationshipGraph(SpaceProvider spaces) {
 
     	for (AtomicRelation rel : relations.getAtomicRelations()) {
-        	Set<List<SID>> tuples = rel.evalAll(spaces.getSpaces(), roleToSID);
-        	for (List<SID> tuple : tuples) {
+        	Set<Tuple> tuples = rel.evalAll(spaces, roleToSID);
+        	for (Tuple tuple : tuples) {
             	if (rel instanceof Overlaps) {
-					addOverlapsWithRedundancyCheck(new HashSet<SID>(tuple));
+					addOverlapsWithRedundancyCheck((Set<SID>) tuple.getElements());
             	} else if (rel instanceof PartOf) {
-					addCoveredBy(tuple.get(0), tuple.get(1));
+                	List<SID> tupleLst = (List<SID>) tuple.getElements();
+					addCoveredBy(tupleLst.get(0), tupleLst.get(1));
             	} else {
-					addBefore(tuple.get(0), tuple.get(1));
+                	List<SID> tupleLst = (List<SID>) tuple.getElements();
+					addBefore(tupleLst.get(0), tupleLst.get(1));
 				}
         	}
     	}
 	}
 
+// 	private void addOverlaps(SID ui, SID uj, Space s, Set<Intersection> intersections,
+// 							 Map<SID, Set<SID>> intMap) {
+// 		Set<SID> elems = new HashSet<SID>(2);
+// 		elems.add(ui);
+// 		elems.add(uj);
+// 		Intersection nin = new Intersection(s, elems);
+// 		intersections.add(nin);
+// 		intMap.get(ui).add(uj);
+// 		intMap.get(uj).add(ui);
+// 		//addOverlapsWithoutRedundancyCheck(elems); // Redundant
+// 	}
+// 
 //	private void computeBinaryRelations(SID[] urisArr, SpaceProvider spaces, 
 //	                                    Set<Intersection> intersections, Map<SID, Set<SID>> intMap) {
 //
