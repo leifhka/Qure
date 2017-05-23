@@ -56,6 +56,7 @@ public class SpaceToBintree {
 		Representation representation;
 
 		if (node.isEmpty() || (!node.hasEvenSplit() && config.atMaxDepth.test(node))) {
+
 			representation = node.makeRepresentation(config.relationSet);
 			if (config.verbose) {
 				node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);

@@ -143,6 +143,9 @@ public class PartOf extends AtomicRelation {
 	        	}
 	    	} else {
 		    	SID sid2 = pos.get(1);
+		    	if (sid1.equals(sid2)) {
+    		    	continue;
+		    	}
             	Space[] spaceTuple = new Space[]{spaces.get(sid1), spaces.get(sid2)};
 				if (eval(spaceTuple)) {
 					tuples.add(new Tuple(Arrays.asList(new SID[]{sid1, sid2})));

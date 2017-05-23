@@ -119,7 +119,7 @@ public class TreeNode {
 	}
 
 	public void deleteSpaces() {
-		covering = spaces.getCoversUniverse();
+		covering = new HashSet<SID>(spaces.getCoversUniverse());
 		spaces.clear();
 		spaces = null;
 	}
