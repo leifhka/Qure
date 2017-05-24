@@ -1,6 +1,6 @@
 \set id_val 13
-\set geo_name geo.osm_no
-\set bt_name qure.osm_no_d20_k3_cwl2
+\set geo_name geo.dallas
+\set bt_name qure.dallas_d13_simple3_bc30_ms10_nred
 \set len_s 7
 \set len_v 56
 \set len_b ((:len_s + :len_v)+1)
@@ -20,7 +20,7 @@ FROM :bt_name AS T1, :bt_name AS T2,
              (50), (51), (52), (53), (54), (55), (56)) AS V(n)
 WHERE T1.gid = :id_val AND 
       ((T1.block & -2 <= T2.block AND
-        (((1::bigint << ((:len_b - 1) - ((T1.block & :lh)::int >> 1)) - 1) | T1.block) >= T2.block)) OR
+        ((((1::bigint << ((:len_b - 1) - ((T1.block & :lh)::int >> 1))) - 1) | T1.block) >= T2.block)) OR
        (((T1.block & :lh) >> 1) >= V.n AND
         T2.block >= ((T1.block & ~((1::bigint << ((:len_b - V.n) - 1)) - 1)) | (V.n<<1)) AND
         T2.block <= ((T1.block & ~((1::bigint << ((:len_b - V.n) - 1)) - 1)) | ((V.n<<1)+1))) OR
