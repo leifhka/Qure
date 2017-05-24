@@ -167,19 +167,16 @@ public class Overlaps extends AtomicRelation {
     	return tuples;
 	}
 
-	public Set<Tuple> evalAll(SpaceProvider spaces, Set<Tuple> possible, Map<Integer, Set<SID>> roleToSID) {
+	public Set<Tuple> evalAll(SpaceProvider spaces, Tuple possible, Map<Integer, Set<SID>> roleToSID) {
     	Set<Tuple> tuples = new HashSet<Tuple>();
     	Set<Tuple> checked = new HashSet<Tuple>();
-    	for (Tuple posTup : possible) {
-			evalAll(spaces, checked, roleToSID, tuples, posTup);
-    	}
+		evalAll(spaces, checked, roleToSID, tuples, possible);
     	return tuples;
 	}
 
 	private void evalAll(SpaceProvider spaces, Set<Tuple> checked,
 	                     Map<Integer, Set<SID>> roleToSID, Set<Tuple> tuples, Tuple tuple) {
 
-		// TODO: Make tuple be pair instead of just list.
     	if (tuple.size() == getArity()) {
 			// Found one potensial tuple, so we now eval that if not checked before
 			tuples.add(tuple);

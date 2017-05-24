@@ -108,7 +108,7 @@ public class RelationSet {
 			if (rel.getImpliedByRelations().isEmpty()) {
 				removeTransitiveClosure(rel);
 			}
-			if (rel.getImpliedRelations().isEmpty()) {
+			if (rel.getImpliesRelations().isEmpty()) {
 				leaves.add(rel);
 			}
 		}
@@ -116,8 +116,8 @@ public class RelationSet {
 
 	private void removeTransitiveClosure(AtomicRelation rel) {
 		
-		for (AtomicRelation child : new HashSet<AtomicRelation>(rel.getImpliedRelations())) {
-			rel.getImpliedRelations().removeAll(child.getImpliedRelations());
+		for (AtomicRelation child : new HashSet<AtomicRelation>(rel.getImpliesRelations())) {
+			rel.getImpliesRelations().removeAll(child.getImpliesRelations());
 			removeTransitiveClosure(child);
 		}
 	}	

@@ -24,12 +24,10 @@ public class RelationshipGraph {
 	private final Set<SID> topmostNodes;
 	private int overlapsNodeId; // Always negative, and decreasing
 	private final Block block;
-	private final Set<SID> uris;
 	private final RelationSet relations;
 
 	public RelationshipGraph(Block block, Set<SID> uris, RelationSet relations) {
 		this.block = block;
-		this.uris = new HashSet<SID>(uris);
 		this.relations = relations;
 
 		topmostNodes = new HashSet<SID>(uris); // Init all uris as roots, and remove if set parent of some node
@@ -49,7 +47,6 @@ public class RelationshipGraph {
 	public void addUris(Set<SID> newUris) {
 		for (SID uri : newUris) {
 			if (!nodes.containsKey(uri)) {
-				uris.add(uri);
 				topmostNodes.add(uri);
 				nodes.put(uri, new Node(uri));
 			}
@@ -65,11 +62,7 @@ public class RelationshipGraph {
 
 	public boolean isOverlapsNode(SID nodeSID) { return nodeSID.getID() < 0; }
 
-	public Set<SID> getUris() { return uris; }
-
 	public Map<SID, Node> getNodes() { return nodes; }
-
-	public int size() { return getUris().size(); }
 
 	/**
 	 * Adds a containment-relationship between child and parent if necessary (not already in graph).
@@ -82,6 +75,12 @@ public class RelationshipGraph {
 		if (cn.succs.contains(parent)) {
 			return; // Relationship already in node 
 		}	
+
+		Set<SID> both = new HashSet<SID>(2);
+		both.add(child);
+		both.add(parent);
+		removeOverlapsNodes(getRedundantOverlapNodes(both));
+		
 		// Locally update coveredBy
 		cn.succs.add(parent);
 		topmostNodes.remove(child);
@@ -135,13 +134,13 @@ public class RelationshipGraph {
 	 */
 	private SID addOverlapsWithRedundancyCheck(Set<SID> parents) {
 
-		if (parents.isEmpty() || overlaps(parents)) return null;
+		if (parents.size() < 2 || overlaps(parents)) return null;
 
+		// Overlaps relationship not already contained. 
 		// We then add the new overlaps.
 		SID newNode = newOverlapsNode();
 		addCoveredBy(newNode, parents);
 
-		// Overlaps relationship not already contained. 
 		// Lastly, remove the nodes becoming redundant when adding the new.
 		removeRedundantWRT(newNode);
 
@@ -157,11 +156,6 @@ public class RelationshipGraph {
 	}
 
 	private boolean overlaps(Set<SID> parents) {
-
-		for (SID p : parents) {
-			if (!uris.contains(p) || nodes.get(p).preds.isEmpty())
-				return false;
-		}
 
 		// We check redundancy by trying to find a common pred (ov. node) for parents.
 		Iterator<SID> parIter = parents.iterator();
@@ -256,10 +250,21 @@ public class RelationshipGraph {
 
 	private void addRelationshipsToGraph(Map<AtomicRelation, Set<Tuple>> tuples) {
 
-		for (int i = RelationSet.getHighestArity(tuples.keySet()); i > 0; i--) {
-			for (AtomicRelation rel : RelationSet.getRelationsWithArity(i, tuples.keySet())) {
+		// Add PartOfs first, so that redundancy checks are correct for Overlaps
+		for (AtomicRelation rel : tuples.keySet()) {
+			if (rel instanceof PartOf) {
 				for (Tuple tuple : tuples.get(rel)) {
 					addRelationshipToGraph(rel, tuple.getElements());
+				}
+			}
+		}
+		
+		for (int i = RelationSet.getHighestArity(tuples.keySet()); i > 0; i--) {
+			for (AtomicRelation rel : RelationSet.getRelationsWithArity(i, tuples.keySet())) {
+				if (!(rel instanceof PartOf)) {
+					for (Tuple tuple : tuples.get(rel)) {
+						addRelationshipToGraph(rel, tuple.getElements());
+					}
 				}
 			}
 		}
@@ -291,17 +296,25 @@ public class RelationshipGraph {
 
 				tuples.putIfAbsent(rel, new HashSet<Tuple>());
 
-				if (!rel.getImpliedRelations().isEmpty()) {
+				if (!rel.getImpliesRelations().isEmpty()) {
 					// We only have to check tuples that occur in intersection of possible tuples of lower levels.
 					// However, they might have different arity, so we only take the tuples of highest arity.
-    				Set<AtomicRelation> relsWHighestArity = RelationSet.getRelationsWithHighestArity(rel.getImpliedRelations());
-    				Pair<AtomicRelation, Set<AtomicRelation>> someRel = Utils.getSome(relsWHighestArity);
-    				Set<Tuple> possibleTuples = new HashSet<Tuple>(tuples.get(someRel.fst));
+					Set<AtomicRelation> relsWHighestArity = RelationSet.getRelationsWithHighestArity(rel.getImpliesRelations());
+					Pair<AtomicRelation, Set<AtomicRelation>> someRel = Utils.getSome(relsWHighestArity);
+					Set<Tuple> possibleTuples = new HashSet<Tuple>(tuples.get(someRel.fst));
 				
-    				for (AtomicRelation impliesRel : someRel.snd) {
-    					possibleTuples.retainAll(tuples.get(impliesRel));
-    				}
-    				tuples.get(rel).addAll(rel.evalAll(spaces, possibleTuples, roleToSID));
+					for (AtomicRelation impliesRel : someRel.snd) {
+						possibleTuples.retainAll(tuples.get(impliesRel));
+					}
+					for (Tuple possible : possibleTuples) {
+						Set<Tuple> toAdd = rel.evalAll(spaces, possible, roleToSID);
+						if (!toAdd.isEmpty()) {
+							tuples.get(rel).addAll(toAdd);
+							for (AtomicRelation pred : rel.getImpliesRelations()) {
+								tuples.get(pred).remove(possible); // Possible implied by tuples in toAdd
+							}
+						}
+					}
 				} else {
 					// Leaf-relation, thus we need to check all constructable tuples from spaces
 					tuples.get(rel).addAll(rel.evalAll(spaces, roleToSID));
@@ -331,115 +344,6 @@ public class RelationshipGraph {
         	}
     	}
 	}
-
-// 	private void addOverlaps(SID ui, SID uj, Space s, Set<Intersection> intersections,
-// 							 Map<SID, Set<SID>> intMap) {
-// 		Set<SID> elems = new HashSet<SID>(2);
-// 		elems.add(ui);
-// 		elems.add(uj);
-// 		Intersection nin = new Intersection(s, elems);
-// 		intersections.add(nin);
-// 		intMap.get(ui).add(uj);
-// 		intMap.get(uj).add(ui);
-// 		//addOverlapsWithoutRedundancyCheck(elems); // Redundant
-// 	}
-// 
-//	private void computeBinaryRelations(SID[] urisArr, SpaceProvider spaces, 
-//	                                    Set<Intersection> intersections, Map<SID, Set<SID>> intMap) {
-//
-//		for (int i = 0; i < urisArr.length; i++) { 
-//
-//			SID ui = urisArr[i];
-//			Space si = spaces.get(ui);
-//
-//			for (int j = i+1; j < urisArr.length; j++) {
-//
-//				SID uj = urisArr[j];
-//				Space sj = spaces.get(uj);
-//
-//				Relationship rel = si.relate(sj);
-//
-//				if (rel.isIntersects()) {
-//
-//					if (rel.isCovers()) {
-//						addCoveredBy(uj, ui);
-//					}
-//					if (rel.isCoveredBy()) {
-//						addCoveredBy(ui, uj);
-//					}	
-//					if (!rel.isCovers() && !rel.isCoveredBy()) { // Overlaps already represented by containment
-//						Space s = si.intersection(sj);
-//						addOverlaps(ui, uj, s, intersections, intMap);
-//					}
-//				} else if (rel.isBefore()) {
-//					addBefore(ui,uj);
-//				}
-//			}
-//		}
-//	}
-
-	/**
-	 * Computes the set of maximal overlaps up to arity k, such that the set contains no redundant overlaps.
-	 * @return A set containing one set per maximal overlap, that is, the intersection of the spaces
-	 *		 for each of the elements in each set is nonempty, but adding any new element to the set
-	 *		 will give an empty intersection.
-	 */
-//	public void computeKIntersections(Set<Intersection> intersections, Set<SID> elems,
-//	                                  SpaceProvider spaces, Map<SID, Set<SID>> intMap) {
-//
-//		Set<Intersection> ints = new HashSet<Intersection>(intersections);
-//		Set<Set<SID>> added = new HashSet<Set<SID>>();
-//
-//		for (int i = 3; i <= overlapsArity; i++) {
-//
-//			Set<Intersection> iterSet = new HashSet<Intersection>(ints);
-//			ints = new HashSet<Intersection>(); // Stores next iterations intersections
-//
-//			for (Intersection in : iterSet) {
-//
-//				boolean updated = false; // States whether the <in> has become part of a larger intersection
-//
-//				// Need only check the elements already intersection all elements in nin
-//				// so we compute the intersection of all overlapping elements
-//				Set<SID> possible = new HashSet<SID>();
-//				boolean first = true;
-//				for (SID ine : in.getElements()) {
-//					if (first) {
-//						possible.addAll(intMap.get(ine));
-//						first = false;
-//					} else {
-//						possible.retainAll(intMap.get(ine));
-//					}
-//				}
-//				possible.removeAll(in.getElements());
-//
-//				for (SID e : possible) {
-//
-//					if (ints.contains(new Intersection(null, Utils.add(in.getElements(), e)))) {
-//						updated = true;
-//						continue;
-//					}
-//
-//					Intersection nin = null;
-//					nin = in.add(e, spaces);
-//
-//					if (nin != null) { // Intersection was successfull (i.e. non-empty)
-//						updated = true;
-//						ints.add(nin); 
-//						//addOverlapsWithRedundancyCheck(nin.getElements()); //Redundant
-//					}
-//				}
-//				if (!updated && !added.contains(in.getElements())) {
-//					addOverlapsWithRedundancyCheck(in.getElements());
-//					added.add(in.getElements());
-//				}
-//			}
-//		}
-//
-//		for (Intersection in : ints) { // Need to add remaining intersections
-//			addOverlapsWithRedundancyCheck(in.getElements());
-//		}
-//	}
 
 	private boolean sameBefore(SID sid1, Set<SID> sids) {
 		Node n1 = nodes.get(sid1);
@@ -558,6 +462,24 @@ public class RelationshipGraph {
 
 	// TODO: Long method, split into smaller!
 	public Representation constructRepresentation() { 
+
+		for (SID s1 : nodes.keySet()) {
+			if (isOverlapsNode(s1)) {
+				Node n1 = nodes.get(s1);
+				for (SID s2 : nodes.keySet()) {
+					if (isOverlapsNode(s2) && !s1.equals(s2)) {
+						Node n2 = nodes.get(s2);
+						if (n1.succs.containsAll(n2.succs) || n2.succs.containsAll(n1.succs)) {
+							System.out.println("Redundant:\n " + n1.succs.toString() + "\n " + n2.succs.toString());
+							for (SID s : Utils.union(n1.succs, n2.succs)) {
+								Node n = nodes.get(s);
+								System.out.println(s + "'s succs: " + n.succs);
+							}
+						}
+					}
+				}
+			}
+		}
 
 		// Construct sufficient unique parts and order nodes according to infix traversal
 		Block[] witnessesArr = Block.makeNDistinct(nodes.keySet().size()+1);

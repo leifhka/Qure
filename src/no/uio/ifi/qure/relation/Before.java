@@ -109,11 +109,11 @@ public class Before extends AtomicRelation {
     	return tuples;
 	}
 	
-	public Set<Tuple> evalAll(SpaceProvider spaces, Set<Tuple> possible, Map<Integer, Set<SID>> roleToSID) {
+	public Set<Tuple> evalAll(SpaceProvider spaces, Tuple possible, Map<Integer, Set<SID>> roleToSID) {
 
 		Set<Tuple> tuples = new HashSet<Tuple>();
 
-    	for (List<SID> pos : tuplesToLists(possible)) {
+    	for (List<SID> pos : tupleToLists(possible)) {
 
         	SID sid1 = pos.get(0);
 
