@@ -463,24 +463,6 @@ public class RelationshipGraph {
 	// TODO: Long method, split into smaller!
 	public Representation constructRepresentation() { 
 
-		for (SID s1 : nodes.keySet()) {
-			if (isOverlapsNode(s1)) {
-				Node n1 = nodes.get(s1);
-				for (SID s2 : nodes.keySet()) {
-					if (isOverlapsNode(s2) && !s1.equals(s2)) {
-						Node n2 = nodes.get(s2);
-						if (n1.succs.containsAll(n2.succs) || n2.succs.containsAll(n1.succs)) {
-							System.out.println("Redundant:\n " + n1.succs.toString() + "\n " + n2.succs.toString());
-							for (SID s : Utils.union(n1.succs, n2.succs)) {
-								Node n = nodes.get(s);
-								System.out.println(s + "'s succs: " + n.succs);
-							}
-						}
-					}
-				}
-			}
-		}
-
 		// Construct sufficient unique parts and order nodes according to infix traversal
 		Block[] witnessesArr = Block.makeNDistinct(nodes.keySet().size()+1);
 		SID[] order = getNodesOrder();
