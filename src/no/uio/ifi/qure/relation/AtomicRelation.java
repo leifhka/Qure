@@ -59,6 +59,11 @@ public abstract class AtomicRelation extends Relation {
 
 	public abstract Set<Tuple> evalAll(SpaceProvider spaces, Tuple possible, Map<Integer, Set<SID>> roleToSID);
 
+	/**
+	 * Returns the set of all lists constructed from the elements of argument tuple,
+	 * assumed to have a max length of 2. Used by PartOf and Before to obtain
+	 * ordered tuples from unordered tuples from Overlaps.
+	 */
 	public Set<List<SID>> tupleToLists(Tuple tuple) {
 
 		Set<List<SID>> lists = new HashSet<List<SID>>();
