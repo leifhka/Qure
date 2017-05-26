@@ -37,31 +37,45 @@ public class PartOf extends AtomicRelation {
 		return a1 == a2 && stricterRole(r1, r2);
 	}
 
-	public boolean impliesNonEmpty(AtomicRelation r) {
+	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
 
 		if (r.isValid()) {
-			return true;
-		} else if (isValid() || (r instanceof Before)) {
-			return false;
-		} else if (r instanceof Overlaps) {
+			return new HashSet<Map<Integer, Integer>>(); // Need no unifiers to imply
+		} else if (isValid() || r.getArity() > 2 || (r instanceof Before)) {
+			return null;
+		}
+
+		Set<Map<Integer, Integer>> unifiers = new HashSet<Map<Integer, Integer>>();
+
+		if (r instanceof Overlaps) {
 			Overlaps ovr = (Overlaps) r;
-			if (r.getArity() > 2) { // The case of arity=1 is handled by r.isvalid()
-				return false;
-			} else {
-				// First argument must overlap one of the arguments, and
-				// second argument must contain the other argument.
-    			return (strictnessRelated(r1, ovr.getArgRole(a1)) &&
-				        stricterRole(r2, ovr.getArgRole(a2))) ||
-				       (strictnessRelated(r1, ovr.getArgRole(a2)) &&
-				        stricterRole(r2, ovr.getArgRole(a1)));
+			// First argument must overlap one of the arguments, and
+			// second argument must contain the other argument.
+			if (strictnessRelated(r1, ovr.getArgRole(a1)) &&
+			    stricterRole(r2, ovr.getArgRole(a2))) {
+
+				Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+				unifier.put(new Integer(a1), new Integer(a1));
+				unifier.put(new Integer(a2), new Integer(a2));
+			}
+			if (strictnessRelated(r1, ovr.getArgRole(a2)) &&
+			    stricterRole(r2, ovr.getArgRole(a1))) {
+
+				Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+				unifier.put(new Integer(a1), new Integer(a1));
+				unifier.put(new Integer(a2), new Integer(a2));
 			}
 		} else {
 			PartOf pr = (PartOf) r;
-			// First argument must overlap one of the arguments, and
-			// second argument must contain the other argument.
-			return a1 == pr.a1 && stricterRole(pr.r1, r1) &&
-			       a2 == pr.a2 && stricterRole(r2, pr.r2);
+			// First argument must be less strict than r's first argument, and
+			// second argument must be stricter than  r's other argument.
+			if (stricterRole(pr.r1, r1) && stricterRole(r2, pr.r2)) {
+				Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+				unifier.put(new Integer(a1), new Integer(pr.a1));
+				unifier.put(new Integer(a2), new Integer(pr.a2));
+			}
 		}
+		return (unifiers.isEmpty()) ? null : unifiers;
 	}
 
 	@Override

@@ -15,38 +15,12 @@ import no.uio.ifi.qure.space.*;
 
 public abstract class AtomicRelation extends Relation {
 
-	// Used for implication graph
-	private Set<AtomicRelation> implies = new HashSet<AtomicRelation>();
-	private Set<AtomicRelation> impliedBy = new HashSet<AtomicRelation>();	
-
-	public void addImplies(AtomicRelation rel) { implies.add(rel); }
-	public void addImpliedBy(AtomicRelation rel) { impliedBy.add(rel); }
-	public Set<AtomicRelation> getImpliesRelations() { return implies; }
-	public Set<AtomicRelation> getImpliedByRelations() { return impliedBy; }
-
-	public Set<AtomicRelation> getImpliedByWithOnlyVisitedChildren(Set<AtomicRelation> visited) {
-		Set<AtomicRelation> rels = new HashSet<AtomicRelation>();
-		for (AtomicRelation rel : impliedBy) {
-			if (visited.containsAll(rel.implies)) {
-				rels.add(rel);
-			}
-		}
-		return rels;
-	}
-
 	// Rest of methods
 
 	/**
 	 * Returns true iff this relation implies r for anny instantiation of the arguments with non-empty spaces.
 	 */
-	public abstract boolean impliesNonEmpty(AtomicRelation r);
-
-	/**
-	 * Returns true iff this relation is implied by r for any instantiation of the arguments with non-empty spaces.
-	 */
-	public boolean impliedByNonEmpty(AtomicRelation r) {
-		return r.impliesNonEmpty(this);
-	}
+	public abstract Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r);
 
 	/**
 	 * Returns true iff this relation holds for any instantiation of the arguments with non-empty spaces.
@@ -55,6 +29,16 @@ public abstract class AtomicRelation extends Relation {
 
 	public abstract int getArity();
 
+	// TODO: Implement evalAll such that it takes into account all unifiers and tuples of
+	// implied relations, in the following way:
+	// For each tuple in relation with fewest tuples (or highest arity) do:
+	//   Check that elements of tuple has non-empty parts for each role of this relation.
+	//   Then check that the tuple satisfies every relation under each unifier mapping into tuple.
+	//   Then if tuple has length equal to this' arity, eval, if not, extend tuple with
+	//     one element either from relation with unifier to that argument, or with element
+	//     with correct role, and repeat loop.
+	//
+	// Can also check as a further optimization whether a Tuple's space can be used when extending tuple.
 	public abstract Set<Tuple> evalAll(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID);
 
 	public abstract Set<Tuple> evalAll(SpaceProvider spaces, Tuple possible, Map<Integer, Set<SID>> roleToSID);

@@ -19,6 +19,9 @@ public class RelationSet {
 	private int highestArity;
 
 	private Set<AtomicRelation> leaves; // Used for implication graph
+	private Map<AtomicRelation, Set<AtomicRelation>> implies;
+	private Map<AtomicRelation, Set<AtomicRelation>> impliedBy;
+	private Map<Pair<AtomicRelation, AtomicRelation>, Set<Map<Integer, Integer>>> unifiers;
 
 	public RelationSet(Set<Relation> relations) {
 		this.relations = relations;
@@ -79,7 +82,7 @@ public class RelationSet {
             	continue;
         	}
         	for (AtomicRelation r2 : new HashSet<AtomicRelation>(atomicRels)) {
-            	if (!r1.equals(r2) && r1.impliesNonEmpty(r2) && r2.impliesNonEmpty(r1)) {
+            	if (!r1.equals(r2) && r1.impliesNonEmpty(r2) != null && r2.impliesNonEmpty(r1) != null) {
                 	atomicRels.remove(r2);
                 	removed.add(r2);
             	}
@@ -89,15 +92,26 @@ public class RelationSet {
 
 	private void computeImplicationGraph() {
 
+		implies = new HashMap<AtomicRelation, Set<AtomicRelation>>();
+		impliedBy = new HashMap<AtomicRelation, Set<AtomicRelation>>();
+		unifiers = new HashMap<Pair<AtomicRelation, AtomicRelation>, Set<Map<Integer, Integer>>>();
+
+		for (AtomicRelation rel : atomicRels) {
+			implies.put(rel, new HashSet<AtomicRelation>());
+			impliedBy.put(rel, new HashSet<AtomicRelation>());
+		}
+
 		// Naive computation of all implications, with transitive closure
 		// As the set of atomic relations has a low cardinality, a naive solution suffices
 		for (AtomicRelation rel1 : atomicRels) {
 			for (AtomicRelation rel2 : atomicRels) {
 				if (rel1.equals(rel2)) continue;
-			
-				if (rel1.impliesNonEmpty(rel2)) {
-					rel1.addImplies(rel2);
-					rel2.addImpliedBy(rel1);
+
+				Set<Map<Integer, Integer>> unis = rel1.impliesNonEmpty(rel2);
+				if (unis != null) {
+					implies.get(rel1).add(rel2);
+					impliedBy.get(rel2).add(rel1);
+					unifiers.put(new Pair<AtomicRelation, AtomicRelation>(rel1, rel2), unis);
 				}
 			}
 		}
@@ -105,10 +119,10 @@ public class RelationSet {
 		// Remove transitive closure to obtain minimal implication graph and find all leaves
 		leaves = new HashSet<AtomicRelation>();
 		for (AtomicRelation rel : atomicRels) {
-			if (rel.getImpliedByRelations().isEmpty()) {
+			if (impliedBy.get(rel).isEmpty()) {
 				removeTransitiveClosure(rel);
 			}
-			if (rel.getImpliesRelations().isEmpty()) {
+			if (implies.get(rel).isEmpty()) {
 				leaves.add(rel);
 			}
 		}
@@ -116,11 +130,32 @@ public class RelationSet {
 
 	private void removeTransitiveClosure(AtomicRelation rel) {
 		
-		for (AtomicRelation child : new HashSet<AtomicRelation>(rel.getImpliesRelations())) {
-			rel.getImpliesRelations().removeAll(child.getImpliesRelations());
+		for (AtomicRelation child : new HashSet<AtomicRelation>(implies.get(rel))) {
+			for (AtomicRelation cc : implies.get(child)) {
+				implies.get(rel).remove(cc);
+				unifiers.remove(new Pair<AtomicRelation, AtomicRelation>(rel, cc));
+			}
 			removeTransitiveClosure(child);
 		}
-	}	
+	}
+
+	public Set<AtomicRelation> getImplies(AtomicRelation rel) {
+		return implies.get(rel);
+	}
+
+	public Set<AtomicRelation> getImpliedBy(AtomicRelation rel) {
+		return impliedBy.get(rel);
+	}
+
+	public Set<AtomicRelation> getImpliedByWithOnlyVisitedChildren(AtomicRelation rel, Set<AtomicRelation> visited) {
+		Set<AtomicRelation> rels = new HashSet<AtomicRelation>();
+		for (AtomicRelation r : impliedBy.get(rel)) {
+			if (visited.containsAll(implies.get(r))) {
+				rels.add(r);
+			}
+		}
+		return rels;
+	}
 
 	public String getName() { return name; }
 

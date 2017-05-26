@@ -38,17 +38,24 @@ public class Before extends AtomicRelation {
 		return false;
 	}
 
-	public boolean impliesNonEmpty(AtomicRelation r) {
+	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
 
 		if (r.isValid()) {
-			return true;
-		} else if (isValid() || r instanceof Overlaps || r instanceof PartOf) {
-			return false;
-		} else {
+			return new HashSet<Map<Integer, Integer>>();
+		} else if (!isValid() && (r instanceof Before)) {
 			Before bfr = (Before) r;
-			return a1 == bfr.a1 && stricterRole(bfr.r1, r1) &&
-			       a2 == bfr.a2 && stricterRole(bfr.r2, r2);
+			if (a1 == bfr.a1 && stricterRole(bfr.r1, r1) &&
+			    a2 == bfr.a2 && stricterRole(bfr.r2, r2)) {
+
+				Set<Map<Integer, Integer>> unifiers = new HashSet<Map<Integer, Integer>>();
+				Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+				unifier.put(new Integer(r1), new Integer(bfr.r1));
+				unifier.put(new Integer(r2), new Integer(bfr.r2));
+				unifiers.add(unifier);
+				return unifiers;
+			}
 		}
+		return null;
 	}
 
 	@Override

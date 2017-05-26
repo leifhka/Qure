@@ -61,40 +61,51 @@ public class Overlaps extends AtomicRelation {
 		return getArity() == 1; // Assuming non-empty argument for argument role
 	}
 
-	public boolean impliesNonEmpty(AtomicRelation r) {
+	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
 
 		if (r.isValid()) {
-			return true;
+			return new HashSet<Map<Integer, Integer>>();
 		} else if (isValid() || !(r instanceof Overlaps)) {
-			return false;
+			return null;
 		} else {
-    		if (getArity() < r.getArity()) return false;
+    		if (getArity() < r.getArity()) return null;
 
 			Overlaps ovr = (Overlaps) r;
+			Set<Map<Integer, Integer>> unifiers = new HashSet<Map<Integer, Integer>>();
+			Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
 			Set<Integer> rArgs = new HashSet<Integer>(ovr.argRole.keySet());
 			Set<Integer> tArgs = new HashSet<Integer>(argRole.keySet());
-			return unifyOverlaps(tArgs, rArgs, ovr);
+			unifyOverlaps(unifiers, unifier, tArgs, rArgs, ovr);
+			return unifiers;
 		}
 	}
 
-	private boolean unifyOverlaps(Set<Integer> tArgs, Set<Integer> rArgs, Overlaps r) {
-    	if (rArgs.isEmpty()) return true;
+	private void unifyOverlaps(Set<Map<Integer, Integer>> unifiers, Map<Integer, Integer> unifier,
+	                           Set<Integer> tArgs, Set<Integer> rArgs, Overlaps r) {
+    	if (rArgs.isEmpty()) { // Unifier found for all variables
+	    	unifiers.add(unifier);
+    		return;
+    	}
 
-    	Set<Integer> possible = new HashSet<Integer>();
+		// Pick some argument which we try to unify with next
     	Pair<Integer, Set<Integer>> oneArg = Utils.getSome(rArgs);
     	Integer rArg = oneArg.fst;
 
+		// Generate a set of all possible unifications for rArg
+    	Set<Integer> possible = new HashSet<Integer>();
     	for (Integer tArg : tArgs) {
         	if (stricterRole(argRole.get(tArg), r.argRole.get(rArg))) {
             	possible.add(tArg);
         	}
     	}
+    	// Then recusively try to unify rest of variables with each unification
     	for (Integer tArg : possible) {
         	Set<Integer> tArgsNew = new HashSet<Integer>(tArgs);
         	tArgsNew.remove(tArg);
-        	if (unifyOverlaps(tArgsNew, oneArg.snd, r)) return true;
+        	Map<Integer, Integer> newUnifier = new HashMap<Integer, Integer>(unifier);
+        	newUnifier.put(tArg, rArg);
+        	unifyOverlaps(unifiers, newUnifier, tArgsNew, oneArg.snd, r);
     	}
-    	return false;
 	}
 
 	@Override
@@ -179,6 +190,7 @@ public class Overlaps extends AtomicRelation {
 
     	if (tuple.size() == getArity()) {
 			// Found one potensial tuple, so we now eval that if not checked before
+			// TODO: Fix, now not evaling if tuple has correct arity from previous relation
 			tuples.add(tuple);
 			checked.add(tuple);
     	} else {

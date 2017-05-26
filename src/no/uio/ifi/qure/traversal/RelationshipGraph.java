@@ -273,7 +273,7 @@ public class RelationshipGraph {
 	/**
 	 * Constructs the relationship graph between the SIDs by traversing the implication graph between
 	 * the relationships topologically. It computes all satisfying tuples in each layer based on possible tuples
-	 * from the highest-arity relation from the lower level.
+	 * from the highest-arity relations from the lower level.
 	 */
 	private void computeRelationshipGraphOpt(SpaceProvider spaces) {
 
@@ -296,10 +296,10 @@ public class RelationshipGraph {
 
 				tuples.putIfAbsent(rel, new HashSet<Tuple>());
 
-				if (!rel.getImpliesRelations().isEmpty()) {
+				if (!relations.getImplies(rel).isEmpty()) {
 					// We only have to check tuples that occur in intersection of possible tuples of lower levels.
 					// However, they might have different arity, so we only take the tuples of highest arity.
-					Set<AtomicRelation> relsWHighestArity = RelationSet.getRelationsWithHighestArity(rel.getImpliesRelations());
+					Set<AtomicRelation> relsWHighestArity = RelationSet.getRelationsWithHighestArity(relations.getImplies(rel));
 					Pair<AtomicRelation, Set<AtomicRelation>> someRel = Utils.getSome(relsWHighestArity);
 					Set<Tuple> possibleTuples = new HashSet<Tuple>(tuples.get(someRel.fst));
 				
@@ -310,7 +310,7 @@ public class RelationshipGraph {
 						Set<Tuple> toAdd = rel.evalAll(spaces, possible, roleToSID);
 						if (!toAdd.isEmpty()) {
 							tuples.get(rel).addAll(toAdd);
-							for (AtomicRelation pred : rel.getImpliesRelations()) {
+							for (AtomicRelation pred : relations.getImplies(rel)) {
 								tuples.get(pred).remove(possible); // Possible implied by tuples in toAdd
 							}
 						}
@@ -320,7 +320,7 @@ public class RelationshipGraph {
 					tuples.get(rel).addAll(rel.evalAll(spaces, roleToSID));
 				}
 				visited.add(rel);
-				nextRels.addAll(rel.getImpliedByWithOnlyVisitedChildren(visited));
+				nextRels.addAll(relations.getImpliedByWithOnlyVisitedChildren(rel, visited));
 			}
 		}
 		addRelationshipsToGraph(tuples);
