@@ -9,4 +9,16 @@ public class Pair<A,B> {
 		this.fst = fst;
 		this.snd = snd;
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof Pair)) return false;
+		Pair op = (Pair) o;
+		return fst.equals(o.fst) && snd.equals(o.snd);
+	}
+
+	@Override
+	public int hashCode() {
+		return fst.hashCode() + snd.hashCode();
+	}
 }
