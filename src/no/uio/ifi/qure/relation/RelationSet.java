@@ -195,6 +195,7 @@ public class RelationSet {
 		return maxArr;
     }
 
+	// TODO: Does not work, need to take unifier into account
 	public static AtomicRelation getSmallestRelationWithHighestArity(Set<AtomicRelation> rels,
 	                                                                 Map<AtomicRelation, Set<List<Integer>>> tuples) {
 		Pair<AtomicRelation, Set<AtomicRelation>> some = Utils.getSome(getRelationsWithArity(getHighestArity(rels), rels));
@@ -275,6 +276,7 @@ public class RelationSet {
 					AtomicRelation relsWHighestArity = getSmallestRelationWithHighestArity(getImplies(rel), tuples);
 					Set<List<Integer>> possibleTuples = new HashSet<List<Integer>>(tuples.get(relsWHighestArity));
 				
+					// TODO: Does not work, need to take unifier into account
 					for (List<Integer> possible : possibleTuples) {
 						Set<List<Integer>> toAdd = rel.evalAll(spaces, possible, roleToSID);
 						if (!toAdd.isEmpty()) {
