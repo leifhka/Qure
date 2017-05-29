@@ -71,12 +71,12 @@ public class Before extends AtomicRelation {
 		return 10*((r1+a1) + 2*(r2+a2));
 	}
 
-	public boolean evalRoled(Space[] spaceArgs) {
-		return spaceArgs[a1].getPart(r1).before(spaceArgs[a2].getPart(r2));
+	public boolean evalRoled(List<Space> spaceArgs) {
+		return spaceArgs.get(a1).getPart(r1).before(spaceArgs.get(a2).getPart(r2));
 	}
 
-	public boolean eval(Space[] spaceArgs) {
-    	return spaceArgs[a1].before(spaceArgs[a2]);
+	public boolean eval(List<Space> spaceArgs) {
+    	return spaceArgs.get(a1).before(spaceArgs.get(a2));
 	}
 
 	public Set<AtomicRelation> getAtomicRelations() {
@@ -96,50 +96,68 @@ public class Before extends AtomicRelation {
 		rs.add(r2);
 		return rs;
 	}
+	
+	public List<SID> toSIDs(List<Integer> tuple) {
+		List<SID> sids = new ArrayList<SID>(2);
+		sids.add(new SID(tuple.get(0), r1));
+		sids.add(new SID(tuple.get(1), r2));
+		return sids;
+	}
+	
+	public Set<List<Integer>> evalAll(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID) {
 
-	public Set<Tuple> evalAll(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID) {
-
-		Set<Tuple> tuples = new HashSet<Tuple>();
+		Set<List<Integer>> tuples = new HashSet<List<Integer>>();
 
     	for (SID sid1 : roleToSID.get(r1)) {
         	for (SID sid2 : roleToSID.get(r2)) {
             	if (sid1.equals(sid2)) {
 	            	continue;
             	}
-            	
-            	Space[] spaceTuple = new Space[]{spaces.get(sid1), spaces.get(sid2)};
-				if (eval(spaceTuple)) {
-    				tuples.add(new Tuple(Arrays.asList(new SID[]{sid1, sid2})));
+
+            	List<Integer> newTuple = new ArrayList<Integer>(2);
+            	newTuple.add(sid1.getID());
+            	newTuple.add(sid2.getID());
+				if (eval(spaces.toSpaces(toSIDs(newTuple)))) {
+    				tuples.add(newTuple);
 				}
         	}
     	}
     	return tuples;
 	}
 	
-	public Set<Tuple> evalAll(SpaceProvider spaces, Tuple possible, Map<Integer, Set<SID>> roleToSID) {
+	public Set<List<Integer>> evalAll(SpaceProvider spaces, List<Integer> possible, Map<Integer, Set<SID>> roleToSID) {
 
-		Set<Tuple> tuples = new HashSet<Tuple>();
+		Set<List<Integer>> tuples = new HashSet<List<Integer>>();
 
-    	for (List<SID> pos : tupleToLists(possible)) {
+    	for (List<Integer> pos : tupleToLists(possible)) {
 
-        	SID sid1 = pos.get(0);
+        	Integer id1 = pos.get(0);
 
 	    	if (pos.size() < 2) {
 	        	for (SID sid2 : roleToSID.get(r2)) {
-	            	if (sid1.equals(sid2)) {
+		        	Integer id2 = sid2.getID();
+	            	if (id1.equals(id2)) {
 		            	continue;
 	            	}
             	
-	            	Space[] spaceTuple = new Space[]{spaces.get(sid1), spaces.get(sid2)};
-					if (eval(spaceTuple)) {
-						tuples.add(new Tuple(Arrays.asList(new SID[]{sid1, sid2})));
+            		List<Integer> newTuple = new ArrayList<Integer>(2);
+            		newTuple.add(id1);
+            		newTuple.add(id2);
+					if (eval(spaces.toSpaces(toSIDs(newTuple)))) {
+    					tuples.add(newTuple);
 					}
 	        	}
 	    	} else {
-		    	SID sid2 = pos.get(1);
-            	Space[] spaceTuple = new Space[]{spaces.get(sid1), spaces.get(sid2)};
-				if (eval(spaceTuple)) {
-					tuples.add(new Tuple(Arrays.asList(new SID[]{sid1, sid2})));
+		    	Integer id2 = pos.get(1);
+		    	if (id1.equals(id2)) {
+    		    	continue;
+		    	}
+		    	
+        		List<Integer> newTuple = new ArrayList<Integer>(2);
+        		newTuple.add(id1);
+        		newTuple.add(id2);
+				if (eval(spaces.toSpaces(toSIDs(newTuple)))) {
+					tuples.add(newTuple);
 				}
 	    	}
     	}

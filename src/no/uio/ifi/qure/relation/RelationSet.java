@@ -4,9 +4,12 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.space.*;
+import no.uio.ifi.qure.traversal.*;
 
 import static no.uio.ifi.qure.relation.Relation.*;
 
@@ -21,7 +24,7 @@ public class RelationSet {
 	private Set<AtomicRelation> leaves; // Used for implication graph
 	private Map<AtomicRelation, Set<AtomicRelation>> implies;
 	private Map<AtomicRelation, Set<AtomicRelation>> impliedBy;
-	private Map<Pair<AtomicRelation, AtomicRelation>, Set<Map<Integer, Integer>>> unifiers; // TODO: rewrite to map AtomicRelation to Pair<AtomicRelation, Set<Map<Integer, Integer>>>
+	private Map<Pair<AtomicRelation, AtomicRelation>, Set<Map<Integer, Integer>>> unifiers;
 
 	public RelationSet(Set<Relation> relations) {
 		this.relations = relations;
@@ -192,8 +195,19 @@ public class RelationSet {
 		return maxArr;
     }
 
-	public static Set<AtomicRelation> getRelationsWithHighestArity(Set<AtomicRelation> rels) {
-		return getRelationsWithArity(getHighestArity(rels), rels);
+	public static AtomicRelation getSmallestRelationWithHighestArity(Set<AtomicRelation> rels,
+	                                                                 Map<AtomicRelation, Set<List<Integer>>> tuples) {
+		Pair<AtomicRelation, Set<AtomicRelation>> some = Utils.getSome(getRelationsWithArity(getHighestArity(rels), rels));
+		AtomicRelation sha = some.fst;
+		int smallest = tuples.get(sha).size();
+		for (AtomicRelation rel : some.snd) {
+			int s = tuples.get(rel).size();
+			if (s < smallest) {
+				smallest = s;
+				sha = rel;
+			}
+		}
+		return sha;
 	}
 
 	public static Set<AtomicRelation> getRelationsWithArity(int arr, Set<AtomicRelation> rels) {
@@ -208,6 +222,78 @@ public class RelationSet {
 	public int getHighestArity() { return highestArity; }
 
 	public Set<AtomicRelation> getAtomicRelations() { return atomicRels; }
+	
+	// TODO: Implement evalAll such that it takes into account all unifiers and tuples of
+	// implied relations, in the following way:
+	// For each tuple in relation with fewest tuples (or highest arity) do:
+	//   Check that elements of tuple has non-empty parts for each role of this relation.
+	//   Then check that the tuple satisfies every relation under each unifier mapping into tuple.
+	//   Then if tuple has length equal to this' arity, eval, if not, extend tuple with
+	//     one element either from relation with unifier to that argument, or with element
+	//     with correct role, and repeat loop.
+	//
+	// Or: Construct tuple one by one element based on possible elements for each posision in tuple	w.r.t. already
+	//     computed implied relations.
+	public boolean isPossible(AtomicRelation rel, List<Integer> tuple, Integer newArg) {
+		for (AtomicRelation implies : getImplies(rel)) {
+			if (rel.equals(implies)) continue;
+			for (Map<Integer, Integer> unifier : unifiers.get(new Pair<AtomicRelation, AtomicRelation>(rel, implies))) {
+				if (!isPossible(tuple, newArg, implies, unifier)) return false;
+			}
+		}
+		return true;
+	}
+	
+	public boolean isPossible(List<Integer> tuple, Integer newArg, AtomicRelation implied, Map<Integer, Integer> unifier) {
+		return false;
+	}
+
+	public Map<AtomicRelation, Set<List<Integer>>> computeRelationships(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID) {
+		
+		// tuples contains map from relation to tuples/lists (with witness space) satisfying that relation
+		// The witness space is the intersection of the spaces in the list, and can be used to optimize computation
+		// of other more specific relationships (e.g. higher arity overlaps or part-of)
+		Map<AtomicRelation, Set<List<Integer>>> tuples = new HashMap<AtomicRelation, Set<List<Integer>>>();
+		// nexRels contains all relations to visit next according to implication graph. Start at leaves.
+		Set<AtomicRelation> nextRels = new HashSet<AtomicRelation>(getImplicationGraphLeaves());
+		// currentRels will contain the relations to visit this iteration, taken from previou's nextRels.
+		Set<AtomicRelation> currentRels;
+		Set<AtomicRelation> visited = new HashSet<AtomicRelation>();
+
+		while (!nextRels.isEmpty()) {
+
+			currentRels = new HashSet<AtomicRelation>(nextRels);
+			nextRels.clear();
+			
+			for (AtomicRelation rel : currentRels) {
+
+				tuples.putIfAbsent(rel, new HashSet<List<Integer>>());
+
+				if (!getImplies(rel).isEmpty()) {
+					// We only have to check tuples that occur in intersection of possible tuples of lower levels.
+					// However, they might have different arity, so we only take the tuples of highest arity.
+					AtomicRelation relsWHighestArity = getSmallestRelationWithHighestArity(getImplies(rel), tuples);
+					Set<List<Integer>> possibleTuples = new HashSet<List<Integer>>(tuples.get(relsWHighestArity));
+				
+					for (List<Integer> possible : possibleTuples) {
+						Set<List<Integer>> toAdd = rel.evalAll(spaces, possible, roleToSID);
+						if (!toAdd.isEmpty()) {
+							tuples.get(rel).addAll(toAdd);
+							for (AtomicRelation pred : getImplies(rel)) {
+								tuples.get(pred).remove(possible); // Possible implied by tuples in toAdd
+							}
+						}
+					}
+				} else {
+					// Leaf-relation, thus we need to check all constructable tuples from spaces
+					tuples.get(rel).addAll(rel.evalAll(spaces, roleToSID));
+				}
+				visited.add(rel);
+				nextRels.addAll(getImpliedByWithOnlyVisitedChildren(rel, visited));
+			}
+		}
+		return tuples;
+	}
 
 	public static RelationSet getRCC8(int i, int b) {
 		

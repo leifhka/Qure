@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 import no.uio.ifi.qure.*;
 import no.uio.ifi.qure.relation.*;
@@ -42,6 +44,14 @@ public interface SpaceProvider {
 	public Space get(SID uri);
 
 	public void populateWithExternalOverlapping();
+
+	public default List<Space> toSpaces(List<SID> tuple) {
+		List<Space> sps = new ArrayList<Space>(tuple.size());
+		for (SID s : tuple) {
+			sps.add(get(s));
+		}
+		return sps;
+	}
 
 	public SpaceProvider makeSubProvider(Space uni, Set<SID> sids);
 
