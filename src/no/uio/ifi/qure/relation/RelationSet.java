@@ -235,6 +235,8 @@ public class RelationSet {
 	//
 	// Or: Construct tuple one by one element based on possible elements for each posision in tuple	w.r.t. already
 	//     computed implied relations.
+	// Or: Compute the join of all (possibly partial) tuples from implies under unifiers and check them one by one
+	//     but where we remove redundant tuples (e.g. reflexive or symmetric variants)
 	public boolean isPossible(AtomicRelation rel, List<Integer> tuple, Integer newArg) {
 		for (AtomicRelation implies : getImplies(rel)) {
 			if (rel.equals(implies)) continue;
