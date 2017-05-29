@@ -39,6 +39,19 @@ public abstract class AtomicRelation extends Relation {
 	//     with correct role, and repeat loop.
 	//
 	// Can also check as a further optimization whether a Tuple's space can be used when extending tuple.
+	public boolean isPossible(Tuple tuple, SID newArg, Map<AtomicRelation, Pair<AtomicRelation, Set<Map<Integer, Integer>>>> unifiers) {
+		for (Pair<AtomicRelation, Set<Map<Integer, Integer>>> tUnifiers : unifiers.get(this)) {
+			for (Map<Integer, Integer> unifier : tUnifiers.snd) {
+				if (!isPossible(tuple, newArg, tUnifiers.fst, unifier)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+	
+	public abstract boolean isPossible(Tuple tuple, SID newArg, AtomicRelation implied, Map<Integer, Integer> unifier);
+
 	public abstract Set<Tuple> evalAll(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID);
 
 	public abstract Set<Tuple> evalAll(SpaceProvider spaces, Tuple possible, Map<Integer, Set<SID>> roleToSID);

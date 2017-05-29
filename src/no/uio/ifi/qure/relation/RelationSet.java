@@ -21,7 +21,7 @@ public class RelationSet {
 	private Set<AtomicRelation> leaves; // Used for implication graph
 	private Map<AtomicRelation, Set<AtomicRelation>> implies;
 	private Map<AtomicRelation, Set<AtomicRelation>> impliedBy;
-	private Map<Pair<AtomicRelation, AtomicRelation>, Set<Map<Integer, Integer>>> unifiers;
+	private Map<Pair<AtomicRelation, AtomicRelation>, Set<Map<Integer, Integer>>> unifiers; // TODO: rewrite to map AtomicRelation to Pair<AtomicRelation, Set<Map<Integer, Integer>>>
 
 	public RelationSet(Set<Relation> relations) {
 		this.relations = relations;
