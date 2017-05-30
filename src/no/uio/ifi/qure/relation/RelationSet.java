@@ -168,6 +168,10 @@ public class RelationSet {
 
 	public Set<Integer> getRoles() { return roles; }
 
+	public int getHighestArity() { return highestArity; }
+
+	public Set<AtomicRelation> getAtomicRelations() { return atomicRels; }
+	
 	public Set<AtomicRelation> getImplicationGraphLeaves() { return leaves; }
 
 	/**
@@ -197,7 +201,7 @@ public class RelationSet {
 
 	// TODO: Does not work, need to take unifier into account
 	public static AtomicRelation getSmallestRelationWithHighestArity(Set<AtomicRelation> rels,
-	                                                                 Map<AtomicRelation, Set<List<Integer>>> tuples) {
+	                                                                 Map<AtomicRelation, Set<Integer[]>> tuples) {
 		Pair<AtomicRelation, Set<AtomicRelation>> some = Utils.getSome(getRelationsWithArity(getHighestArity(rels), rels));
 		AtomicRelation sha = some.fst;
 		int smallest = tuples.get(sha).size();
@@ -220,43 +224,26 @@ public class RelationSet {
 		return result;
 	}
 
-	public int getHighestArity() { return highestArity; }
+	public Set<Table> makeTables(AtomicRelation rel, Map<AtomicRelation, Table> tables) {
 
-	public Set<AtomicRelation> getAtomicRelations() { return atomicRels; }
-	
-	// TODO: Implement evalAll such that it takes into account all unifiers and tuples of
-	// implied relations, in the following way:
-	// For each tuple in relation with fewest tuples (or highest arity) do:
-	//   Check that elements of tuple has non-empty parts for each role of this relation.
-	//   Then check that the tuple satisfies every relation under each unifier mapping into tuple.
-	//   Then if tuple has length equal to this' arity, eval, if not, extend tuple with
-	//     one element either from relation with unifier to that argument, or with element
-	//     with correct role, and repeat loop.
-	//
-	// Or: Construct tuple one by one element based on possible elements for each posision in tuple	w.r.t. already
-	//     computed implied relations.
-	// Or: Compute the join of all (possibly partial) tuples from implies under unifiers and check them one by one
-	//     but where we remove redundant tuples (e.g. reflexive or symmetric variants)
-	public boolean isPossible(AtomicRelation rel, List<Integer> tuple, Integer newArg) {
-		for (AtomicRelation implies : getImplies(rel)) {
-			if (rel.equals(implies)) continue;
-			for (Map<Integer, Integer> unifier : unifiers.get(new Pair<AtomicRelation, AtomicRelation>(rel, implies))) {
-				if (!isPossible(tuple, newArg, implies, unifier)) return false;
+		return null; //TODO
+	}
+
+	public void removeAdded(Set<Map<Integer, Integer>> unis, Table table, Table added) {
+
+		for (Map<Integer, Integer> unifier : unis) {
+			for (Integer[] tuple : added.tuples) {
+				// Remove tuple based on unifier from table
 			}
 		}
-		return true;
-	}
-	
-	public boolean isPossible(List<Integer> tuple, Integer newArg, AtomicRelation implied, Map<Integer, Integer> unifier) {
-		return false;
 	}
 
-	public Map<AtomicRelation, Set<List<Integer>>> computeRelationships(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID) {
+	public Map<AtomicRelation, Set<Integer[]>> computeRelationships(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID) {
 		
 		// tuples contains map from relation to tuples/lists (with witness space) satisfying that relation
 		// The witness space is the intersection of the spaces in the list, and can be used to optimize computation
 		// of other more specific relationships (e.g. higher arity overlaps or part-of)
-		Map<AtomicRelation, Set<List<Integer>>> tuples = new HashMap<AtomicRelation, Set<List<Integer>>>();
+		Map<AtomicRelation, Table> tables = new HashMap<AtomicRelation, Table>();
 		// nexRels contains all relations to visit next according to implication graph. Start at leaves.
 		Set<AtomicRelation> nextRels = new HashSet<AtomicRelation>(getImplicationGraphLeaves());
 		// currentRels will contain the relations to visit this iteration, taken from previou's nextRels.
@@ -270,27 +257,22 @@ public class RelationSet {
 			
 			for (AtomicRelation rel : currentRels) {
 
-				tuples.putIfAbsent(rel, new HashSet<List<Integer>>());
-
 				if (!getImplies(rel).isEmpty()) {
-					// We only have to check tuples that occur in intersection of possible tuples of lower levels.
-					// However, they might have different arity, so we only take the tuples of highest arity.
-					AtomicRelation relsWHighestArity = getSmallestRelationWithHighestArity(getImplies(rel), tuples);
-					Set<List<Integer>> possibleTuples = new HashSet<List<Integer>>(tuples.get(relsWHighestArity));
+					Set<Tables> possibleTables = makeTables(rel, tables);
+					Pair<Table, Set<Tables>> smallestP = Utils.getSmallest(possibleTables);
+					Table possible = smallestP.fst;
 				
-					// TODO: Does not work, need to take unifier into account
-					for (List<Integer> possible : possibleTuples) {
-						Set<List<Integer>> toAdd = rel.evalAll(spaces, possible, roleToSID);
-						if (!toAdd.isEmpty()) {
-							tuples.get(rel).addAll(toAdd);
-							for (AtomicRelation pred : getImplies(rel)) {
-								tuples.get(pred).remove(possible); // Possible implied by tuples in toAdd
-							}
-						}
+					for (Table larger : smallestP.snd) {
+						possible = possible.join(larger);
+					}
+					Table actual = rel.evalAll(possible);
+					tables.put(rel, actual);
+					for (AtomicRelation implies : getImplies(rel)) {
+						removeAdded(new Pair<AtomicRelation, AtomicRelation>(rel, implies), tables.get(implies), actual);
 					}
 				} else {
 					// Leaf-relation, thus we need to check all constructable tuples from spaces
-					tuples.get(rel).addAll(rel.evalAll(spaces, roleToSID));
+					tables.put(rel, rel.evalAll(spaces, roleToSID));
 				}
 				visited.add(rel);
 				nextRels.addAll(getImpliedByWithOnlyVisitedChildren(rel, visited));
@@ -300,59 +282,129 @@ public class RelationSet {
 	}
 
 	public static RelationSet getRCC8(int i, int b) {
-		
 		Set<Relation> rcc8 = new HashSet<Relation>();
-
 		rcc8.add(not(overlaps(0, 0, 0, 1)));                                                      // DJ
-
 		rcc8.add(overlaps(0, 0, 0, 1).and(not(overlaps(i, i, 0, 1))));                            // EC
-
 		rcc8.add(overlaps(i, i, 0, 1).and(not(partOf(0, 0, 0, 1))).and(not(partOf(0, 0, 1, 0)))); // PO
-
 		rcc8.add(partOf(0, 0, 0, 1).and(partOf(0, 0, 1, 0)));                                     // EQ
-
 		rcc8.add(partOf(0, 0, 0, 1).and(overlaps(b, b, 0, 1)).and(not(partOf(0, 0, 1, 0))));      // TPP
-
 		rcc8.add(partOf(0, 0, 0, 1).and(not(overlaps(b, b, 0, 1))));                              // NTPP
-		
 		return new RelationSet(rcc8, "RCC8");
 	}
 
 	public static RelationSet getAllensIntervalAlgebra(int f, int i, int l) {
-
     	Set<Relation> allen = new HashSet<Relation>();
-
     	allen.add(before(f, l, 0, 1));                                                             // before
-
     	allen.add(partOf(f, l, 0, 1).and(partOf(l, f, 1, 0)));                                     // meets
-
     	allen.add(overlaps(i, i, 0, 1).and(not(partOf(0, 0, 0, 1))).and(not(partOf(0, 0, 1, 0)))); // overlaps
-
     	allen.add(partOf(0, 0, 0, 1).and(partOf(0, 0, 1, 0)));                                     // equal
-
     	allen.add(partOf(l, l, 0, 1).and(partOf(l, l, 1, 0)).and(partOf(f, i, 0, 1)));             // starts
-
     	allen.add(partOf(l, i, 0, 1).and(partOf(f, i, 0, 1)));                                     // during
-
     	allen.add(partOf(f, f, 0, 1).and(partOf(f, f, 1, 0)).and(partOf(l, i, 0, 1)));             // ends
-
     	allen.add(before(f, l, 1, 0));                                                             // after
-
 		return new RelationSet(allen, "allen");
 	}
 
 	public static RelationSet getSimple(int arity) {
-
     	Set<Relation> simple = new HashSet<Relation>();
     	simple.add(partOf(0, 0, 0, 1));
-
     	for (int i = 2; i <= arity; i++) {
-
         	int[] noRoles = new int[i];
         	int[] args = new int[i];
         	for (int j = 0; j < i; j++) args[j] = j;
         	simple.add(overlaps(noRoles, args));
     	}
     	return new RelationSet(simple, "simple" + arity);
+	}
+	
+
+	private class Table {
+		private final Set<Integer[]> tuples;
+		private final List<Map<Integer, Set<Integer[]>>> indecies;
+
+		public Table(int nrColumns) {
+			tuples = new HashSet<Integer[]>();
+			indecies = new ArrayList<Map<Integer, Set<Integer[]>>>();
+			for (int i = 0; i < nrColumns; i++) {
+				indecies.add(new HashMap<Integer, Set<Integer[]>>());
+			}
+		}
+
+		/**
+		 * Returns the tuple that results from applying the reverse of unifier to tuple, putting null/wild-card
+		 * for non-matched positions
+		 */
+		private Integer[] fromUnifier(Integer[] tuple, Map<Integer, Integer> unifier, int arity) {
+			Integer[] res = new Integer[arity];
+			for (int i = 0; i < arity; i++) {
+				if (unifier.get(i) != null) {
+					res[i] = tuple[unifier.get(i)];
+				}
+			}
+			return res;
+		}
+		
+		public Table fromTable(Table other, Map<Integer, Integer> unifier, int nrColumns) {
+
+			Table res = new Table(nrColumns);
+			for (Integer[] tuple : other.tuples) {
+				res.addTuple(fromUnifier(tuple, unifier, nrColumns));
+			}
+			return res;
+		}
+
+		public int size() { return tuples.size(); }
+
+		public void addTuple(Integer[] tuple) {
+			tuples.add(tuple);
+			for (int i = 0; i < tuple.size(); i++) {
+				if (tuple.get(i) != null) {
+					indecies.get(i).putIfAbsent(tuple[i], new HashSet<Integer[]>());
+					indecies.get(i).get(tuple.[i]).add(tuple);
+				}
+			}
+		}
+
+		/**
+		 * Returns the tuple-join of t1 and t2 with null being a wild-card
+		 */
+		public static Integer[] join(Integer[] t1, Integer[] t2) {
+			Integer[] res = new Integer[]();
+			for (int i = 0; i < t1.length; i++) {
+				if (t1[i] == null) {
+					res[i] = t2[i];
+				} else if (t2[i] == null || t1[i].equals(t2[i])) {
+					res[i] = t1[i];
+				} else {
+					return null;
+				}
+			}
+			return res;
+		}
+
+		/**
+		 * Returns the set of tuples from this table that joins on all fields with argument
+		 * where null is a wild-card
+		 */
+		public Set<Integer[]> getJoinable(Integer[] tuple) {
+			Set<Integer[]> res = indecies.get(0).get(tuple[0]);
+			for (int i = 1; i < tuple.length; i++) {
+				res.retainAll(indecies.get(i).get(tuple[i]));
+			}
+			return res;
+		}
+
+		/**
+		 * Returns a table containing the relational join of this and other
+		 */
+		public Table join(Table other) {
+			Table res = new Table(indecies.size());
+			for (Integer[] tuple : tuples) {
+				for (Integer[] joinable : other.getJoinable(tuple)) {
+					res.addTuple(join(tuple, joinable));
+				}
+			}
+			return res;
+		}
 	}
 }
