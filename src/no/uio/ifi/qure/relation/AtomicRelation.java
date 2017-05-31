@@ -28,6 +28,8 @@ public abstract class AtomicRelation extends Relation {
 
 	public abstract Table evalAll(SpaceProvider spaces, Table possible);
 
+	public abstract boolean isIntrinsic(Integer[] tuple);
+
 	public Space[] toSpaces(Integer[] args, SpaceProvider spaces) {
 		Space[] sps = new Space[args.length];
 		for (int i = 0; i < sps.length; i++) {

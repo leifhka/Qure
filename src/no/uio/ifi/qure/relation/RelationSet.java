@@ -49,6 +49,10 @@ public class RelationSet {
 		return new RelationSet(Utils.union(relations, rels.getRelations()));
 	}
 
+	private Set<Map<Integer, Integer>> getUnifiers(AtomicRelation rel1, AtomicRelation rel2) {
+		return unifiers.get(new Pair<AtomicRelation, AtomicRelation>(rel1, rel2));
+	}
+
 	private void initRolesAndAtomic() {
 		roles = new HashSet<Integer>();
 		atomicRels = new HashSet<AtomicRelation>();
@@ -72,28 +76,24 @@ public class RelationSet {
 
 		// Add unary role-relations
 		for (Integer role : roles) {
-			atomicRels.add(new Overlaps(0, role));
+			atomicRels.add(new Overlaps(role, 0));
 		}
 
-		removeRedundantAtomicRelations();
 		computeImplicationGraph();
 	}
 
-	private void removeRedundantAtomicRelations() {
-
-    	Set<AtomicRelation> removed = new HashSet<AtomicRelation>();
-
-    	for (AtomicRelation r1 : new HashSet<AtomicRelation>(atomicRels)) {
-        	if (removed.contains(r1)) {
-            	continue;
-        	}
-        	for (AtomicRelation r2 : new HashSet<AtomicRelation>(atomicRels)) {
-            	if (!r1.equals(r2) && r1.impliesNonEmpty(r2) != null && r2.impliesNonEmpty(r1) != null) {
-                	atomicRels.remove(r2);
-                	removed.add(r2);
-            	}
-        	}
-    	}
+	private void removeTransitiveUnifiers(AtomicRelation rel) {
+		for (AtomicRelation imp : getImplies(rel)) {
+			for (AtomicRelation impimp : getImplies(imp)) {
+				for (Map<Integer, Integer> uImp : new HashSet<Map<Integer, Integer>>(getUnifiers(rel, imp))) {
+					for (Map<Integer, Integer> uImpimp : new HashSet<Map<Integer, Integer>>(getUnifiers(rel, impimp))) {
+						 if (uImp.keySet().containsAll(uImpimp.keySet())) {
+							 getUnifiers(rel, impimp).remove(uImpimp);
+						 }
+					}
+				}
+			}
+		}
 	}
 
 	private void computeImplicationGraph() {
@@ -125,6 +125,7 @@ public class RelationSet {
 		// Remove transitive closure to obtain minimal implication graph and find all leaves
 		leaves = new HashSet<AtomicRelation>();
 		for (AtomicRelation rel : atomicRels) {
+			removeTransitiveUnifiers(rel);
 			if (implies.get(rel).isEmpty()) {
 				leaves.add(rel);
 			}

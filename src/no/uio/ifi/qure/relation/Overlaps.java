@@ -57,6 +57,23 @@ public class Overlaps extends AtomicRelation {
 		return res + ")";
 	}
 
+	public boolean isIntrinsic(Integer[] tuple) {
+		if (getArity() < 2) return false;
+
+		Set<SID> sids = new HashSet<SID>();
+		for (int i = 0; i < tuple.length; i++) {
+			if (tuple[i] == null) continue;
+			for (int role : getStricter(new HashSet<Integer>(argRole.values()), getArgRole(i))) {
+				SID s = new SID(tuple[i], role);
+				if (sids.contains(s)) {
+					return true;
+				}
+				sids.add(s);
+			}
+		}
+		return false;
+	}
+
 	public Integer getArgRole(Integer arg) { return argRole.get(arg); }
 
 	public int getArity() {
@@ -76,14 +93,40 @@ public class Overlaps extends AtomicRelation {
 			Set<Integer> rArgs = new HashSet<Integer>(ovr.argRole.keySet());
 			Set<Integer> tArgs = new HashSet<Integer>(argRole.keySet());
 			unifyOverlaps(unifiers, unifier, tArgs, rArgs, ovr);
-			return unifiers;
+			return (unifiers.isEmpty()) ? null : unifiers;
 		}
 	}
+
+	private boolean redundantUnifier(Map<Integer, Integer> unifier, Set<Map<Integer, Integer>> unifiers, AtomicRelation or) {
+
+		if (or.getArity() == 1) return false;
+
+		Set<SID> sids = new HashSet<SID>();
+		for (Integer val : unifier.values()) {
+			sids.add(new SID(val, or.getArgRole(val)));
+		}
+
+		Set<Integer> keys = unifier.keySet();
+		for (Map<Integer, Integer> other : unifiers) {
+			Set<Integer> oKeys = other.keySet();
+			if (keys.equals(oKeys)) {
+				Set<SID> oSids = new HashSet<SID>();
+				for (Integer oVal : other.values()) {
+					oSids.add(new SID(oVal, or.getArgRole(oVal)));
+				}
+				if (sids.equals(oSids)) return true;
+			}
+		}
+		return false;
+	}
+
 
 	private void unifyOverlaps(Set<Map<Integer, Integer>> unifiers, Map<Integer, Integer> unifier,
 	                           Set<Integer> tArgs, Set<Integer> rArgs, Overlaps r) {
     	if (rArgs.isEmpty()) { // Unifier found for all variables
-	    	unifiers.add(unifier);
+    		if (!redundantUnifier(unifier, unifiers, r)) {
+		    	unifiers.add(unifier);
+    		}
     		return;
     	}
 
@@ -172,8 +215,13 @@ public class Overlaps extends AtomicRelation {
 
 	public Table evalAll(SpaceProvider spaces, Table possible) {
 		Table table = new Table(this);
+
 		for (Integer[] tuple : possible.getTuples()) {
-			if (eval(toSpaces(tuple, spaces))) {
+			if (getArity() == 1) {
+				if (spaces.get(new SID(argRole.get(0), tuple[0])) != null) {
+					table.addTuple(tuple);
+				}
+			} else if (eval(toSpaces(tuple, spaces))) {
 				table.addTuple(tuple);
 			}
 		}

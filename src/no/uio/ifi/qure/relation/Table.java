@@ -103,7 +103,12 @@ public class Table {
 		if (tuple[0] == null || indecies.get(0).keySet().isEmpty()) {
 			res = new HashSet<Integer[]>(tuples);
 		} else {
-			res = new HashSet<Integer[]>(indecies.get(0).get(tuple[0]));
+			Set<Integer[]> pos = indecies.get(0).get(tuple[0]);
+			if (pos == null) {
+				return new HashSet<Integer[]>();
+			} else {
+				res = new HashSet<Integer[]>(pos);
+			}
 		}
 
 		for (int i = 1; i < tuple.length; i++) {
@@ -125,7 +130,10 @@ public class Table {
 		Table res = new Table(rel);
 		for (Integer[] tuple : tuples) {
 			for (Integer[] joinable : other.getJoinable(tuple)) {
-				res.addTuple(join(tuple, joinable));
+				Integer[] joined = join(tuple, joinable);
+				if (!rel.isIntrinsic(joined)) {
+					res.addTuple(join(tuple, joinable));
+				}
 			}
 		}
 		return res;

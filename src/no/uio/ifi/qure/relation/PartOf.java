@@ -35,6 +35,10 @@ public class PartOf extends AtomicRelation {
 		return "";
 	}
 
+	public boolean isIntrinsic(Integer[] tuple) {
+		return tuple[a1] == tuple[a2] && stricterRole(r1, r2);
+	}
+
 	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
 
 		if (r.getArity() > 2 || (r instanceof Before)) {

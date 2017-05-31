@@ -40,6 +40,10 @@ public class Before extends AtomicRelation {
 		return false;
 	}
 
+	public boolean isIntrinsic(Integer[] tuple) {
+		return tuple[a1] == tuple[a2] && strictnessRelated(r1, r2);
+	}
+
 	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
 
 		if (r instanceof Before) {
