@@ -2,6 +2,7 @@ package no.uio.ifi.qure.traversal;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,6 @@ import no.uio.ifi.qure.relation.*;
 public class RelationshipGraph {
 
 	private final Map<SID, Node> nodes;
-	private final Map<Integer, Set<SID>> roleToSID;
 	private final Set<SID> topmostNodes;
 	private int overlapsNodeId; // Always negative, and decreasing
 	private final Block block;
@@ -32,14 +32,9 @@ public class RelationshipGraph {
 
 		topmostNodes = new HashSet<SID>(uris); // Init all uris as roots, and remove if set parent of some node
 		nodes = new HashMap<SID, Node>();
-		roleToSID = new HashMap<Integer, Set<SID>>();
 
-		for (Integer role : relations.getRoles()) {
-    		roleToSID.put(role, new HashSet<SID>());
-		}
 		for (SID uri : uris) {
 			nodes.put(uri, new Node(uri));
-			roleToSID.get(uri.getRole()).add(uri);
 		}
 		overlapsNodeId = 0;
 	}
@@ -234,26 +229,26 @@ public class RelationshipGraph {
 		return graph;
 	}
 
-	private void addRelationshipToGraph(AtomicRelation rel, List<Integer> tuple) {
+	private void addRelationshipToGraph(AtomicRelation rel, Integer[] tuple) {
 
-		List<SID> sids = rel.toSIDs(tuple);
+		SID[] sids = rel.toSIDs(tuple);
 		
 		if (rel instanceof Overlaps) {
-			addOverlapsWithRedundancyCheck(new HashSet<SID>(sids));
+			addOverlapsWithRedundancyCheck(Utils.asSet(sids));
 		} else if (rel instanceof PartOf) {
-			addCoveredBy(sids.get(0), sids.get(1));
+			addCoveredBy(sids[0], sids[1]);
 		} else {
-			addBefore(sids.get(0), sids.get(1));
+			addBefore(sids[0], sids[1]);
 		}
 	}
 		
 
-	private void addRelationshipsToGraph(Map<AtomicRelation, Set<List<Integer>>> tuples) {
+	private void addRelationshipsToGraph(Map<AtomicRelation, Set<Integer[]>> tuples) {
 
 		// Add PartOfs first, so that redundancy checks are correct for Overlaps
 		for (AtomicRelation rel : tuples.keySet()) {
 			if (rel instanceof PartOf) {
-				for (List<Integer> tuple : tuples.get(rel)) {
+				for (Integer[] tuple : tuples.get(rel)) {
 					addRelationshipToGraph(rel, tuple);
 				}
 			}
@@ -261,8 +256,8 @@ public class RelationshipGraph {
 		
 		for (int i = RelationSet.getHighestArity(tuples.keySet()); i > 0; i--) {
 			for (AtomicRelation rel : RelationSet.getRelationsWithArity(i, tuples.keySet())) {
-				if (!(rel instanceof PartOf)) {
-					for (List<Integer> tuple : tuples.get(rel)) {
+				if (!(rel instanceof PartOf) && rel.getArity() > 1) {
+					for (Integer[] tuple : tuples.get(rel)) {
 						addRelationshipToGraph(rel, tuple);
 					}
 				}
@@ -276,26 +271,7 @@ public class RelationshipGraph {
 	 * from the highest-arity relations from the lower level.
 	 */
 	private void computeRelationshipGraphOpt(SpaceProvider spaces) {
-		addRelationshipsToGraph(relations.computeRelationships(spaces, roleToSID));
-	}
-
-
-	private void computeRelationshipGraph(SpaceProvider spaces) {
-
-    	for (AtomicRelation rel : relations.getAtomicRelations()) {
-        	Set<List<Integer>> tuples = rel.evalAll(spaces, roleToSID);
-        	for (List<Integer> tuple : tuples) {
-            	if (rel instanceof Overlaps) {
-					addOverlapsWithRedundancyCheck(new HashSet<SID>(rel.toSIDs(tuple)));
-            	} else if (rel instanceof PartOf) {
-                	List<SID> tupleLst = rel.toSIDs(tuple);
-					addCoveredBy(tupleLst.get(0), tupleLst.get(1));
-            	} else {
-                	List<SID> tupleLst = rel.toSIDs(tuple);
-					addBefore(tupleLst.get(0), tupleLst.get(1));
-				}
-        	}
-    	}
+		addRelationshipsToGraph(relations.computeRelationships(spaces));
 	}
 
 	private boolean sameBefore(SID sid1, Set<SID> sids) {

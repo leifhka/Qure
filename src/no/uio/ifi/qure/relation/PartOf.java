@@ -25,6 +25,8 @@ public class PartOf extends AtomicRelation {
 
 	public int getArity() { return 2; }
 
+	public Integer getArgRole(Integer pos) { return (pos.equals(a1)) ? r1 : r2; }
+
 	public String toString() {
 		return "po(<" + r1 + "," + a1 + ">, <" + r2 + "," + a2 + ">)";
 	}
@@ -33,15 +35,9 @@ public class PartOf extends AtomicRelation {
 		return "";
 	}
 
-	public boolean isValid() {
-		return a1 == a2 && stricterRole(r1, r2);
-	}
-
 	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
 
-		if (r.isValid()) {
-			return new HashSet<Map<Integer, Integer>>(); // Need no unifiers to imply
-		} else if (isValid() || r.getArity() > 2 || (r instanceof Before)) {
+		if (r.getArity() > 2 || (r instanceof Before)) {
 			return null;
 		}
 
@@ -49,21 +45,38 @@ public class PartOf extends AtomicRelation {
 
 		if (r instanceof Overlaps) {
 			Overlaps ovr = (Overlaps) r;
-			// First argument must overlap one of the arguments, and
-			// second argument must contain the other argument.
-			if (strictnessRelated(r1, ovr.getArgRole(a1)) &&
-			    stricterRole(r2, ovr.getArgRole(a2))) {
+			if (ovr.getArity() == 1) {
+				Integer oRole = Utils.getOnlySome(ovr.getRoles());
+				if (stricterRole(r1, oRole)) {
+					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+					unifier.put(a1, 0);
+					unifiers.add(unifier);
+				}
+				if (stricterRole(r2, oRole)) {
+					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+					unifier.put(a2, 0);
+					unifiers.add(unifier);
+				}
+			} else {
 
-				Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
-				unifier.put(new Integer(a1), new Integer(a1));
-				unifier.put(new Integer(a2), new Integer(a2));
-			}
-			if (strictnessRelated(r1, ovr.getArgRole(a2)) &&
-			    stricterRole(r2, ovr.getArgRole(a1))) {
+				// First argument must overlap one of the arguments, and
+				// second argument must contain the other argument.
+				if (strictnessRelated(r1, ovr.getArgRole(a1)) &&
+				    stricterRole(r2, ovr.getArgRole(a2))) {
 
-				Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
-				unifier.put(new Integer(a1), new Integer(a1));
-				unifier.put(new Integer(a2), new Integer(a2));
+					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+					unifier.put(new Integer(a1), new Integer(a1));
+					unifier.put(new Integer(a2), new Integer(a2));
+					unifiers.add(unifier);
+				}
+				if (strictnessRelated(r1, ovr.getArgRole(a2)) &&
+				    stricterRole(r2, ovr.getArgRole(a1))) {
+
+					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+					unifier.put(new Integer(a1), new Integer(a1));
+					unifier.put(new Integer(a2), new Integer(a2));
+					unifiers.add(unifier);
+				}
 			}
 		} else {
 			PartOf pr = (PartOf) r;
@@ -91,19 +104,8 @@ public class PartOf extends AtomicRelation {
 		return (r1+a1) + 2*(r2+a2);
 	}
 
-	public List<SID> toSIDs(List<Integer> tuple) {
-		List<SID> sids = new ArrayList<SID>(2);
-		sids.add(new SID(tuple.get(0), r1));
-		sids.add(new SID(tuple.get(1), r2));
-		return sids;
-	}
-
-	public boolean evalRoled(List<Space> spaceArgs) {
-		return spaceArgs.get(a1).getPart(r1).partOf(spaceArgs.get(a2).getPart(r2));
-	}
-
-	public boolean eval(List<Space> spaceArgs) {
-    	return spaceArgs.get(a1).partOf(spaceArgs.get(a2));
+	public boolean eval(Space[] spaceArgs) {
+    	return spaceArgs[a1].partOf(spaceArgs[a2]);
 	}
 
 	public Set<AtomicRelation> getAtomicRelations() {
@@ -124,64 +126,22 @@ public class PartOf extends AtomicRelation {
 		return rs;
 	}
 
-	public Set<List<Integer>> evalAll(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID) {
+	public Table evalAll(SpaceProvider spaces) {
 
-		Set<List<Integer>> tuples = new HashSet<List<Integer>>();
-
-    	for (SID sid1 : roleToSID.get(r1)) {
-        	for (SID sid2 : roleToSID.get(r2)) {
-            	if (sid1.equals(sid2)) {
-	            	continue;
-            	}
-
-            	List<Integer> newTuple = new ArrayList<Integer>(2);
-            	newTuple.add(sid1.getID());
-            	newTuple.add(sid2.getID());
-				if (eval(spaces.toSpaces(toSIDs(newTuple)))) {
-    				tuples.add(newTuple);
-				}
-        	}
-    	}
-    	return tuples;
+    	return null; // Should never occur
 	}
 	
-	public Set<List<Integer>> evalAll(SpaceProvider spaces, List<Integer> possible, Map<Integer, Set<SID>> roleToSID) {
+	public Table evalAll(SpaceProvider spaces, Table possible) {
 
-		Set<List<Integer>> tuples = new HashSet<List<Integer>>();
+		Table table = new Table(this);
 
-    	for (List<Integer> pos : tupleToLists(possible)) {
+    	for (Integer[] tuple : possible.getTuples()) {
 
-        	Integer id1 = pos.get(0);
-
-	    	if (pos.size() < 2) {
-	        	for (SID sid2 : roleToSID.get(r2)) {
-		        	Integer id2 = sid2.getID();
-	            	if (id1.equals(id2)) {
-		            	continue;
-	            	}
-            	
-            		List<Integer> newTuple = new ArrayList<Integer>(2);
-            		newTuple.add(id1);
-            		newTuple.add(id2);
-					if (eval(spaces.toSpaces(toSIDs(newTuple)))) {
-    					tuples.add(newTuple);
-					}
-	        	}
-	    	} else {
-		    	Integer id2 = pos.get(1);
-		    	if (id1.equals(id2)) {
-    		    	continue;
-		    	}
-		    	
-        		List<Integer> newTuple = new ArrayList<Integer>(2);
-        		newTuple.add(id1);
-        		newTuple.add(id2);
-				if (eval(spaces.toSpaces(toSIDs(newTuple)))) {
-					tuples.add(newTuple);
-				}
+			if (eval(toSpaces(tuple, spaces))) {
+				table.addTuple(tuple);
 	    	}
     	}
-    	return tuples;
+    	return table;
 	}
 
 	public boolean isConjunctive(boolean insideNgeation) { return true; }

@@ -1,5 +1,6 @@
 package no.uio.ifi.qure.util;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -208,6 +209,21 @@ public class Utils {
 			ns.add(iter.next());
 		}
 		return new Pair<T, Set<T>>(some, ns);
+	}
+
+	public static <T> T getOnlySome(Set<T> s) {
+		Set<T> ns = new HashSet<T>();
+		Iterator<T> iter = s.iterator();
+
+		if (!iter.hasNext()) {
+    		return null;
+		}
+
+		return iter.next();
+	}
+
+	public static <T> Set<T> asSet(T[] ts) {
+		return new HashSet<T>(Arrays.asList(ts));
 	}
 
 // Does not work:

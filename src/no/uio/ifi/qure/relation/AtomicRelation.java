@@ -15,25 +15,34 @@ import no.uio.ifi.qure.space.*;
 
 public abstract class AtomicRelation extends Relation {
 
-	// Rest of methods
-
 	/**
 	 * Returns true iff this relation implies r for anny instantiation of the arguments with non-empty spaces.
 	 */
 	public abstract Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r);
 
-	/**
-	 * Returns true iff this relation holds for any instantiation of the arguments with non-empty spaces.
-	 */
-	public abstract boolean isValid();
+	public abstract Integer getArgRole(Integer pos);
 
 	public abstract int getArity();
 
-	public abstract Set<List<Integer>> evalAll(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID);
+	public abstract Table evalAll(SpaceProvider spaces);
 
-	public abstract Set<List<Integer>> evalAll(SpaceProvider spaces, List<Integer> possible, Map<Integer, Set<SID>> roleToSID);
+	public abstract Table evalAll(SpaceProvider spaces, Table possible);
 
-	public abstract List<SID> toSIDs(List<Integer> tuple);
+	public Space[] toSpaces(Integer[] args, SpaceProvider spaces) {
+		Space[] sps = new Space[args.length];
+		for (int i = 0; i < sps.length; i++) {
+			sps[i] = spaces.get(new SID(args[i], getArgRole(i)));
+		}
+		return sps;
+	}
+
+	public SID[] toSIDs(Integer[] tuple) {
+		SID[] sids = new SID[tuple.length];
+		for (int i = 0; i < tuple.length; i++) {
+			sids[i] = new SID(tuple[i], getArgRole(i));
+		}
+		return sids;
+	}
 
 	/**
 	 * Returns the set of all lists constructed from the elements of argument tuple,

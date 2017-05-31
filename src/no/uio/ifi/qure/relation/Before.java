@@ -26,6 +26,8 @@ public class Before extends AtomicRelation {
 
 	public int getArity() { return 2; }
 
+	public Integer getArgRole(Integer pos) { return (pos.equals(a1)) ? r1 : r2; }
+
 	public String toString() {
 		return "bf(<" + r1 + "," + a1 + ">, <" + r2 + "," + a2 + ">)";
 	}
@@ -40,9 +42,7 @@ public class Before extends AtomicRelation {
 
 	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
 
-		if (r.isValid()) {
-			return new HashSet<Map<Integer, Integer>>();
-		} else if (!isValid() && (r instanceof Before)) {
+		if (r instanceof Before) {
 			Before bfr = (Before) r;
 			if (a1 == bfr.a1 && stricterRole(bfr.r1, r1) &&
 			    a2 == bfr.a2 && stricterRole(bfr.r2, r2)) {
@@ -71,12 +71,8 @@ public class Before extends AtomicRelation {
 		return 10*((r1+a1) + 2*(r2+a2));
 	}
 
-	public boolean evalRoled(List<Space> spaceArgs) {
-		return spaceArgs.get(a1).getPart(r1).before(spaceArgs.get(a2).getPart(r2));
-	}
-
-	public boolean eval(List<Space> spaceArgs) {
-    	return spaceArgs.get(a1).before(spaceArgs.get(a2));
+	public boolean eval(Space[] spaceArgs) {
+    	return spaceArgs[a1].before(spaceArgs[a2]);
 	}
 
 	public Set<AtomicRelation> getAtomicRelations() {
@@ -97,71 +93,22 @@ public class Before extends AtomicRelation {
 		return rs;
 	}
 	
-	public List<SID> toSIDs(List<Integer> tuple) {
-		List<SID> sids = new ArrayList<SID>(2);
-		sids.add(new SID(tuple.get(0), r1));
-		sids.add(new SID(tuple.get(1), r2));
-		return sids;
+	public Table evalAll(SpaceProvider spaces) {
+
+    	return null; // Should never occur
 	}
 	
-	public Set<List<Integer>> evalAll(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID) {
+	public Table evalAll(SpaceProvider spaces, Table possible) {
 
-		Set<List<Integer>> tuples = new HashSet<List<Integer>>();
+		Table table = new Table(this);
 
-    	for (SID sid1 : roleToSID.get(r1)) {
-        	for (SID sid2 : roleToSID.get(r2)) {
-            	if (sid1.equals(sid2)) {
-	            	continue;
-            	}
+    	for (Integer[] tuple : possible.getTuples()) {
 
-            	List<Integer> newTuple = new ArrayList<Integer>(2);
-            	newTuple.add(sid1.getID());
-            	newTuple.add(sid2.getID());
-				if (eval(spaces.toSpaces(toSIDs(newTuple)))) {
-    				tuples.add(newTuple);
-				}
-        	}
-    	}
-    	return tuples;
-	}
-	
-	public Set<List<Integer>> evalAll(SpaceProvider spaces, List<Integer> possible, Map<Integer, Set<SID>> roleToSID) {
-
-		Set<List<Integer>> tuples = new HashSet<List<Integer>>();
-
-    	for (List<Integer> pos : tupleToLists(possible)) {
-
-        	Integer id1 = pos.get(0);
-
-	    	if (pos.size() < 2) {
-	        	for (SID sid2 : roleToSID.get(r2)) {
-		        	Integer id2 = sid2.getID();
-	            	if (id1.equals(id2)) {
-		            	continue;
-	            	}
-            	
-            		List<Integer> newTuple = new ArrayList<Integer>(2);
-            		newTuple.add(id1);
-            		newTuple.add(id2);
-					if (eval(spaces.toSpaces(toSIDs(newTuple)))) {
-    					tuples.add(newTuple);
-					}
-	        	}
-	    	} else {
-		    	Integer id2 = pos.get(1);
-		    	if (id1.equals(id2)) {
-    		    	continue;
-		    	}
-		    	
-        		List<Integer> newTuple = new ArrayList<Integer>(2);
-        		newTuple.add(id1);
-        		newTuple.add(id2);
-				if (eval(spaces.toSpaces(toSIDs(newTuple)))) {
-					tuples.add(newTuple);
-				}
+			if (eval(toSpaces(tuple, spaces))) {
+				table.addTuple(tuple);
 	    	}
     	}
-    	return tuples;
+    	return table;
 	}
 
 	public boolean isConjunctive(boolean insideNgeation) { return true; }

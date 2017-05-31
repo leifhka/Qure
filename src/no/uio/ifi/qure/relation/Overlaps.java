@@ -1,5 +1,6 @@
 package no.uio.ifi.qure.relation;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
@@ -14,6 +15,11 @@ import no.uio.ifi.qure.space.*;
 public class Overlaps extends AtomicRelation {
 
 	private Map<Integer, Integer> argRole;
+
+	public Overlaps(int r, int a) {
+		argRole= new HashMap<Integer, Integer>();
+		argRole.put(a, r);
+	}
 
 	public Overlaps(int r1, int r2, int a1, int a2) {
 
@@ -51,21 +57,15 @@ public class Overlaps extends AtomicRelation {
 		return res + ")";
 	}
 
-	protected Integer getArgRole(int arg) { return argRole.get(arg); }
+	public Integer getArgRole(Integer arg) { return argRole.get(arg); }
 
 	public int getArity() {
 		return argRole.keySet().size();
 	}
 
-	public boolean isValid() {
-		return getArity() == 1; // Assuming non-empty argument for argument role
-	}
-
 	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
 
-		if (r.isValid()) {
-			return new HashSet<Map<Integer, Integer>>();
-		} else if (isValid() || !(r instanceof Overlaps)) {
+		if (!(r instanceof Overlaps)) {
 			return null;
 		} else {
     		if (getArity() < r.getArity()) return null;
@@ -125,28 +125,10 @@ public class Overlaps extends AtomicRelation {
 		return hc;
 	}
 
-	public boolean evalRoled(List<Space> spaceArgs) {
+	public boolean eval(Space[] spaceArgs) {
 
-		Set<Space> sps = new HashSet<Space>();
-		for (Integer arg : argRole.keySet()) {	
-    			sps.add(spaceArgs.get(arg).getPart(argRole.get(arg)));
-		}
-		Pair<Space, Set<Space>> sm = Utils.getSome(sps);
+		Pair<Space, Set<Space>> sm = Utils.getSome(Utils.asSet(spaceArgs));
 		return sm.fst.overlaps(sm.snd);
-	}
-
-	public boolean eval(List<Space> spaceArgs) {
-
-		Pair<Space, Set<Space>> sm = Utils.getSome(new HashSet<Space>(spaceArgs));
-		return sm.fst.overlaps(sm.snd);
-	}
-
-	public List<SID> toSIDs(List<Integer> tuple) {
-		List<SID> sids = new ArrayList<SID>(tuple.size());
-		for (Integer id : tuple) {
-			sids.add(new SID(id, argRole.get(id)));
-		}
-		return sids;
 	}
 
 	public Set<AtomicRelation> getAtomicRelations() {
@@ -173,58 +155,29 @@ public class Overlaps extends AtomicRelation {
 		return new HashSet<Integer>(argRole.values());
 	}
 
-	public Set<List<Integer>> evalAll(SpaceProvider spaces, Map<Integer, Set<SID>> roleToSID) {
-    	List<Integer> tuple = new ArrayList<Integer>();
-    	Set<List<Integer>> tuples = new HashSet<List<Integer>>();
-    	Set<Set<SID>> checked = new HashSet<Set<SID>>();
-		evalAll(spaces, checked, roleToSID, tuples, tuple);
-    	return tuples;
-	}
+	public Table evalAll(SpaceProvider spaces) {
+		// Must be a unary role-relation
+		Table table = new Table(this);
+		Integer role = argRole.get(Utils.getOnlySome(argRole.keySet()));
 
-	public Set<List<Integer>> evalAll(SpaceProvider spaces, List<Integer> possible, Map<Integer, Set<SID>> roleToSID) {
-    	Set<List<Integer>> tuples = new HashSet<List<Integer>>();
-    	Set<Set<SID>> checked = new HashSet<Set<SID>>();
-		evalAll(spaces, checked, roleToSID, tuples, possible);
-    	return tuples;
-	}
-
-	private void evalAll(SpaceProvider spaces, Set<Set<SID>> checked,
-	                     Map<Integer, Set<SID>> roleToSID, Set<List<Integer>> tuples, List<Integer> tuple) {
-
-    	if (tuple.size() == getArity()) {
-			// Found one potensial tuple, so we now eval that if not checked before
-			// TODO: Fix, now not evaling if tuple has correct arity from previous relation
-			List<SID> sids = toSIDs(tuple);
-			if (eval(spaces.toSpaces(sids))) {
-				tuples.add(tuple);
+		for (SID sid : spaces.keySet()) {
+			if (role.equals(sid.getRole())) {
+				Integer[] tuple = new Integer[1];
+				tuple[0] = sid.getID();
+				table.addTuple(tuple);
 			}
-			checked.add(new HashSet<SID>(sids));
-    	} else {
-        	// We first need to extract all candidate SIDs that has a non-empty space for each role of i'th arg
-        	Set<Integer> stricterRoles = getStricter(roleToSID.keySet(), argRole.get(tuple.size()));
-        	Set<Integer> candidates = new HashSet<Integer>();
+		}
+    	return table;
+	}
 
-			// TODO: More pruning using already computed tuples
-        	for (Integer role : stricterRoles) {
-	        	for (SID s : roleToSID.get(role)) {
-	            	candidates.add(s.getID());
-	        	}
-        	}
-
-        	candidates.removeAll(tuple);
-
-        	// We then try eval-ing with each candidate as i'th argument
-        	for (Integer candidate: candidates) {
-	        	List<Integer> newTuple = new ArrayList<Integer>(tuple);
-	        	newTuple.add(candidate);
-            	if (!checked.contains(toSIDs(newTuple))) {
-	            	if (isPossible(newTuple)) { //TODO
-		            	evalAll(spaces, checked, roleToSID, tuples, newTuple);
-	            	}
-    		    	checked.add(new HashSet<SID>(toSIDs(newTuple)));
-            	}
-        	}
-    	}
+	public Table evalAll(SpaceProvider spaces, Table possible) {
+		Table table = new Table(this);
+		for (Integer[] tuple : possible.getTuples()) {
+			if (eval(toSpaces(tuple, spaces))) {
+				table.addTuple(tuple);
+			}
+		}
+    	return table;
 	}
 
 	public String toSQL() { //TODO

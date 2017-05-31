@@ -16,9 +16,7 @@ public abstract class Relation {
 
 	public abstract String toSQL();
 
-	public abstract boolean evalRoled(List<Space> args);
-
-	public abstract boolean eval(List<Space> args);
+	public abstract boolean eval(Space[] args);
 
 	public abstract Set<AtomicRelation> getAtomicRelations();
 
@@ -33,9 +31,9 @@ public abstract class Relation {
 	public abstract int hashCode();
 
 	public boolean eval(Space s1, Space s2) {
-		List<Space> l = new ArrayList<Space>(2);
-		l.add(s1);
-		l.add(s2);
+		Space[] l = new Space[2];
+		l[0] = s1;
+		l[1] = s2;
 		return eval(l);
 	}
 
@@ -103,11 +101,7 @@ class And extends Relation {
 		return "";
 	}
 
-	public boolean evalRoled(List<Space> args) {
-		return conj1.evalRoled(args) && conj2.evalRoled(args);
-	}
-
-	public boolean eval(List<Space> args) {
+	public boolean eval(Space[] args) {
 		return conj1.eval(args) && conj2.eval(args);
 	}
 
@@ -153,11 +147,7 @@ class Not extends Relation {
 		return "";
 	}
 
-	public boolean evalRoled(List<Space> args) {
-		return !rel.evalRoled(args);
-	}
-
-	public boolean eval(List<Space> args) {
+	public boolean eval(Space[] args) {
 		return !rel.eval(args);
 	}
 
