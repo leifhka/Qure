@@ -18,11 +18,32 @@ public class Table {
 	private final Set<Integer[]> tuples;
 	private final List<Map<Integer, Set<Integer[]>>> indecies;
 	private final AtomicRelation rel;
+	private boolean hasOrderedTuples;
+	private boolean shouldHaveOrderedTuples;
+
+	private Set<Set<SID>> checked; // Used if rel is Overlaps to remove dedundant tuples
 
 	public Table(AtomicRelation rel) {
 		this.rel = rel;
 		tuples = new HashSet<Integer[]>();
 		indecies = new ArrayList<Map<Integer, Set<Integer[]>>>();
+		checked = new HashSet<Set<SID>>();
+		hasOrderedTuples = !(rel instanceof Overlaps);
+		shouldHaveOrderedTuples = !(rel instanceof Overlaps);
+
+		for (int i = 0; i < rel.getArity(); i++) {
+			indecies.add(new HashMap<Integer, Set<Integer[]>>());
+		}
+	}
+
+	public Table(AtomicRelation rel, boolean hasOrderedTuples) {
+		this.rel = rel;
+		tuples = new HashSet<Integer[]>();
+		indecies = new ArrayList<Map<Integer, Set<Integer[]>>>();
+		checked = new HashSet<Set<SID>>();
+		this.hasOrderedTuples = hasOrderedTuples;
+		shouldHaveOrderedTuples = !(rel instanceof Overlaps);
+
 		for (int i = 0; i < rel.getArity(); i++) {
 			indecies.add(new HashMap<Integer, Set<Integer[]>>());
 		}
@@ -56,7 +77,7 @@ public class Table {
 	
 	public static Table fromTable(Table other, Map<Integer, Integer> unifier, AtomicRelation rel) {
 
-		Table res = new Table(rel);
+		Table res = new Table(rel, other.hasOrderedTuples);
 		for (Integer[] tuple : other.tuples) {
 			res.addTuple(res.fromUnifier(tuple, unifier));
 		}
@@ -73,6 +94,14 @@ public class Table {
 				indecies.get(i).get(tuple[i]).add(tuple);
 			}
 		}
+	}
+
+	private Integer[] reverse(Integer[] tuple) {
+		Integer[] rev = new Integer[tuple.length];
+		for (int i = 0; i < rev.length; i++) {
+			rev[i] = tuple[tuple.length-(i+1)];
+		}
+		return rev;
 	}
 
 	/**
@@ -131,8 +160,15 @@ public class Table {
 		for (Integer[] tuple : tuples) {
 			for (Integer[] joinable : other.getJoinable(tuple)) {
 				Integer[] joined = join(tuple, joinable);
-				if (!rel.isIntrinsic(joined)) {
-					res.addTuple(join(tuple, joinable));
+				Set<SID> sidSet = rel.toSIDSet(joined);
+				if (!rel.isIntrinsic(joined) && !checked.contains(sidSet)) {
+					res.addTuple(joined);
+					if (rel instanceof Overlaps) {
+						checked.add(sidSet);
+					}
+					if (!hasOrderedTuples && shouldHaveOrderedTuples) {
+						res.addTuple(reverse(joined));
+					}
 				}
 			}
 		}

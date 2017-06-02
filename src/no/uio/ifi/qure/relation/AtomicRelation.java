@@ -46,6 +46,10 @@ public abstract class AtomicRelation extends Relation {
 		return sids;
 	}
 
+	public Set<SID> toSIDSet(Integer[] tuple) {
+		return new HashSet<SID>(Arrays.asList(toSIDs(tuple)));
+	}
+
 	/**
 	 * Returns the set of all lists constructed from the elements of argument tuple,
 	 * assumed to have a max length of 2. Used by PartOf and Before to obtain
