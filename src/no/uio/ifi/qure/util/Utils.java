@@ -194,6 +194,12 @@ public class Utils {
 		return u;
 	}
 
+	public static <T> Set<T> remove(Set<T> s, T e) {
+		Set<T> u = new HashSet<T>(s);
+		u.remove(e);
+		return u;
+	}
+
 	public static <T> Pair<T,Set<T>> getSome(Set<T> s) {
 		//Set<T> ns = cloneByClass(s);
 		Set<T> ns = new HashSet<T>();
@@ -224,6 +230,21 @@ public class Utils {
 
 	public static <T> Set<T> asSet(T[] ts) {
 		return new HashSet<T>(Arrays.asList(ts));
+	}
+
+	public static <T> Set<Set<T>> getSubsets(Set<T> set, int minLen) {
+		Set<Set<T>> subsets = new HashSet<Set<T>>();
+		generateAllSubsets(new HashSet<T>(), set, minLen, subsets);
+		return subsets;
+	}
+
+	private static <T> void generateAllSubsets(Set<T> generated, Set<T> remaining, int minLen, Set<Set<T>> res) {
+		if (generated.size() >= minLen) {
+			res.add(generated);
+		}
+		for (T t : remaining) {
+			generateAllSubsets(add(generated, t), remove(remaining, t), minLen, res);
+		}
 	}
 
 // Does not work:

@@ -61,6 +61,32 @@ public class Table {
 		return tuples.hashCode();
 	}
 
+	public boolean relatesSIDs(Set<SID> tuple) {
+		return containsAllSubTuples(new ArrayList<Integer>(), new HashSet<SID>(tuple));
+	}
+
+	private boolean containsAllSubTuples(List<Integer> subTuple, Set<SID> remaining) {
+		if (subTuple.size() == rel.getArity()) {
+			Integer[] tuple = subTuple.toArray(new Integer[subTuple.size()]);
+			if (!tuples.contains(tuple)) {
+				return false;
+			}
+		} else {
+			for (SID sid : remaining) {
+				if (Relation.stricterRole(sid.getRole(), rel.getArgRole(subTuple.size()))) {
+					List<Integer> newSubTuple = new ArrayList<Integer>(subTuple);
+					newSubTuple.add(sid.getID());
+					Set<SID> newRemaining = new HashSet<SID>(remaining);
+					newRemaining.remove(sid);
+					if (!containsAllSubTuples(newSubTuple, newRemaining)) {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
+	}
+
 	/**
 	 * Returns the tuple that results from applying the reverse of unifier to tuple, putting null/wild-card
 	 * for non-matched positions

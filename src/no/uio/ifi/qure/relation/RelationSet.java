@@ -248,6 +248,7 @@ public class RelationSet {
 		return tuples;
 	}
 
+	//TDOD: return (compressed overlaps+partOf+before) instead of all tables.
 	public Map<AtomicRelation, Set<Integer[]>> computeRelationships(SpaceProvider spaces) {
 		
 		// tuples contains map from relation to tuples/lists (with witness space) satisfying that relation
@@ -287,6 +288,106 @@ public class RelationSet {
 		}
 		return toTuples(tables);
 	}
+
+	private boolean canBeMerged(Set<SID> tuple, Map<AtomicRelation, Table> tables) {
+
+		for (AtomicRelation ov : getAtomicRelations()) {
+			if (ov instanceof Overlaps) {
+				if (!tables.get(ov).relatesSIDs(tuple)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	private Set<Set<SID>> getAllOverlaps(Map<SID, Set<Set<SID>>> index, Map<AtomicRelation, Table> tables) {
+		Set<Set<SID>> ovs = new HashSet<Set<SID>>();
+		for (AtomicRelation rel : getAtomicRelations()) {
+			if (rel instanceof Overlaps) {
+				for (Integer[] tuple : tables.get(rel).getTuples()) {
+					Set<SID> sids = rel.toSIDSet(tuple);
+					ovs.add(sids);
+					for (SID s : sids) {
+						index.putIfAbsent(s, new HashSet<Set<SID>>());
+						index.get(s).add(sids);
+					}
+				}
+			}
+		}
+		return ovs;
+	}
+
+	public Set<Set<SID>> getCompressedOverlaps(Map<AtomicRelation, Table> tables) {
+
+		Set<Set<SID>> compressedOverlaps = new HashSet<Set<SID>>();
+		Map<SID, Set<Set<SID>>> index = new HashMap<SID, Set<Set<SID>>>();
+		Set<Set<SID>> ovs = getAllOverlaps(index, tables);
+
+		for (Set<SID> tuple : ovs) {
+			Set<SID> possibleExt = new HashSet<SID>();
+			for (SID s : tuple) {
+				for (Set<SID> posTup : index.get(s)) {
+					possibleExt.addAll(possibleExt);
+				}
+			}
+
+			Set<SID> tupleExt = tuple;
+			boolean extended = false;
+
+			for (SID posExt : possibleExt) {
+				Set<SID> posTupleExt = Utils.add(tupleExt, posExt);
+				if (canBeMerged(posTupleExt, tables)) {
+					tupleExt = posTupleExt;
+					extended = true;
+				}
+			}
+			if (extended) {
+				for (Set<SID> subset : Utils.getSubsets(tupleExt, 2)) {
+					ovs.remove(subset);
+				}
+			}
+			compressedOverlaps.add(tupleExt);
+		}
+		return compressedOverlaps;
+	}
+
+//	private Set<Set<SID>> splitOverlaps(Set<SID> sids, Overlaps rel) {
+//		Set<SID> splitTuple = null;
+//		Set<Set<SID>> splits = new HashSet<Set<SID>>();
+//
+//		for (Set<SID> tuple : getTuples(sids, rel)) {
+//			if (!tables.get(rel).contains(rel.toIDs(tuple))) {
+//				splitTuple = tuple;
+//				break;
+//			}
+//		}
+//		if (splitTuple == null) {
+//			splits.add(sids);
+//		} else {
+//			for (SID sid : splitTuple) {
+//				Set<SID> split = new HashSet<SID>();
+//				split.addAll(getAllOverlapping(sids, sid));
+//				splits.addAll(splitOverlaps(split, rel));
+//			}
+//		}
+//		return splits;
+//	}
+//
+//	public Set<Set<SID>> getCompressedOverlaps(Set<SID> sids) {
+//
+//		Set<Set<SID>> overlaps = new HashSet<Set<SID>>();
+//		overlaps.add(sids);
+//
+//		for (AtomicRelation rel : getAtomicRelations()) {
+//			Set<Set<SID>> toIter = new HashSet<Set<SID>>(overlaps);
+//			overlaps = new HashSet<Set<SID>>();
+//			for (Set<SID> ov : toIter) {
+//				overlaps.addAll(splitOverlaps(ov, rel));
+//			}
+//		}
+//		return overlaps;
+//	}
 
 	public static RelationSet getRCC8(int i, int b) {
 		Set<Relation> rcc8 = new HashSet<Relation>();

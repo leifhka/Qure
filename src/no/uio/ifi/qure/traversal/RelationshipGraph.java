@@ -388,6 +388,7 @@ public class RelationshipGraph {
 //		}
 //		return order;
 //	}
+//
 
 	// TODO: Long method, split into smaller!
 	public Representation constructRepresentation() { 
@@ -410,7 +411,7 @@ public class RelationshipGraph {
 			}
 		}
 
-		// Propagate nodes representations according to containments
+		// Propagate node's representations according to containments
 		for (SID uri : nodes.keySet()) {
 			Node n = nodes.get(uri);
 			Bintree nodeBT = localRep.get(uri);
