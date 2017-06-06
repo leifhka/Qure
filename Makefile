@@ -32,6 +32,7 @@ CLASSES = \
         relation/AtomicRelation.java \
         relation/RelationSet.java \
         relation/Table.java \
+        relation/Relationships.java \
         space/GeometryProvider.java \
         space/GeometrySpace.java \
         space/Space.java \

@@ -243,25 +243,17 @@ public class RelationshipGraph {
 	}
 		
 
-	private void addRelationshipsToGraph(Map<AtomicRelation, Set<Integer[]>> tuples) {
+	private void addRelationshipsToGraph(Relationships relationships) {
 
 		// Add PartOfs first, so that redundancy checks are correct for Overlaps
-		for (AtomicRelation rel : tuples.keySet()) {
-			if (rel instanceof PartOf) {
-				for (Integer[] tuple : tuples.get(rel)) {
-					addRelationshipToGraph(rel, tuple);
-				}
-			}
+		for (SID[] tuple : relationships.getPartOfs()) {
+			addCoveredBy(tuple[0], tuple[1]);
 		}
-		
-		for (int i = RelationSet.getHighestArity(tuples.keySet()); i > 0; i--) {
-			for (AtomicRelation rel : RelationSet.getRelationsWithArity(i, tuples.keySet())) {
-				if (!(rel instanceof PartOf) && rel.getArity() > 1) {
-					for (Integer[] tuple : tuples.get(rel)) {
-						addRelationshipToGraph(rel, tuple);
-					}
-				}
-			}
+		for (SID[] tuple : relationships.getBefores()) {
+			addBefore(tuple[0], tuple[1]);
+		}
+		for (Set<SID> tuple : relationships.getOverlaps()) {
+			addOverlapsWithRedundancyCheck(tuple);
 		}
 	}
 

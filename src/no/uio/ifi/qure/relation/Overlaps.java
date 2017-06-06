@@ -57,14 +57,14 @@ public class Overlaps extends AtomicRelation {
 		return res + ")";
 	}
 
-	public boolean isIntrinsic(Integer[] tuple) {
+	public boolean isIntrinsic(SID[] tuple) {
 		if (getArity() < 2) return false;
 
 		Set<SID> sids = new HashSet<SID>();
 		for (int i = 0; i < tuple.length; i++) {
 			if (tuple[i] == null) continue;
-			for (int role : getStricter(new HashSet<Integer>(argRole.values()), getArgRole(i))) {
-				SID s = new SID(tuple[i], role);
+			for (int role : getStricter(new HashSet<Integer>(argRole.values()), tuple[i].getRole())) {
+				SID s = new SID(tuple[i].getID(), role);
 				if (sids.contains(s)) {
 					return true;
 				}
@@ -205,8 +205,8 @@ public class Overlaps extends AtomicRelation {
 
 		for (SID sid : spaces.keySet()) {
 			if (role.equals(sid.getRole())) {
-				Integer[] tuple = new Integer[1];
-				tuple[0] = sid.getID();
+				SID[] tuple = new SID[1];
+				tuple[0] = sid;
 				table.addTuple(tuple);
 			}
 		}
@@ -216,9 +216,9 @@ public class Overlaps extends AtomicRelation {
 	public Table evalAll(SpaceProvider spaces, Table possible) {
 		Table table = new Table(this);
 
-		for (Integer[] tuple : possible.getTuples()) {
+		for (SID[] tuple : possible.getTuples()) {
 			if (getArity() == 1) {
-				if (spaces.get(new SID(argRole.get(0), tuple[0])) != null) {
+				if (spaces.get(tuple[0]) != null) {
 					table.addTuple(tuple);
 				}
 			} else if (eval(toSpaces(tuple, spaces))) {

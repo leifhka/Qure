@@ -191,7 +191,7 @@ public class RelationSet {
 
 	// TODO: Does not work, need to take unifier into account
 	public static AtomicRelation getSmallestRelationWithHighestArity(Set<AtomicRelation> rels,
-	                                                                 Map<AtomicRelation, Set<Integer[]>> tuples) {
+	                                                                 Map<AtomicRelation, Set<SID[]>> tuples) {
 		Pair<AtomicRelation, Set<AtomicRelation>> some = Utils.getSome(getRelationsWithArity(getHighestArity(rels), rels));
 		AtomicRelation sha = some.fst;
 		int smallest = tuples.get(sha).size();
@@ -240,16 +240,27 @@ public class RelationSet {
 		return res;
 	}
 
-	private Map<AtomicRelation, Set<Integer[]>> toTuples(Map<AtomicRelation, Table> tables) {
-		Map<AtomicRelation, Set<Integer[]>> tuples = new HashMap<AtomicRelation, Set<Integer[]>>();
-		for (AtomicRelation rel : tables.keySet()) {
-			tuples.put(rel, tables.get(rel).getTuples());
+	private Set<SID[]> getAllPartOfs(Map<AtomicRelation, Table> tables) {
+		Set<SID[]> partOfs = new HashSet<SID[]>();
+		for (AtomicRelation rel : getAtomicRelations()) {
+			if (rel instanceof PartOf) {
+				partOfs.addAll(tables.get(rel).getTuples());
+			}
 		}
-		return tuples;
+		return partOfs;
 	}
 
-	//TDOD: return (compressed overlaps+partOf+before) instead of all tables.
-	public Map<AtomicRelation, Set<Integer[]>> computeRelationships(SpaceProvider spaces) {
+	private Set<SID[]> getAllBefores(Map<AtomicRelation, Table> tables) {
+		Set<SID[]> befores = new HashSet<SID[]>();
+		for (AtomicRelation rel : getAtomicRelations()) {
+			if (rel instanceof Before) {
+				befores.addAll(tables.get(rel).getTuples());
+			}
+		}
+		return befores;
+	}
+
+	public Relationships computeRelationships(SpaceProvider spaces) {
 		
 		// tuples contains map from relation to tuples/lists (with witness space) satisfying that relation
 		// The witness space is the intersection of the spaces in the list, and can be used to optimize computation
@@ -286,7 +297,7 @@ public class RelationSet {
 				nextRels.addAll(getImpliedByWithOnlyVisitedChildren(rel, visited));
 			}
 		}
-		return toTuples(tables);
+		return new Relationships(getAllPartOfs(tables), getAllBefores(tables), getCompressedOverlaps(tables));
 	}
 
 	private boolean canBeMerged(Set<SID> tuple, Map<AtomicRelation, Table> tables) {
@@ -304,13 +315,12 @@ public class RelationSet {
 	private Set<Set<SID>> getAllOverlaps(Map<SID, Set<Set<SID>>> index, Map<AtomicRelation, Table> tables) {
 		Set<Set<SID>> ovs = new HashSet<Set<SID>>();
 		for (AtomicRelation rel : getAtomicRelations()) {
-			if (rel instanceof Overlaps) {
-				for (Integer[] tuple : tables.get(rel).getTuples()) {
-					Set<SID> sids = rel.toSIDSet(tuple);
-					ovs.add(sids);
+			if (rel instanceof Overlaps && rel.getArity() >= 2) {
+				for (SID[] sids : tables.get(rel).getTuples()) {
+					ovs.add(Utils.asSet(sids));
 					for (SID s : sids) {
 						index.putIfAbsent(s, new HashSet<Set<SID>>());
-						index.get(s).add(sids);
+						index.get(s).add(Utils.asSet(sids));
 					}
 				}
 			}
@@ -323,14 +333,16 @@ public class RelationSet {
 		Set<Set<SID>> compressedOverlaps = new HashSet<Set<SID>>();
 		Map<SID, Set<Set<SID>>> index = new HashMap<SID, Set<Set<SID>>>();
 		Set<Set<SID>> ovs = getAllOverlaps(index, tables);
+		int s1 = ovs.size();
 
 		for (Set<SID> tuple : ovs) {
 			Set<SID> possibleExt = new HashSet<SID>();
 			for (SID s : tuple) {
 				for (Set<SID> posTup : index.get(s)) {
-					possibleExt.addAll(possibleExt);
+					possibleExt.addAll(posTup);
 				}
 			}
+			possibleExt.removeAll(tuple);
 
 			Set<SID> tupleExt = tuple;
 			boolean extended = false;
@@ -338,7 +350,7 @@ public class RelationSet {
 			for (SID posExt : possibleExt) {
 				Set<SID> posTupleExt = Utils.add(tupleExt, posExt);
 				if (canBeMerged(posTupleExt, tables)) {
-					tupleExt = posTupleExt;
+					tupleExt = new HashSet<SID>(posTupleExt);
 					extended = true;
 				}
 			}
@@ -349,6 +361,8 @@ public class RelationSet {
 			}
 			compressedOverlaps.add(tupleExt);
 		}
+		int s2 = compressedOverlaps.size();
+		System.out.println("\n Old: " + s1 + " - New: " + s2 + " - Diff: " + (s1-s2));
 		return compressedOverlaps;
 	}
 
