@@ -161,29 +161,6 @@ public class TimeSpace implements Space {
 		}
 	}
 
-	public Relationship relate(Space o) {
-
-		if (!(o instanceof TimeSpace)) {
-			return null;
-		}
-
-		TimeSpace ots = (TimeSpace) o;
-
-		TimeSpace intersection = this.intersection(ots);
-
-		boolean intersects = !intersection.isEmpty();
-		boolean isCovers = intersection.equals(ots);
-		boolean isCoveredBy = intersection.equals(this);
-		boolean isBefore = intersection.isEmpty() && this.before(ots);
-
-		return new Relationship() {
-			public boolean isIntersects() { return intersects; }
-			public boolean isCovers() { return isCovers; }
-			public boolean isCoveredBy() { return isCoveredBy; }
-			public boolean isBefore() { return isBefore; }
-		};
-	}
-
 	public String toString() {
 		if (isEmpty()) {
 			return "[]";

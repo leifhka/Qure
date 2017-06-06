@@ -147,30 +147,6 @@ public class GeometrySpace implements Space {
 
 	public boolean before(Space o) { return false; }
 
-	public Relationship relate(Space o) {
-
-		Geometry go = ((GeometrySpace) o).getGeometry();
-		IntersectionMatrix im = geo.relate(go);
-
-		return new Relationship() {
-			public boolean isCovers() {
-				return im.isCovers();
-			}
-
-			public boolean isCoveredBy() {
-				return im.isCoveredBy();
-			}
-
-			public boolean isIntersects() {
-				return im.isIntersects();
-			}
-
-			public boolean isBefore() {
-				return false;
-			}
-		};
-	}
-
 	public GeometrySpace getPart(int role) {
 		
 		if (role == 0) {

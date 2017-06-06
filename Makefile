@@ -20,7 +20,6 @@ CLASSES = \
         dataprovider/UnparsedIterator.java \
         dataprovider/UnparsedSpace.java \
         traversal/EvenSplit.java \
-        traversal/Relationship.java \
         traversal/RelationshipGraph.java \
         traversal/Representation.java \
         traversal/SID.java \

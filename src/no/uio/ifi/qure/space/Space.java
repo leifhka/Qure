@@ -2,7 +2,6 @@ package no.uio.ifi.qure.space;
 
 import java.util.Set;
 
-import no.uio.ifi.qure.traversal.Relationship;
 import no.uio.ifi.qure.util.Pair;
 
 public interface Space {
@@ -20,8 +19,6 @@ public interface Space {
 	public Pair<? extends Space, ? extends Space> split(int dim);
 
 	public String toDBString();
-
-	public Relationship relate(Space o);
 
 	public default boolean overlaps(Set<Space> sps) {
 		
