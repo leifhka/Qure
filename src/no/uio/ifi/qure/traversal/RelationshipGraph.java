@@ -380,7 +380,6 @@ public class RelationshipGraph {
 //		}
 //		return order;
 //	}
-//
 
 	// TODO: Long method, split into smaller!
 	public Representation constructRepresentation() { 

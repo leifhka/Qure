@@ -198,6 +198,54 @@ public class Overlaps extends AtomicRelation {
 		return new HashSet<Integer>(argRole.values());
 	}
 
+	private Map<Integer, Set<SID>> getRoleToSID(Set<SID> tuple) {
+		Map<Integer, Set<SID>> roleToSID = new HashMap<Integer, Set<SID>>();
+		for (Integer role : getRoles()) {
+			Set<SID> sids = new HashSet<SID>();
+			for (SID s : tuple) {
+				if (s != null && strictnessRelated(s.getRole(), role)) {
+					sids.add(s);
+				}
+			}
+			roleToSID.put(role, sids);
+		}
+		return roleToSID;
+	}
+
+	public boolean compatible(Set<SID> tuple) {
+		Map<Integer, Set<SID>> roleToSID = getRoleToSID(tuple);
+		for (Integer pos : argRole.keySet()) {
+			Set<SID> possible = roleToSID.get(argRole.get(pos));
+			if (possible == null || possible.isEmpty()) {
+				return false;
+			} else {
+				possible = Utils.getSome(possible).snd; // Remove abitrary element from possible
+			}
+		}
+		return true;
+	}
+	
+	private void generateAllOrderedTuples(Set<SID[]> tuples, Map<Integer, Set<SID>> roleToSID,
+	                                      Set<Integer> remPos, SID[] tuple) {
+		if (remPos.isEmpty()) {
+			tuples.add(Arrays.copyOf(tuple, tuple.length));
+		} else {
+			Pair<Integer, Set<Integer>> somePos = Utils.getSome(remPos);
+			for (SID s : roleToSID.get(argRole.get(somePos.fst))) {
+				 tuple[somePos.fst] = s;
+				 generateAllOrderedTuples(tuples, roleToSID, somePos.snd, tuple);
+			}
+		}
+	}
+
+	public Set<SID[]> generateAllOrderedTuples(Set<SID> tuple) {
+
+		Map<Integer, Set<SID>> roleToSID = getRoleToSID(tuple);
+		Set<SID[]> res = new HashSet<SID[]>();
+		generateAllOrderedTuples(res, roleToSID, argRole.keySet(), new SID[getArity()]);
+		return res;
+	}
+
 	public Table evalAll(SpaceProvider spaces) {
 		// Must be a unary role-relation
 		Table table = new Table(this);

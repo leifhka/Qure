@@ -231,19 +231,26 @@ public class Utils {
 	public static <T> Set<T> asSet(T[] ts) {
 		return new HashSet<T>(Arrays.asList(ts));
 	}
-
-	public static <T> Set<Set<T>> getSubsets(Set<T> set, int minLen) {
+	
+	public static <T> Set<Set<T>> getSubsets(Set<T> set, int minLen, int maxLen) {
 		Set<Set<T>> subsets = new HashSet<Set<T>>();
-		generateAllSubsets(new HashSet<T>(), set, minLen, subsets);
+		generateAllSubsets(new HashSet<T>(), set, minLen, maxLen, subsets);
 		return subsets;
 	}
 
-	private static <T> void generateAllSubsets(Set<T> generated, Set<T> remaining, int minLen, Set<Set<T>> res) {
+	public static <T> Set<Set<T>> getSubsets(Set<T> set, int minLen) {
+		Set<Set<T>> subsets = new HashSet<Set<T>>();
+		generateAllSubsets(new HashSet<T>(), set, minLen, set.size(), subsets);
+		return subsets;
+	}
+
+	private static <T> void generateAllSubsets(Set<T> generated, Set<T> remaining, int minLen, int maxLen, Set<Set<T>> res) {
+		if (generated.size() > maxLen) return;
 		if (generated.size() >= minLen) {
 			res.add(generated);
 		}
 		for (T t : remaining) {
-			generateAllSubsets(add(generated, t), remove(remaining, t), minLen, res);
+			generateAllSubsets(add(generated, t), remove(remaining, t), minLen, maxLen, res);
 		}
 	}
 

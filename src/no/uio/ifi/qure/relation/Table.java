@@ -18,8 +18,6 @@ public class Table {
 	private final Set<SID[]> tuples;
 	private final List<Map<SID, Set<SID[]>>> indecies;
 	private final AtomicRelation rel;
-	private boolean hasOrderedTuples;
-	private boolean shouldHaveOrderedTuples;
 
 	private Set<Set<SID>> checked; // Used if rel is Overlaps to remove dedundant tuples
 
@@ -28,25 +26,19 @@ public class Table {
 		tuples = new HashSet<SID[]>();
 		indecies = new ArrayList<Map<SID, Set<SID[]>>>();
 		checked = new HashSet<Set<SID>>();
-		hasOrderedTuples = !(rel instanceof Overlaps);
-		shouldHaveOrderedTuples = !(rel instanceof Overlaps);
 
 		for (int i = 0; i < rel.getArity(); i++) {
 			indecies.add(new HashMap<SID, Set<SID[]>>());
 		}
 	}
+	
+	public static Table fromTable(Table other, Map<Integer, Integer> unifier, AtomicRelation rel) {
 
-	public Table(AtomicRelation rel, boolean hasOrderedTuples) {
-		this.rel = rel;
-		tuples = new HashSet<SID[]>();
-		indecies = new ArrayList<Map<SID, Set<SID[]>>>();
-		checked = new HashSet<Set<SID>>();
-		this.hasOrderedTuples = hasOrderedTuples;
-		shouldHaveOrderedTuples = !(rel instanceof Overlaps);
-
-		for (int i = 0; i < rel.getArity(); i++) {
-			indecies.add(new HashMap<SID, Set<SID[]>>());
+		Table res = new Table(rel);
+		for (SID[] tuple : other.tuples) {
+			res.addTuple(res.fromUnifier(tuple, unifier));
 		}
+		return res;
 	}
 
 	public Set<SID[]> getTuples() { return tuples; }
@@ -59,32 +51,6 @@ public class Table {
 	@Override
 	public int hashCode() {
 		return tuples.hashCode();
-	}
-
-	public boolean relatesSIDs(Set<SID> tuple) {
-		return containsAllSubTuples(new HashSet<SID>(), new HashSet<SID>(tuple), 0);
-	}
-
-	private boolean containsAllSubTuples(Set<SID> subTuple, Set<SID> remaining, int i) {
-		if (i == rel.getArity()) {
-			Pair<SID, Set<SID>> some = Utils.getSome(subTuple);
-			Set<SID[]> tuples = index.get(some.fst);
-			for (SID rest : some.snd) {
-				tuples.retainAll(index.get(rest));
-			}
-			return tuples.isEmpty();
-		} else {
-			for (SID sid : remaining) {
-				if (Relation.stricterRole(rel.getArgRole(i), sid.getRole())) {
-					Set<SID> newSubTuple = Utils.add(subTuple, sid);
-					Set<SID> newRemaining = Utils.remove(remaining, sid);
-					if (!containsAllSubTuples(newSubTuple, newRemaining, i+1)) {
-						return false;
-					}
-				}
-			}
-		}
-		return true;
 	}
 
 	/**
@@ -101,16 +67,13 @@ public class Table {
 		return res;
 	}
 	
-	public static Table fromTable(Table other, Map<Integer, Integer> unifier, AtomicRelation rel) {
-
-		Table res = new Table(rel, other.hasOrderedTuples);
-		for (SID[] tuple : other.tuples) {
-			res.addTuple(res.fromUnifier(tuple, unifier));
-		}
-		return res;
-	}
-
 	public int size() { return tuples.size(); }
+
+	public void addAllTuples(Set<SID[]> tuples) {
+		for (SID[] tuple : tuples) {
+			addTuple(tuple);
+		}
+	}
 
 	public void addTuple(SID[] tuple) {
 		tuples.add(tuple);
@@ -120,14 +83,6 @@ public class Table {
 				indecies.get(i).get(tuple[i]).add(tuple);
 			}
 		}
-	}
-
-	private SID[] reverse(SID[] tuple) {
-		SID[] rev = new SID[tuple.length];
-		for (int i = 0; i < rev.length; i++) {
-			rev[i] = tuple[tuple.length-(i+1)];
-		}
-		return rev;
 	}
 
 	/**
@@ -146,9 +101,6 @@ public class Table {
 		}
 		return res;
 	}
-
-	// TODO: Fix, join now dependent on the random order of tuples. Can have both [a,b] and [b,a] if same roles,
-	// however, only one of them joins with [a,c].
 
 	/**
 	 * Returns the set of tuples from this table that joins on all fields with argument,
@@ -181,6 +133,23 @@ public class Table {
 		return res;
 	}
 
+	private Set<SID[]> toSameFormat(SID[] tuple, Set<SID[]> ordered) {
+		Set<SID[]> res = new HashSet<SID[]>();
+		for (SID[] ord : ordered) {
+			boolean add = true;
+			for (int i = 0; i < ord.length; i++) {
+				if ((ord[i] == null && tuple[i] != null) || (ord[i] != null && tuple[i] == null)) {
+					add = false;
+					break;
+				}
+			}
+			if (add) {
+				res.add(ord);
+			}
+		}
+		return res;
+	}
+
 	/**
 	 * Returns a table containing the relational join of this and other
 	 */
@@ -194,9 +163,7 @@ public class Table {
 					res.addTuple(joined);
 					if (rel instanceof Overlaps) {
 						checked.add(sidSet);
-					}
-					if (!hasOrderedTuples && shouldHaveOrderedTuples) {
-						res.addTuple(reverse(joined));
+						res.addAllTuples(toSameFormat(tuple, ((Overlaps) rel).generateAllOrderedTuples(Utils.asSet(tuple))));
 					}
 				}
 			}
