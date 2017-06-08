@@ -77,8 +77,8 @@ public class PartOf extends AtomicRelation {
 				    stricterRole(r2, ovr.getArgRole(a1))) {
 
 					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
-					unifier.put(new Integer(a1), new Integer(a1));
-					unifier.put(new Integer(a2), new Integer(a2));
+					unifier.put(new Integer(a1), new Integer(a2));
+					unifier.put(new Integer(a2), new Integer(a1));
 					unifiers.add(unifier);
 				}
 			}

@@ -10,6 +10,10 @@ public class Pair<A,B> {
 		this.snd = snd;
 	}
 
+	public String toString() {
+		return "(" + fst.toString() + ", " + snd.toString() + ")";
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Pair)) return false;

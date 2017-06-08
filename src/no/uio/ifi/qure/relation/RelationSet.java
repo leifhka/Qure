@@ -130,6 +130,9 @@ public class RelationSet {
 				leaves.add(rel);
 			}
 		}
+		for (Pair<AtomicRelation, AtomicRelation> p : unifiers.keySet()) {
+			System.out.println(p.toString() + ": " + unifiers.get(p).toString());
+		}
 	}
 
 	public Set<AtomicRelation> getImplies(AtomicRelation rel) {
