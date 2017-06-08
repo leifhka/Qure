@@ -163,7 +163,7 @@ public class Table {
 					res.addTuple(joined);
 					if (rel instanceof Overlaps) {
 						checked.add(sidSet);
-						res.addAllTuples(toSameFormat(tuple, ((Overlaps) rel).generateAllOrderedTuples(Utils.asSet(tuple))));
+						res.addAllTuples(toSameFormat(tuple, ((Overlaps) rel).generateAllOrderedTuples(Utils.asSet(joined))));
 					}
 				}
 			}

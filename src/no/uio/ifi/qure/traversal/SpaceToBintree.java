@@ -65,7 +65,7 @@ public class SpaceToBintree {
 		} else {
 			Pair<TreeNode, TreeNode> nodes = node.splitNodeEvenly();
 			node.deleteSpaces(); // Free memory
- 
+
 			Representation newLeftRep = traverseTree(nodes.fst);
 			Representation newRightRep = traverseTree(nodes.snd);
 		
