@@ -243,32 +243,6 @@ public class RelationSet {
 //		return res;
 //	}
 
-	private Set<Table> getTables(AtomicRelation rel, Map<AtomicRelation, Table> tables) {
-		Set<Table> res = new HashSet<Table>();
-		for (AtomicRelation impl : getImplies(rel)) {
-			res.add(tables.get(impl));
-		}
-		return res;
-	}
-
-	private Set<Table> getJoinedTables(AtomicRelation rel, Map<AtomicRelation, Table> tables) {
-		Set<Table> toJoin = getTables(rel, tables);
-		Set<Table> joined = new HashSet<Table>();
-		while (!toJoin.isEmpty()) {
-			Pair<Table, Set<Table>> someTbl = Utils.getSome(toJoin);
-			Table joinedTbl = someTbl.fst;
-			toJoin.remove(joinedTbl);
-			for (Table t : someTbl.snd) {
-				Table tmp = joinedTbl.join(t);
-				if (tmp != null) {
-					joinedTbl = tmp;
-					toJoin.remove(t);
-				}
-			}
-		}
-		return joined;
-	}
-	
 	private Set<Set<SID>> getAllOverlaps(Map<AtomicRelation, Table> tables) {
 		Set<Set<SID>> ovs = new HashSet<Set<SID>>();
 		for (AtomicRelation rel : getAtomicRelations()) {
@@ -301,6 +275,18 @@ public class RelationSet {
 		return befores;
 	}
 
+	private Table getJoinedTable(AtomicRelation rel, Map<AtomicRelation, Table> tables) {
+		
+		Table joined = Table.getUniversalTable(rel);
+		
+		for (AtomicRelation imp : getImplies(rel)) {
+			for (Map<Integer, Integer> unifier : getUnifiers(rel, imp)) {
+				joined = joined.join(rel, tables.get(imp), unifier);
+			}
+		}
+		return joined;
+	}
+	
 	public Relationships computeRelationships(SpaceProvider spaces) {
 		
 		// tuples contains map from relation to tuples/lists (with witness space) satisfying that relation
@@ -321,13 +307,8 @@ public class RelationSet {
 			for (AtomicRelation rel : currentRels) {
 
 				if (!getImplies(rel).isEmpty()) {
-					Set<Table> joined = getJoinedTables(rel, tables);
-
-					tables.put(rel, new Table(rel));
-					for (Table jt  : joined) {
-						Table actual = rel.evalAll(spaces, jt);
-						tables.get(rel).addAll(actual);
-					}
+					Table joined = getJoinedTable(rel, tables);
+					tables.put(rel, rel.evalAll(spaces, joined));
 				} else {
 					// Leaf-relation, thus we need to check all constructable tuples from spaces
 					tables.put(rel, rel.evalAll(spaces));

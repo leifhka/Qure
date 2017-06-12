@@ -169,7 +169,6 @@ public class Overlaps extends AtomicRelation {
 	}
 
 	public boolean eval(Space[] spaceArgs) {
-
 		Pair<Space, Set<Space>> sm = Utils.getSome(Utils.asSet(spaceArgs));
 		return sm.fst.overlaps(sm.snd);
 	}

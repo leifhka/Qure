@@ -65,6 +65,7 @@ public class PartOf extends AtomicRelation {
 
 				// First argument must overlap one of the arguments, and
 				// second argument must contain the other argument.
+				// We only add one unifier between partOf and Overlaps, but expand before eval
 				if (strictnessRelated(r1, ovr.getArgRole(a1)) &&
 				    stricterRole(r2, ovr.getArgRole(a2))) {
 
@@ -72,8 +73,7 @@ public class PartOf extends AtomicRelation {
 					unifier.put(new Integer(a1), new Integer(a1));
 					unifier.put(new Integer(a2), new Integer(a2));
 					unifiers.add(unifier);
-				}
-				if (strictnessRelated(r1, ovr.getArgRole(a2)) &&
+				} else if (strictnessRelated(r1, ovr.getArgRole(a2)) &&
 				    stricterRole(r2, ovr.getArgRole(a1))) {
 
 					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
@@ -140,11 +140,19 @@ public class PartOf extends AtomicRelation {
 		Table table = new Table(this);
 
     	for (SID[] tuple : possible.getTuples()) {
-			if (eval(toSpaces(tuple, spaces))) {
+			if (eval(toSpaces(tuple, spaces)) ||
+			    eval(toSpaces(reverse(tuple), spaces))) {
 				table.addTuple(tuple);
 	    	}
     	}
     	return table;
+	}
+
+	private SID[] reverse(SID[] tuple) {
+		SID[] res = new SID[2];
+		res[0] = tuple[1];
+		res[1] = tuple[0];
+		return res;
 	}
 
 	public boolean isConjunctive(boolean insideNgeation) { return true; }
