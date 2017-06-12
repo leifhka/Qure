@@ -18,11 +18,16 @@ public class Table {
 	private final Set<SID[]> tuples;
 	private final List<Map<SID, Set<SID[]>>> indecies;
 	private final AtomicRelation rel;
+	private final Map<Integer, Integer> unifier; // The unifier mapping an AtomicRelation's arguments into the columns of this table
 
 	private Set<Set<SID>> checked; // Used if rel is Overlaps to remove dedundant tuples
 
 	public Table(AtomicRelation rel) {
 		this.rel = rel;
+		unifier = new HashMap<Integer, Integer>();
+		for (int i = 0; i < rel.getArity(); i++) {
+			unifier.put(i, i); // Making the identity unifier
+		}
 		tuples = new HashSet<SID[]>();
 		indecies = new ArrayList<Map<SID, Set<SID[]>>>();
 		checked = new HashSet<Set<SID>>();
@@ -32,14 +37,26 @@ public class Table {
 		}
 	}
 	
-	public static Table fromTable(Table other, Map<Integer, Integer> unifier, AtomicRelation rel) {
+	public Table(AtomicRelation rel, Map<Integer, Integer> unifier) {
+		this.rel = rel;
+		this.unifier = unifier;
+		tuples = new HashSet<SID[]>();
+		indecies = new ArrayList<Map<SID, Set<SID[]>>>();
+		checked = new HashSet<Set<SID>>();
 
-		Table res = new Table(rel);
-		for (SID[] tuple : other.tuples) {
-			res.addTuple(res.fromUnifier(tuple, unifier));
+		for (int i = 0; i < rel.getArity(); i++) {
+			indecies.add(new HashMap<SID, Set<SID[]>>());
 		}
-		return res;
 	}
+	
+//	public static Table fromTable(Table other, Map<Integer, Integer> unifier, AtomicRelation rel) {
+//
+//		Table res = new Table(rel);
+//		for (SID[] tuple : other.tuples) {
+//			res.addTuple(res.fromUnifier(tuple, unifier));
+//		}
+//		return res;
+//	}
 
 	public Set<SID[]> getTuples() { return tuples; }
 
@@ -53,11 +70,7 @@ public class Table {
 		return tuples.hashCode();
 	}
 
-	/**
-	 * Returns the tuple that results from applying the reverse of unifier to tuple, putting null/wild-card
-	 * for non-matched positions
-	 */
-	private SID[] fromUnifier(SID[] tuple, Map<Integer, Integer> unifier) {
+	private SID[] toRelTuple(SID[] tuple) {
 		SID[] res = new SID[rel.getArity()];
 		for (int i = 0; i < res.length; i++) {
 			if (unifier.get(i) != null) {
@@ -65,6 +78,30 @@ public class Table {
 			}
 		}
 		return res;
+	}
+
+	private SID[] fromRelTuple(SID[] tuple) {
+		SID[] res = new SID[rel.getArity()];
+		for (int i = 0; i < res.length; i++) {
+			if (unifier.get(i) != null) {
+				res[unifier.get(i)] = tuple[i];
+			}
+		}
+		return res;
+	}
+
+	public Set<SID[]> toRelTuples() {
+		Set<SID[]> res = new HashSet<SID[]>();
+		for (SID[] tuple : tuples) {
+			res.add(toRelTuple(tuple));
+		}
+		return res;
+	}
+
+	public void addAll(Table other) {
+		for (SID[] tuple : other.toRelTuples()) {
+			addTuple(fromRelTuple(tuple));
+		}
 	}
 	
 	public int size() { return tuples.size(); }
@@ -172,13 +209,13 @@ public class Table {
 		Pair<Integer, Set<Integer>> somePos = Utils.getSome(common);
 
 		if (indecies.get(toUni1.get(somePos.fst)).keySet().isEmpty()) {
-			return null;
+			return new HashSet<SID[]>();
 		} 
 		Set<SID[]> res = new HashSet<SID[]>(indecies.get(toUni2.get(somePos.fst)).get(tuple[toUni1.get(somePos.fst)]));
 
 		for (Integer i : somePos.snd) {
 			if (!indecies.get(toUni2.get(i)).containsKey(tuple[toUni1.get(i)])) {
-					return null;
+					return new HashSet<SID[]>();
 			} else {
 				res.retainAll(indecies.get(toUni2.get(i)).get(tuple[toUni1.get(i)]));
 			}
@@ -219,10 +256,15 @@ public class Table {
 	 * Returns a table containing the relational join of this and other
 	 */
 	public Table join(Table other) {
-		Table res = new Table(rel);
+		Map<Integer, Integer> toUni1 = new HashMap<Integer, Integer>(); 
+		Map<Integer, Integer> toUni2 = new HashMap<Integer, Integer>();
+		Map<Integer, Integer> newUni = joinUnifiers(this.unifier, other.unifier, toUni1, toUni2);
+		if (newUni == null) return null;
+
+		Table res = new Table(rel, newUni);
 		for (SID[] tuple : tuples) {
-			for (SID[] joinable : other.getJoinable(tuple)) {
-				SID[] joined = join(tuple, joinable);
+			for (SID[] joinable : other.getJoinableWUni(tuple, toUni1, toUni2)) {
+				SID[] joined = joinWUni(tuple, joinable, toUni1, toUni2);
 				Set<SID> sidSet = Utils.asSet(joined);
 				if (!rel.isIntrinsic(joined) && !checked.contains(sidSet)) {
 					res.addTuple(joined);

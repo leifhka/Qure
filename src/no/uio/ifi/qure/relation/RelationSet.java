@@ -232,15 +232,41 @@ public class RelationSet {
 		return smallest;
 	}
 
-	public Set<Table> makeTables(AtomicRelation rel, Map<AtomicRelation, Table> tables) {
+//	public Set<Table> makeTables(AtomicRelation rel, Map<AtomicRelation, Table> tables) {
+//
+//		Set<Table> res = new HashSet<Table>();
+//		for (AtomicRelation imp : getImplies(rel)) {
+//			for (Map<Integer, Integer> unifier : unifiers.get(new Pair<AtomicRelation, AtomicRelation>(rel, imp))) {
+//				res.add(Table.fromTable(tables.get(imp), unifier, rel));
+//			}
+//		}
+//		return res;
+//	}
 
+	private Set<Table> getTables(AtomicRelation rel, Map<AtomicRelation, Table> tables) {
 		Set<Table> res = new HashSet<Table>();
-		for (AtomicRelation imp : getImplies(rel)) {
-			for (Map<Integer, Integer> unifier : unifiers.get(new Pair<AtomicRelation, AtomicRelation>(rel, imp))) {
-				res.add(Table.fromTable(tables.get(imp), unifier, rel));
-			}
+		for (AtomicRelation impl : getImplies(rel)) {
+			res.add(tables.get(impl));
 		}
 		return res;
+	}
+
+	private Set<Table> getJoinedTables(AtomicRelation rel, Map<AtomicRelation, Table> tables) {
+		Set<Table> toJoin = getTables(rel, tables);
+		Set<Table> joined = new HashSet<Table>();
+		while (!toJoin.isEmpty()) {
+			Pair<Table, Set<Table>> someTbl = Utils.getSome(toJoin);
+			Table joinedTbl = someTbl.fst;
+			toJoin.remove(joinedTbl);
+			for (Table t : someTbl.snd) {
+				Table tmp = joinedTbl.join(t);
+				if (tmp != null) {
+					joinedTbl = tmp;
+					toJoin.remove(t);
+				}
+			}
+		}
+		return joined;
 	}
 	
 	private Set<Set<SID>> getAllOverlaps(Map<AtomicRelation, Table> tables) {
@@ -295,15 +321,13 @@ public class RelationSet {
 			for (AtomicRelation rel : currentRels) {
 
 				if (!getImplies(rel).isEmpty()) {
-					Set<Table> possibleTables = makeTables(rel, tables);
-					Table possible = getSmallest(possibleTables);
-					possibleTables.remove(possible);
-				
-					for (Table larger : possibleTables) {
-						possible = possible.join(larger);
+					Set<Table> joined = getJoinedTables(rel, tables);
+
+					tables.put(rel, new Table(rel));
+					for (Table jt  : joined) {
+						Table actual = rel.evalAll(spaces, jt);
+						tables.get(rel).addAll(actual);
 					}
-					Table actual = rel.evalAll(spaces, possible);
-					tables.put(rel, actual);
 				} else {
 					// Leaf-relation, thus we need to check all constructable tuples from spaces
 					tables.put(rel, rel.evalAll(spaces));
