@@ -24,6 +24,7 @@ public class Block {
 
 	// Long that if bitwise-AND-ed with a block returns a long containing only the meta-information.
 	private static long META_SIZE_ONES = (1L << META_SIZE) - 1;
+	private static long ROLE_SIZE_ONES = (1L << ROLE_META_SIZE) - 1;
 
 	public static Block EMPTYBLOCK = new Block(0,-1L);
 	public static Block TOPBLOCK = new Block(0,0L);
@@ -35,6 +36,7 @@ public class Block {
 		META_SIZE = SIZE_META_SIZE + ROLE_META_SIZE;
 		MAX_SIZE = BLOCK_SIZE - META_SIZE;
 		META_SIZE_ONES = (1L << META_SIZE) - 1;
+		ROLE_SIZE_ONES = (1L << ROLE_META_SIZE) - 1;
 	}
 
 	// The long-representation of this block.
@@ -108,7 +110,7 @@ public class Block {
 	}
 
 	public long getRoles() {
-		return (value & META_SIZE_ONES) >> 1;
+		return (value & ROLE_SIZE_ONES) >> 1;
 	}
 
 	public int hashCode() {
@@ -213,7 +215,7 @@ public class Block {
 		if (b.isEmpty() || getRoles() != b.getRoles())
 			return false;
 
-		return (b.getRepresentation() & -2) <= getRepresentation() &&
+		return (b.getRepresentation() & -2L) <= getRepresentation() &&
 		       b.getMaxContainedRepresentation() >= getRepresentation();
 	}
 
