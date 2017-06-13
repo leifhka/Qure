@@ -246,6 +246,7 @@ public class Utils {
 
 	private static <T> void generateAllSubsets(Set<T> generated, Set<T> remaining, int minLen, int maxLen, Set<Set<T>> res) {
 		if (generated.size() > maxLen) return;
+		
 		if (generated.size() >= minLen) {
 			res.add(generated);
 		}

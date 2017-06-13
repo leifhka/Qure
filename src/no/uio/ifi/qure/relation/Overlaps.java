@@ -212,6 +212,8 @@ public class Overlaps extends AtomicRelation {
 	}
 
 	public boolean compatible(Set<SID> tuple) {
+		if (tuple.size() != getArity()) return false;
+		
 		Map<Integer, Set<SID>> roleToSID = getRoleToSID(tuple);
 		for (Integer pos : argRole.keySet()) {
 			Set<SID> possible = roleToSID.get(argRole.get(pos));
