@@ -2,6 +2,7 @@
 package no.uio.ifi.qure.relation;
 
 import java.util.Set;
+import java.util.Arrays;
 
 import no.uio.ifi.qure.traversal.SID;
 

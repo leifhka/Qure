@@ -140,9 +140,12 @@ public class PartOf extends AtomicRelation {
 		Table table = new Table(this);
 
     	for (SID[] tuple : possible.getTuples()) {
-			if (eval(toSpaces(tuple, spaces)) ||
-			    eval(toSpaces(reverse(tuple), spaces))) {
+			if (eval(toSpaces(tuple, spaces))) {
 				table.addTuple(tuple);
+	    	}
+	    	SID[] rev = reverse(tuple);
+			if (eval(toSpaces(rev, spaces))) {
+				table.addTuple(rev);
 	    	}
     	}
     	return table;
