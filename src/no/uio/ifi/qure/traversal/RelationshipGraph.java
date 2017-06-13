@@ -120,15 +120,10 @@ public class RelationshipGraph {
 
 		if (parents.size() < 2 || overlaps(parents)) return null;
 
+		SID newNode = newOverlapsNode();
 		// Check if overlaps can be part of larger merge of overlaps
-		SID newNode = null; //= addOverlapsWithMerge(parents);
-
-		if (newNode == null) {
-			// Overlaps relationship not already contained or merged
-			// We then add the new overlaps.
-			newNode = newOverlapsNode();
-		}
-		addCoveredBy(newNode, parents);
+		Set<SID> newParents = findMerge(parents);
+		addCoveredBy(newNode, newParents);
 
 		// Lastly, remove the nodes becoming redundant when adding the new.
 		removeRedundantWRT(newNode);
@@ -136,6 +131,32 @@ public class RelationshipGraph {
 		return newNode;
 	}
 
+	private Set<SID> findMerge(Set<SID> sids) {
+
+		Set<SID> merged = new HashSet<SID>(sids);
+		for (SID p : sids) {
+			for (SID ov : hasPart.get(p)) {
+				if (isOverlapsNode(ov) && canBeMerged(Utils.union(sids, partOf.get(ov)), sids)) {
+					merged = Utils.union(sids, partOf.get(ov));
+				}
+			}
+		}
+		return merged;
+	}
+
+	private boolean canBeMerged(Set<SID> toCheck, Set<SID> toAdd) {
+
+		for (Set<SID> subset : Utils.getSubsets(toCheck, 2, relations.getHighestArity())) {
+			if (subset.containsAll(toAdd)) continue; // toAdd not yet overlapping, but is going to be added
+			for (AtomicRelation rel : relations.getAtomicRelations()) {
+				if (rel instanceof Overlaps && ((Overlaps) rel).compatible(subset) && !overlaps(subset)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+	
 	private void removeRedundantWRT(SID uri) {
 
 		Set<SID> redundant = getRedundantOverlapNodes(partOf.get(uri));
