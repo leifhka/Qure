@@ -1,17 +1,6 @@
 package no.uio.ifi.qure.traversal;
 
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Comparator;
-import java.util.Arrays;
+import java.util.*;
 
 import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.space.*;
@@ -20,7 +9,9 @@ import no.uio.ifi.qure.relation.*;
 
 public class RelationshipGraph {
 
-	private final Map<SID, Node> nodes;
+	private final Map<SID, Set<SID>> partOf;
+	private final Map<SID, Set<SID>> hasPart;
+	private final Map<SID, Set<SID>> before;
 	private final Set<SID> topmostNodes;
 	private int overlapsNodeId; // Always negative, and decreasing
 	private final Block block;
@@ -31,19 +22,25 @@ public class RelationshipGraph {
 		this.relations = relations;
 
 		topmostNodes = new HashSet<SID>(uris); // Init all uris as roots, and remove if set parent of some node
-		nodes = new HashMap<SID, Node>();
+		partOf = new HashMap<SID, Set<SID>>();
+		hasPart = new HashMap<SID, Set<SID>>();
+		before = new HashMap<SID, Set<SID>>();
 
 		for (SID uri : uris) {
-			nodes.put(uri, new Node(uri));
+			partOf.put(uri, new HashSet<SID>());
+			hasPart.put(uri, new HashSet<SID>());
+			before.put(uri, new HashSet<SID>());
 		}
 		overlapsNodeId = 0;
 	}
 
 	public void addUris(Set<SID> newUris) {
 		for (SID uri : newUris) {
-			if (!nodes.containsKey(uri)) {
+			if (!hasPart.containsKey(uri)) {
 				topmostNodes.add(uri);
-				nodes.put(uri, new Node(uri));
+				partOf.put(uri, new HashSet<SID>());
+				hasPart.put(uri, new HashSet<SID>());
+				before.put(uri, new HashSet<SID>());
 			}
 		}
 	}
@@ -51,52 +48,45 @@ public class RelationshipGraph {
 	private SID newOverlapsNode() {
 		overlapsNodeId--;
 		SID ovSID = new SID(overlapsNodeId);
-		nodes.put(ovSID, new Node(ovSID));
+		partOf.put(ovSID, new HashSet<SID>());
+		hasPart.put(ovSID, new HashSet<SID>());
+		before.put(ovSID, new HashSet<SID>());
 		return ovSID;
 	}
 
 	public boolean isOverlapsNode(SID nodeSID) { return nodeSID.getID() < 0; }
-
-	public Map<SID, Node> getNodes() { return nodes; }
 
 	/**
 	 * Adds a containment-relationship between child and parent if necessary (not already in graph).
 	 */ 
 	public void addCoveredBy(SID child, SID parent) {
 
-		Node cn = nodes.get(child);
-		Node pn = nodes.get(parent);
-
-		if (cn.succs.contains(parent)) {
-			return; // Relationship already in node 
-		}	
-
-		Set<SID> both = new HashSet<SID>(2);
-		both.add(child);
-		both.add(parent);
-		removeOverlapsNodes(getRedundantOverlapNodes(both));
+		if (!isOverlapsNode(child) && !isOverlapsNode(parent)) {
+			Set<SID> both = new HashSet<SID>(2);
+			both.add(child);
+			both.add(parent);
+			removeOverlapsNodes(getRedundantOverlapNodes(both));
+		}
 		
 		// Locally update coveredBy
-		cn.succs.add(parent);
+		partOf.get(child).add(parent);
 		topmostNodes.remove(child);
 
 		// Locally update covers
-		pn.preds.add(child);
+		hasPart.get(parent).add(child);
 
 		// Transitive closure
-		cn.succs.addAll(pn.succs);
-		pn.preds.addAll(cn.preds);
+		partOf.get(child).addAll(partOf.get(parent));
+		hasPart.get(parent).addAll(hasPart.get(child));
 
-		for (SID parentsParent : pn.succs) {
-			Node ppn = nodes.get(parentsParent);
-			ppn.preds.add(child);
-			ppn.preds.addAll(pn.preds);
+		for (SID parentsParent : partOf.get(parent)) {
+			hasPart.get(parentsParent).add(child);
+			hasPart.get(parentsParent).addAll(hasPart.get(parent));
 		}
 
-		for (SID childsChild : cn.preds) {
-			Node ccn = nodes.get(childsChild);
-			ccn.succs.add(parent);
-			ccn.succs.addAll(cn.succs);
+		for (SID childsChild : hasPart.get(child)) {
+			partOf.get(childsChild).add(parent);
+			partOf.get(childsChild).addAll(partOf.get(child));
 		}
 	}
 
@@ -111,8 +101,7 @@ public class RelationshipGraph {
 	}
 
 	private void addBefore(SID u1, SID u2) {
-		Node n1 = nodes.get(u1);
-		n1.before.add(u2);
+		before.get(u1).add(u2);
 	}
 
 	private SID addOverlapsWithoutRedundancyCheck(Set<SID> parents) {
@@ -131,9 +120,14 @@ public class RelationshipGraph {
 
 		if (parents.size() < 2 || overlaps(parents)) return null;
 
-		// Overlaps relationship not already contained. 
-		// We then add the new overlaps.
-		SID newNode = newOverlapsNode();
+		// Check if overlaps can be part of larger merge of overlaps
+		SID newNode = null; //= addOverlapsWithMerge(parents);
+
+		if (newNode == null) {
+			// Overlaps relationship not already contained or merged
+			// We then add the new overlaps.
+			newNode = newOverlapsNode();
+		}
 		addCoveredBy(newNode, parents);
 
 		// Lastly, remove the nodes becoming redundant when adding the new.
@@ -144,8 +138,7 @@ public class RelationshipGraph {
 
 	private void removeRedundantWRT(SID uri) {
 
-		Node n = nodes.get(uri);
-		Set<SID> redundant = getRedundantOverlapNodes(n.succs);
+		Set<SID> redundant = getRedundantOverlapNodes(partOf.get(uri));
 		redundant.remove(uri);
 		removeOverlapsNodes(redundant);
 	}
@@ -154,30 +147,23 @@ public class RelationshipGraph {
 
 		// We check redundancy by trying to find a common pred (ov. node) for parents.
 		Iterator<SID> parIter = parents.iterator();
-		Node par = nodes.get(parIter.next());
+		SID par = parIter.next();
 		// Init commonPreds to contain all overlapsNodes from one parent
-		Set<SID> commonPreds = new HashSet<SID>(par.preds);
+		Set<SID> commonPreds = new HashSet<SID>(hasPart.get(par));
 
 		// We then intersects this set with all preds of rest of parents
 		while (parIter.hasNext() && !commonPreds.isEmpty()) {
-			par = nodes.get(parIter.next());
-			commonPreds.retainAll(par.preds);
+			commonPreds.retainAll(hasPart.get(parIter.next()));
 		}
-
 		return !commonPreds.isEmpty();
 	}
 
 	private Set<SID> getRedundantOverlapNodes(Set<SID> parents) {
 
 		Set<SID> toRemove = new HashSet<SID>();
-
 		for (SID parent : parents) {
-
-			Node pn = nodes.get(parent);
-			
-			for (SID pred : pn.preds) {
-				Node ppn = nodes.get(pred);
-				if (isOverlapsNode(pred) && parents.containsAll(ppn.succs)) {
+			for (SID pred : hasPart.get(parent)) {
+				if (isOverlapsNode(pred) && parents.containsAll(partOf.get(pred))) {
 					toRemove.add(pred);
 				}
 			}
@@ -188,14 +174,11 @@ public class RelationshipGraph {
 
 	public void removeOverlapsNode(SID uri) {
 
-		Node n = nodes.get(uri);
-		
-		for (SID parent : n.succs) {
-			Node pn = nodes.get(parent);
-			pn.preds.remove(uri);
+		for (SID parent : partOf.get(uri)) {
+			hasPart.get(parent).remove(uri);
 		}
-			
-		nodes.remove(uri);
+		partOf.remove(uri);
+		before.remove(uri);
 	}
 
 	private void removeOverlapsNodes(Set<SID> uris) {
@@ -218,30 +201,10 @@ public class RelationshipGraph {
 			intMap.put(uri, new HashSet<SID>());
 		}
 		RelationshipGraph graph = new RelationshipGraph(spaceNode.getBlock(), uris, relations);
-
-		// SID[] urisArr = uris.toArray(new SID[uris.size()]);
-		// Set<Intersection> intersections = new HashSet<Intersection>();
-		// graph.computeBinaryRelations(urisArr, spaces, intersections, intMap);
-		// graph.computeKIntersections(intersections, uris, spaces, intMap);
-
 		graph.computeRelationshipGraphOpt(spaces);
 
 		return graph;
 	}
-
-	private void addRelationshipToGraph(AtomicRelation rel, Integer[] tuple) {
-
-		SID[] sids = rel.toSIDs(tuple);
-		
-		if (rel instanceof Overlaps) {
-			addOverlapsWithRedundancyCheck(Utils.asSet(sids));
-		} else if (rel instanceof PartOf) {
-			addCoveredBy(sids[0], sids[1]);
-		} else {
-			addBefore(sids[0], sids[1]);
-		}
-	}
-		
 
 	private void addRelationshipsToGraph(Relationships relationships) {
 
@@ -267,10 +230,8 @@ public class RelationshipGraph {
 	}
 
 	private boolean sameBefore(SID sid1, Set<SID> sids) {
-		Node n1 = nodes.get(sid1);
 		for (SID sid2 : sids) {
-			Node n2 = nodes.get(sid2);
-			if (!n1.before.equals(n2.before)) {
+			if (!before.get(sid1).equals(before.get(sid2))) {
 				return false;
 			}
 		}
@@ -278,10 +239,9 @@ public class RelationshipGraph {
 	}
 
 	private boolean beforeAll(SID sid1, Set<SID> sids) {
-		
-		Node n1 = nodes.get(sid1);
+	
 		for (SID sid2 : sids) {
-			if (!n1.before.contains(sid2)) {
+			if (!before.get(sid1).contains(sid2)) {
 				return false;
 			}
 		}
@@ -312,7 +272,7 @@ public class RelationshipGraph {
 
 		List<Set<SID>> equivs = new ArrayList<Set<SID>>();
 
-		for (SID toAdd : nodes.keySet()) {
+		for (SID toAdd : partOf.keySet()) {
 			updateClasses(toAdd, equivs);
 		}
 		return equivs;
@@ -320,7 +280,7 @@ public class RelationshipGraph {
 
 	// TODO: Make more optimal ordering based on partOf-relationships
 	private SID[] getNodesOrder() {
-		SID[] order = new SID[nodes.keySet().size()];
+		SID[] order = new SID[partOf.keySet().size()];
 
 		int i = 0;
 		for (Set<SID> bfc : computeBFClasses()) {
@@ -332,60 +292,11 @@ public class RelationshipGraph {
 		return order;
 	}
 
-//	private Set<SID> imidiatePreds(Node n) {
-//
-//		Set<SID> res = new HashSet<SID>(n.preds);
-//
-//		for (SID pred : n.preds) {
-//			res.removeAll(nodes.get(pred).preds);
-//		}
-//		return res;
-//	}
-//
-//	private int orderNodes(SID[] order, int i, SID uri) {
-//
-//		Node n = nodes.get(uri);
-//		if (n.visited) {
-//			return i;
-//		} else {
-//			n.visited = true;
-//		}
-//		for (SID preds : imidiatePreds(n)) {
-//			i = orderNodes(order, i, preds);
-//		}
-//		order[i++] = uri;
-//		return i;
-//	}
-//
-//	private SID[] getNodesOrder() {
-//
-//		SID[] order = new SID[nodes.keySet().size()];
-//		int k = 0;
-//		for (SID tm : sortAccToBefore(topmostNodes)) {
-//			k = orderNodes(order, k, tm);
-//		}
-//
-//		if (k == order.length) {
-//			return order;
-//		}
-//
-//		// We have (topmost) cycles, which are not yet visited
-//		for (SID uri : nodes.keySet()) {
-//			Node n = nodes.get(uri);
-//			if (n.visited) {
-//				continue;
-//			} else {
-//				k = orderNodes(order, k, uri);
-//			}
-//		}
-//		return order;
-//	}
-
 	// TODO: Long method, split into smaller!
 	public Representation constructRepresentation() { 
 
 		// Construct sufficient unique parts and order nodes according to infix traversal
-		Block[] witnessesArr = Block.makeNDistinct(nodes.keySet().size()+1);
+		Block[] witnessesArr = Block.makeNDistinct(partOf.keySet().size()+1);
 		SID[] order = getNodesOrder();
 
 		Map<SID, Bintree> localRep = new HashMap<SID, Bintree>();
@@ -403,14 +314,12 @@ public class RelationshipGraph {
 		}
 
 		// Propagate node's representations according to containments
-		for (SID uri : nodes.keySet()) {
-			Node n = nodes.get(uri);
+		for (SID uri : hasPart.keySet()) {
 			Bintree nodeBT = localRep.get(uri);
 
-			for (SID pred : n.preds) {
+			for (SID pred : hasPart.get(uri)) {
 				nodeBT = nodeBT.union(localRep.get(pred));
 			}
-
 			localRep.put(uri, nodeBT);
 		}
 
@@ -436,22 +345,5 @@ public class RelationshipGraph {
 			}
 		}
 		return new Representation(urisRep);
-	}
-
-	class Node {
-
-		SID uri;
-		boolean visited; // Used for post-fix ordering of nodes
-		Set<SID> preds;
-		Set<SID> succs;
-		Set<SID> before;
-
-		public Node(SID uri) {
-			this.uri = uri;
-			visited = false;
-			preds = new HashSet<SID>();
-			succs = new HashSet<SID>();
-			before = new HashSet<SID>();
-		}
 	}
 }
