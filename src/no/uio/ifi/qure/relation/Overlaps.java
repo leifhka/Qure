@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 
+import no.uio.ifi.qure.Config;
 import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.traversal.*;
 import no.uio.ifi.qure.space.*;
@@ -277,7 +278,7 @@ public class Overlaps extends AtomicRelation {
     	return table;
 	}
 
-	public String toSQL() { //TODO
+	public String toSQL(Integer[] agrs, Config config) { //TODO
 		return "";
 	}
 

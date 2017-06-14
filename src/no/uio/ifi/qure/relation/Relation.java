@@ -8,13 +8,14 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Arrays;
 
+import no.uio.ifi.qure.Config;
 import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.traversal.*;
 import no.uio.ifi.qure.space.*;
 
 public abstract class Relation {
 
-	public abstract String toSQL();
+	public abstract String toSQL(Integer[] args, Config config);
 
 	public abstract boolean eval(Space[] args);
 
@@ -97,8 +98,8 @@ class And extends Relation {
 		return conj1.toString() + " /\\ " + conj2.toString();
 	}
 
-	public String toSQL() { //TODO
-		return "";
+	public String toSQL(Integer[] args, Config config) {
+		return "(" + conj1.toSQL(args, config) + ") NATURAL JOIN (" + conj2.toSQL(args, config) + ")";
 	}
 
 	public boolean eval(Space[] args) {
@@ -143,8 +144,8 @@ class Not extends Relation {
 		return "~" + rel.toString();
 	}
 
-	public String toSQL() { //TODO
-		return "";
+	public String toSQL(Integer[] args, Config config) {
+		return "EXCEPT (" + rel.toSQL(args, config) + ")";
 	}
 
 	public boolean eval(Space[] args) {

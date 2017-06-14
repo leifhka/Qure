@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Arrays;
 
+import no.uio.ifi.qure.Config;
 import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.traversal.*;
 import no.uio.ifi.qure.space.*;
@@ -32,8 +33,32 @@ public class Before extends AtomicRelation {
 		return "bf(<" + r1 + "," + a1 + ">, <" + r2 + "," + a2 + ">)";
 	}
 
-	public String toSQL() { //TODO
-		return "";
+	public String toSQL(Integer[] args, Config config) {
+		if (args[0] == null && args[1] == null) {
+			return toSQLBoth(config);
+		} else if (args[0] == null) {
+			return toSQL1(args[1], config);
+		} else if (args[1] == null) {
+			return toSQL2(args[0], config);
+		} else {
+			return toSQLNone(args, config);
+		}
+	}
+
+	private String toSQL1(int gid, Config config) {
+		return null; // TODO
+	}
+
+	private String toSQL2(int gid, Config config) {
+		return null; // TODO
+	}
+
+	private String toSQLBoth(Config config) {
+		return null; // TODO
+	}
+
+	private String toSQLNone(Integer[] agrs, Config config) {
+		return null; // TODO
 	}
 
 	public boolean isValid() {
