@@ -582,7 +582,9 @@ public class Qure {
 			try {
 
 				String blockType = (config.blockSize > 31) ? "bigint" : "int";
-				String blockForm = "block " + blockType + ((config.compactBlocks) ?  "" : ", role smallint");
+				// We order the columns as (gid, role, block) to save space,
+				// both gid and role are ints so less paddin, both gid and role are ints so less padding
+				String blockForm = ((config.compactBlocks) ?  "" : "role int, ") + "block " + blockType;
 
 				if (config.convertUriToInt) {
 					statement.executeUpdate("CREATE TABLE " + config.btTableName + " (gid int, " + blockForm + ");");
