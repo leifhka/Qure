@@ -307,7 +307,9 @@ public class RelationSet {
 			for (AtomicRelation rel : currentRels) {
 
 				if (!getImplies(rel).isEmpty()) {
+					// We first join the tables of the actual tuples in the implied relations
 					Table joined = getJoinedTable(rel, tables);
+					// And then filter these possible tuples on the actual relationships
 					tables.put(rel, rel.evalAll(spaces, joined));
 				} else {
 					// Leaf-relation, thus we need to check all constructable tuples from spaces

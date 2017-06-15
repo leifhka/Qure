@@ -42,6 +42,14 @@ public class Table {
 
 	public AtomicRelation getRelation() { return rel; }
 
+	public String toString() {
+		String res = "";
+		for (SID[] t : getTuples()) {
+			res += Arrays.toString(t) + "\n";
+		}
+		return res;
+	}
+
 	@Override
 	public boolean equals(Object other) {
 		return (other instanceof Table) && ((Table) other).tuples.equals(tuples);
