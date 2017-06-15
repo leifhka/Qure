@@ -49,7 +49,7 @@ public class Qure {
 		// System.out.println("Leaves: " + rels.getImplicationGraphLeaves().toString());
 
 		ArrayList<Config> rfs = new ArrayList<Config>();
-		rfs.add(new Config("small_physical", "impl", 10, 3, 30, 10));
+		rfs.add(new Config("dallas", "cblb", 15, 30, 10));
 		//rfs.add(new Config("dallas", "f3", 13, 3, 30, 10));
 		//rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
 		//rfs.add(new Config("npd",	"upsa", 10, 3, 30, 10));
@@ -68,7 +68,7 @@ public class Qure {
 		for (Config config : configs) {
 			try {
 				runBulk(config);
-				Thread.sleep(1000*60*0);
+				Thread.sleep(1000*60*0); // Poor computer should cool down
 			} catch (InterruptedException ex) {
 				try {
 					FileWriter fw = new FileWriter("errs.txt", true);
@@ -325,8 +325,13 @@ public class Qure {
 			Block[] blocks = blocksArr.toArray(new Block[blocksArr.size()]);
 
 			for (int i = 0; i < blocks.length; i++) {
-				long b = blocks[i].getRepresentation();
-				query += "('" + uri + "', " + b + ")" + ((i == blocks.length-1) ? ";" : ", ");
+				if (config.compactBlocks) {
+					long b = blocks[i].getRepresentation();
+					query += "('" + uri + "', " + b + ")" + ((i == blocks.length-1) ? ";" : ", ");
+				} else {
+					Pair<Long, Integer> simple = blocks[i].toSimpleBlock();
+					query += "('" + uri + "', " + simple.fst + ", " + simple.snd + ")" + ((i == blocks.length-1) ? ";" : ", ");
+				}
 			}
 
 			statement.addBatch(query);
@@ -353,7 +358,7 @@ public class Qure {
 		String universeStr = universe.toDBString();
 		statement.executeUpdate("INSERT INTO " + config.universeTable + " VALUES ('" +
 		                        config.btTableName + "', " + universeStr + ");"); 
-		if (config.verbose) System.out.println(" Done.");
+		if (config.verbose) System.out.println(" Done");
 	}
 
 
@@ -381,7 +386,7 @@ public class Qure {
 
 		int ins = statement.executeUpdate(splitStr);
 
-		if (config.verbose) System.out.println(" Done. [Inserted " + ins + " rows]");
+		if (config.verbose) System.out.println(" Done [Inserted " + ins + " rows]");
 	}
 
 	public static void createIndexStructures(Config config) 
@@ -393,10 +398,14 @@ public class Qure {
 		                        + "_gid_index ON " + config.btTableName + "(gid);");
 		statement.executeUpdate("CREATE INDEX " + config.rawBTTableName 
 		                        + "_block_index ON " + config.btTableName + "(block);");
-		statement.executeUpdate("CREATE INDEX " + config.rawBTTableName
-		                        + "_wit_index ON " + config.btTableName + "(block,gid) WHERE block % 2 != 0;");
-
-		if (config.verbose) System.out.println(" Done.");
+		if (config.compactBlocks) {
+			statement.executeUpdate("CREATE INDEX " + config.rawBTTableName
+		                            + "_wit_index ON " + config.btTableName + "(block,gid) WHERE block % 2 != 0;");
+		} else {
+			statement.executeUpdate("CREATE INDEX " + config.rawBTTableName
+		                            + "_wit_index ON " + config.btTableName + "(block,gid) WHERE role % 2 != 0;");
+		}
+		if (config.verbose) System.out.println(" Done");
 	}
 
 	private static void deleteRandomBintreesLoc(int n, Config config) {
@@ -474,7 +483,7 @@ public class Qure {
 			delSum += deleted[i];
 		}
 
-		if (config.verbose) System.out.println(" Done. [Deleted " + delSum + " rows]");
+		if (config.verbose) System.out.println(" Done [Deleted " + delSum + " rows]");
 	}
 
 	public static void deleteBintreesOld(Representation rep, Set<Block> oldSplitBlocks, Config config) 
@@ -509,7 +518,7 @@ public class Qure {
 		for (int i = 0; i < deleted.length; i++)
 			delSum += deleted[i];
 
-		if (config.verbose) System.out.println(" Done. [Deleted " + delSum + " rows]");
+		if (config.verbose) System.out.println(" Done [Deleted " + delSum + " rows]");
 	}
 
 	public static Block getParentInSet(Block block, Set<Block> bs) {
@@ -573,11 +582,12 @@ public class Qure {
 			try {
 
 				String blockType = (config.blockSize > 31) ? "bigint" : "int";
+				String blockForm = "block " + blockType + ((config.compactBlocks) ?  "" : ", role smallint");
 
 				if (config.convertUriToInt) {
-					statement.executeUpdate("CREATE TABLE " + config.btTableName + " (gid int, block " + blockType + ");");
+					statement.executeUpdate("CREATE TABLE " + config.btTableName + " (gid int, " + blockForm + ");");
 				} else {
-					statement.executeUpdate("CREATE TABLE " + config.btTableName + " (id text, block " + blockType + ");");
+					statement.executeUpdate("CREATE TABLE " + config.btTableName + " (id text, " + blockForm + ");");
 				}
 				tableMade = true;
 
@@ -587,7 +597,7 @@ public class Qure {
 				System.out.println(sqlex.getMessage());
 				System.out.print("Try to add a new table name suffix (or just hit return twice to abort): ");
 				Scanner scan = new Scanner(System.in).useDelimiter("[ \n]"); // Table name is only one word
-				config = new Config(config.rawGeoTableName, scan.next(), config.maxIterDepth, config.overlapsArity, config.blockMemberCount, config.maxSplits);
+				config = new Config(config.rawGeoTableName, scan.next(), config.maxIterDepth, config.blockMemberCount, config.maxSplits);
 				System.out.println("");
 
 				if (config.btTableName.equals("")) {

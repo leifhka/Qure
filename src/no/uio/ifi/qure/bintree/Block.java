@@ -233,6 +233,14 @@ public class Block {
 		return new Block(getSize() + b.getSize(), newBits);
 	}
 
+	public Pair<Long, Integer> toSimpleBlock() {
+		long lastBitPos = (BLOCK_SIZE + 1) - getSize(); // Position of last bit in bit-string in value
+		long block = value & ~((1L << (lastBitPos-1)) - 1); // Remove meta-information
+		block = block | (1L << (lastBitPos-2)); // Set bit denoting start of bit-string
+		int roles = (int) (value & ROLE_SIZE_ONES);
+		return new Pair<Long, Integer>(block, roles);
+	}
+
 	public String toString() {
 		
 		String vs = Long.toBinaryString(value);

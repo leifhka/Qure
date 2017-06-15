@@ -19,7 +19,6 @@ public class Config {
 	public String schemaName;
 
 	public int maxIterDepth;
-	public int overlapsArity;
 	public int blockMemberCount;
 	public int numThreads = 8;
 	public int dim = 2;
@@ -31,10 +30,9 @@ public class Config {
 	public RelationSet relationSet = RelationSet.getSimple(3);
 	//public RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
  
-	public Config(String table, String suff, int representationDepth, int overlapsArity, 
+	public Config(String table, String suff, int representationDepth, 
 				  int blockMemberCount, int maxSplits) {
 
-		this.overlapsArity = overlapsArity;
 		this.maxIterDepth = representationDepth;
 		this.blockMemberCount = blockMemberCount;
 		this.maxSplits = maxSplits;
@@ -63,7 +61,8 @@ public class Config {
 		}
 	};
 
-	public int blockSize = 63;
+	public int blockSize = 31;
+	public boolean compactBlocks = true;
 	public String dbName = "test";
 	public String dbPWD = "test";
 	public String dbUsername = "leifhka";
@@ -85,7 +84,7 @@ public class Config {
 	public int percentStep = 1;
 	public boolean writeBintreesToDB = true;
 
-	public PrecisionModel geometryFactoryPrecision = new PrecisionModel(Math.pow(20, 10));
+	public PrecisionModel geometryFactoryPrecision = new PrecisionModel();
 	public PrecisionModel geometryPrecision = new PrecisionModel(Math.pow(10, 10));
 
 }
