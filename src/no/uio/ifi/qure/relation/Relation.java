@@ -15,7 +15,9 @@ import no.uio.ifi.qure.space.*;
 
 public abstract class Relation {
 
-	public abstract String toSQL(Integer[] args, Config config);
+	public abstract String toBTSQL(Integer[] args, Config config);
+
+	public abstract String toGeoSQL(Integer[] args, Config config);
 
 	public abstract boolean eval(Space[] args);
 
@@ -98,8 +100,28 @@ class And extends Relation {
 		return conj1.toString() + " /\\ " + conj2.toString();
 	}
 
-	public String toSQL(Integer[] args, Config config) {
-		return "(" + conj1.toSQL(args, config) + ") NATURAL JOIN (" + conj2.toSQL(args, config) + ")";
+	public String toBTSQL(Integer[] args, Config config) {
+		if (conj1 instanceof Not && conj2 instanceof Not) {
+			return null;
+		} else if (conj1 instanceof Not) {
+			return "(" + conj2.toBTSQL(args, config) + ") EXCEPT (" + ((Not) conj1).getInnerRelation().toBTSQL(args, config) + ")";
+		} else if (conj2 instanceof Not) {
+			return "(" + conj1.toBTSQL(args, config) + ") EXCEPT (" + ((Not) conj2).getInnerRelation().toBTSQL(args, config) + ")";
+		} else {
+			return "(" + conj1.toBTSQL(args, config) + ") NATURAL JOIN (" + conj2.toBTSQL(args, config) + ")";
+		}
+	}
+
+	public String toGeoSQL(Integer[] args, Config config) {
+		if (conj1 instanceof Not && conj2 instanceof Not) {
+			return null;
+		} else if (conj1 instanceof Not) {
+			return "(" + conj2.toGeoSQL(args, config) + ") EXCEPT (" + ((Not) conj1).getInnerRelation().toGeoSQL(args, config) + ")";
+		} else if (conj2 instanceof Not) {
+			return "(" + conj1.toGeoSQL(args, config) + ") EXCEPT (" + ((Not) conj2).getInnerRelation().toGeoSQL(args, config) + ")";
+		} else {
+			return "(" + conj1.toGeoSQL(args, config) + ") NATURAL JOIN (" + conj2.toGeoSQL(args, config) + ")";
+		}
 	}
 
 	public boolean eval(Space[] args) {
@@ -127,6 +149,8 @@ class Not extends Relation {
 		this.rel = rel;
 	}
 
+	public Relation getInnerRelation() { return rel; }
+
 	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof Not)) return false;
@@ -144,8 +168,28 @@ class Not extends Relation {
 		return "~" + rel.toString();
 	}
 
-	public String toSQL(Integer[] args, Config config) {
-		return "EXCEPT (" + rel.toSQL(args, config) + ")";
+	public String toBTSQL(Integer[] args, Config config) {
+		String sel = "";
+		String from = "";
+		String sep = "";
+		for (int i = 0; i < args.length; i++) {
+			sel += sep + "T" + i + "." + config.uriColumn + " AS v" + i;
+			from += sep + config.btTableName + " AS T" + i;
+			sep = ", ";
+		}
+		return "(SELECT " + sel + " FROM " + from + ") EXCEPT (" + rel.toBTSQL(args, config) + ")";
+	}
+
+	public String toGeoSQL(Integer[] args, Config config) {
+		String sel = "";
+		String from = "";
+		String sep = "";
+		for (int i = 0; i < args.length; i++) {
+			sel += sep + "T" + i + "." + config.uriColumn + " AS v" + i;
+			from += sep + config.geoTableName + " AS T" + i;
+			sep = ", ";
+		}
+		return "(SELECT " + sel + " FROM " + from + ") EXCEPT (" + rel.toGeoSQL(args, config) + ")";
 	}
 
 	public boolean eval(Space[] args) {

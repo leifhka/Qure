@@ -47,51 +47,68 @@ public class Overlaps extends AtomicRelation {
 	public Overlaps(Map<Integer, Integer> argRole) {
 		this.argRole = argRole;
 	}
-
-	public String toSQL(Integer[] args, Config config) { //TODO
+		
+	public String toGeoSQL(Integer[] args, Config config) { //TODO
 		if (getArity() == 2) {
-			return toSQL2(args, config);
+			return toGeoSQL2(args, config);
 		} else {
 			return ""; // Base query on implied Overlaps of lower arity
 		}
 	}
 
-	private String toSQL2(Integer[] args, Config config) {
-		String selected = "";
-		String from = "";
-		String whereGID = "";
-  		String sepSel = "";
-  		String sepFro = "";
-  		String sepWhere = "";
+	private String[] makeSelectFromWhereParts(String tableName, String uriColumn, Integer[] args) {
+		String select = "", from = "", where = "", sepSelFro = "", sepWhere = "";
 		for (int i = 0; i < args.length; i++) {
 			if (argRole.containsKey(i)) {
-				selected += sepSel + "T" + i + "." + config.uriColumn + " AS " + "v" + i;
-				sepSel = ", ";
-				if (args[i] == null) {
-					from += sepFro + config.btTableName + " AS T" + i;
-					sepFro = ", ";
-				} else {
-					whereGID += sepWhere + "T" + i + "." + config.uriColumn + " = " + args[i];
+				select += sepSelFro + "T" + i + "." + uriColumn + " AS " + "v" + i;
+				from += sepSelFro + tableName + " AS T" + i;
+				sepSelFro = ", ";
+				if (args[i] != null) {
+					where += sepWhere + "T" + i + "." + uriColumn + " = " + args[i];
 					sepWhere = " AND ";
 				}
 			}
-			
 		}
-		from += sepFro + "\n";
-	    from += "(SELECT (1::bigint << N.n)\n"; 
+		return new String[]{select, from, where};
+	}
+	
+	private String toGeoSQL2(Integer[] args, Config config) {
+
+		String[] sfw = makeSelectFromWhereParts(config.geoTableName, config.uriColumn, args);
+		String query = "SELECT " + sfw[0] + "\n";
+		query += "FROM " + sfw[1] + "\n";
+		query += "WHERE ";
+		if (!sfw[2].equals("")) query += sfw[2] + " AND\n";
+		query += "ST_intersects(T1.geom, T2.geom);";
+		return query;
+	}
+
+	public String toBTSQL(Integer[] args, Config config) { //TODO
+		if (getArity() == 2) {
+			return toBTSQL2(args, config);
+		} else {
+			return ""; // Base query on implied Overlaps of lower arity
+		}
+	}
+
+	private String toBTSQL2(Integer[] args, Config config) {
+		String[] sfw = makeSelectFromWhereParts(config.geoTableName, config.uriColumn, args);
+		
+		String from = sfw[1];
+	    from += ",\n(SELECT (1::bigint << N.n)\n"; 
 	    from += " FROM (VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12), (13),\n"; 
 	    from += "              (14), (15), (16), (17), (18), (19), (20), (21), (22), (23), (24), (25),\n"; 
 	    from += "              (26), (27), (28), (29), (30), (31), (32), (33), (34), (35), (36), (37),\n"; 
 	    from += "              (38), (39), (40), (41), (42), (43), (44), (45), (46), (47), (48), (49),\n"; 
 	    from += "              (50), (51), (52), (53), (54), (55), (56)) AS N(n)) AS V(n)";
-		String query = "SELECT DISTINCT " + selected + "\n";
+	    
+		String query = "SELECT DISTINCT " + sfw[0] + "\n";
 		query += " FROM " + from + "\n";
 		query += " WHERE ";
-		if (!whereGID.equals("")) query += whereGID + " AND \n";
+		if (!sfw[2].equals("")) query += sfw[2] + " AND \n";
 		query += " ((T2.block >= (T1.block & (T1.block-1)) AND \n";
         query += "   T2.block <= (T1.block | (T1.block-1))) OR \n";
 		query += "  T2.block = ((T1.block & ~(V.n-1))-1)); ";
-		System.out.println(query);
 		return query;
 	}
 

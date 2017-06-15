@@ -32,31 +32,59 @@ public class PartOf extends AtomicRelation {
 		return "po(<" + r1 + "," + a1 + ">, <" + r2 + "," + a2 + ">)";
 	}
 
-	public String toSQL(Integer[] args, Config config) {
+	public String toBTSQL(Integer[] args, Config config) {
 		if (args[0] == null && args[1] == null) {
-			return toSQLBoth(config);
+			return toBTSQLBoth(config);
 		} else if (args[0] == null) {
-			return toSQL1(args[1], config);
+			return toBTSQL1(args[1], config);
 		} else if (args[1] == null) {
-			return toSQL2(args[0], config);
+			return toBTSQL2(args[0], config);
 		} else {
-			return toSQLNone(args, config);
+			return toBTSQLNone(args, config);
 		}
 	}
 
-	private String toSQL1(int gid, Config config) {
+	private String toBTSQL1(int gid, Config config) {
 		return null; // TODO
 	}
 
-	private String toSQL2(int gid, Config config) {
+	private String toBTSQL2(int gid, Config config) {
 		return null; // TODO
 	}
 
-	private String toSQLBoth(Config config) {
+	private String toBTSQLBoth(Config config) {
 		return null; // TODO
 	}
 
-	private String toSQLNone(Integer[] agrs, Config config) {
+	private String toBTSQLNone(Integer[] agrs, Config config) {
+		return null; // TODO
+	}
+
+	public String toGeoSQL(Integer[] args, Config config) {
+		if (args[0] == null && args[1] == null) {
+			return toGeoSQLBoth(config);
+		} else if (args[0] == null) {
+			return toGeoSQL1(args[1], config);
+		} else if (args[1] == null) {
+			return toGeoSQL2(args[0], config);
+		} else {
+			return toGeoSQLNone(args, config);
+		}
+	}
+
+	private String toGeoSQL1(int gid, Config config) {
+		return null; // TODO
+	}
+
+	private String toGeoSQL2(int gid, Config config) {
+		return null; // TODO
+	}
+
+	private String toGeoSQLBoth(Config config) {
+		return null; // TODO
+	}
+
+	private String toGeoSQLNone(Integer[] agrs, Config config) {
 		return null; // TODO
 	}
 
