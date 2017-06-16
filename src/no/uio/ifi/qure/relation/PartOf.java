@@ -28,6 +28,10 @@ public class PartOf extends AtomicRelation {
 
 	public Integer getArgRole(Integer pos) { return (pos.equals(a1)) ? r1 : r2; }
 
+	public boolean relatesArg(int arg) {
+		return a1 == arg || a2 == arg;
+	}
+
 	public String toString() {
 		return "po(<" + r1 + "," + a1 + ">, <" + r2 + "," + a2 + ">)";
 	}

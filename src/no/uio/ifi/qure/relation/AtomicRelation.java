@@ -30,6 +30,8 @@ public abstract class AtomicRelation extends Relation {
 
 	public abstract boolean isIntrinsic(SID[] tuple);
 
+	public abstract boolean relatesArg(int arg);
+
 	public Space[] toSpaces(SID[] args, SpaceProvider spaces) {
 		Space[] sps = new Space[args.length];
 		for (int i = 0; i < sps.length; i++) {
@@ -45,5 +47,20 @@ public abstract class AtomicRelation extends Relation {
 		}
 		return sids;
 	}
-}
 
+	public String[] makeSelectFromWhereParts(String tableName, String uriColumn, Integer[] args) {
+		String select = "", from = "", where = "", sepSelFro = "", sepWhere = "";
+		for (int i = 0; i < args.length; i++) {
+			if (relatesArg(i)) {
+				select += sepSelFro + "T" + i + "." + uriColumn + " AS " + "v" + i;
+				from += sepSelFro + tableName + " AS T" + i;
+				sepSelFro = ", ";
+				if (args[i] != null) {
+					where += sepWhere + "T" + i + "." + uriColumn + " = " + args[i];
+					sepWhere = " AND ";
+				}
+			}
+		}
+		return new String[]{select, from, where};
+	}
+}

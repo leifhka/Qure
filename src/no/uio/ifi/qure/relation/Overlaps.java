@@ -47,6 +47,10 @@ public class Overlaps extends AtomicRelation {
 	public Overlaps(Map<Integer, Integer> argRole) {
 		this.argRole = argRole;
 	}
+
+	public boolean relatesArg(int arg) {
+		return argRole.containsKey(arg);
+	}
 		
 	public String toGeoSQL(Integer[] args, Config config) { //TODO
 		if (getArity() == 2) {
@@ -56,22 +60,6 @@ public class Overlaps extends AtomicRelation {
 		}
 	}
 
-	private String[] makeSelectFromWhereParts(String tableName, String uriColumn, Integer[] args) {
-		String select = "", from = "", where = "", sepSelFro = "", sepWhere = "";
-		for (int i = 0; i < args.length; i++) {
-			if (argRole.containsKey(i)) {
-				select += sepSelFro + "T" + i + "." + uriColumn + " AS " + "v" + i;
-				from += sepSelFro + tableName + " AS T" + i;
-				sepSelFro = ", ";
-				if (args[i] != null) {
-					where += sepWhere + "T" + i + "." + uriColumn + " = " + args[i];
-					sepWhere = " AND ";
-				}
-			}
-		}
-		return new String[]{select, from, where};
-	}
-	
 	private String toGeoSQL2(Integer[] args, Config config) {
 
 		String[] sfw = makeSelectFromWhereParts(config.geoTableName, config.uriColumn, args);
@@ -92,7 +80,7 @@ public class Overlaps extends AtomicRelation {
 	}
 
 	private String toBTSQL2(Integer[] args, Config config) {
-		String[] sfw = makeSelectFromWhereParts(config.geoTableName, config.uriColumn, args);
+		String[] sfw = makeSelectFromWhereParts(config.btTableName, config.uriColumn, args);
 		
 		String from = sfw[1];
 	    from += ",\n(SELECT (1::bigint << N.n)\n"; 
