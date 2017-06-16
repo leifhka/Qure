@@ -42,20 +42,25 @@ public class Qure {
 
 	public static void main(String[] args) {
 
-		// RelationSet rels = RelationSet.getSimple(5); //getRCC8(1, 2); //AllensIntervalAlgebra(1,2,4);
-		// for (AtomicRelation rel : rels.getAtomicRelations()) {
-		// 	System.out.println(rel.toString() + " => " + rel.getImpliedRelations().toString());
-		// }
-		// System.out.println("Leaves: " + rels.getImplicationGraphLeaves().toString());
+		Config config = new Config("tiny", "qtst", 4, 1, 10);
+		int gid = 0;
+		String btQuery = (new Overlaps(0,0,0,1)).toBTSQL(new Integer[]{null,gid}, config);
+		String geoQuery = (new Overlaps(0,0,0,1)).toGeoSQL(new Integer[]{null,gid}, config);
+		System.out.println(btQuery + "\n");
+		runQuery(btQuery, config);
+		System.out.println("\n");
+		System.out.println(geoQuery + "\n");
+		runQuery(geoQuery, config);
 
 		ArrayList<Config> rfs = new ArrayList<Config>();
-		rfs.add(new Config("dallas", "cblb", 15, 30, 10));
+		//rfs.add(config);
+		//rfs.add(new Config("dallas", "cblb", 15, 30, 10));
 		//rfs.add(new Config("dallas", "f3", 13, 3, 30, 10));
 		//rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
 		//rfs.add(new Config("npd",	"upsa", 10, 3, 30, 10));
 		//rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
 
-		runMany(rfs);
+		//runMany(rfs);
 		//writeDBSizes(rfs);
 		//times = new HashMap<String, Long>();
 		//runManyQueryBM(rfs);
@@ -330,7 +335,7 @@ public class Qure {
 					query += "('" + uri + "', " + b + ")" + ((i == blocks.length-1) ? ";" : ", ");
 				} else {
 					Pair<Long, Integer> simple = blocks[i].toSimpleBlock();
-					query += "('" + uri + "', " + simple.fst + ", " + simple.snd + ")" + ((i == blocks.length-1) ? ";" : ", ");
+					query += "('" + uri + "', " + simple.snd + ", " + simple.fst + ")" + ((i == blocks.length-1) ? ";" : ", ");
 				}
 			}
 
@@ -664,6 +669,29 @@ public class Qure {
 			ex.printStackTrace();
 		} catch (InterruptedException ex) {
 			ex.printStackTrace();
+		}
+	}
+
+	public static void runQuery(String query, Config config) {
+		try {
+			Class.forName(config.jdbcDriver);
+
+			connect = DriverManager.getConnection(config.connectionStr);
+			statement = connect.createStatement();
+
+			long before, after;
+
+			before = System.currentTimeMillis();
+			statement.execute(query);
+			resultSet = statement.getResultSet();
+			after = System.currentTimeMillis();
+			while (resultSet.next()) { System.out.println(resultSet.getInt(1) + ", " + resultSet.getInt(2)); }
+			System.out.println("Time: " + (after-before));
+			//takeTime(before, after, config.rawBTTableName, "query time", true, true, "query.txt", true);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			close();
 		}
 	}
 

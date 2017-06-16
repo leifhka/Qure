@@ -67,7 +67,7 @@ public class Overlaps extends AtomicRelation {
 		query += "FROM " + sfw[1] + "\n";
 		query += "WHERE ";
 		if (!sfw[2].equals("")) query += sfw[2] + " AND\n";
-		query += "ST_intersects(T1.geom, T2.geom);";
+		query += "ST_intersects(T0.geom, T1.geom);";
 		return query;
 	}
 
@@ -86,17 +86,21 @@ public class Overlaps extends AtomicRelation {
 	    from += ",\n(SELECT (1::bigint << N.n)\n"; 
 	    from += " FROM (VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12), (13),\n"; 
 	    from += "              (14), (15), (16), (17), (18), (19), (20), (21), (22), (23), (24), (25),\n"; 
-	    from += "              (26), (27), (28), (29), (30), (31), (32), (33), (34), (35), (36), (37),\n"; 
-	    from += "              (38), (39), (40), (41), (42), (43), (44), (45), (46), (47), (48), (49),\n"; 
-	    from += "              (50), (51), (52), (53), (54), (55), (56)) AS N(n)) AS V(n)";
+	    from += "              (26), (27), (28), (29), (30), (31)) AS N(n)) AS V(n)";
 	    
 		String query = "SELECT DISTINCT " + sfw[0] + "\n";
 		query += " FROM " + from + "\n";
 		query += " WHERE ";
 		if (!sfw[2].equals("")) query += sfw[2] + " AND \n";
-		query += " ((T2.block >= (T1.block & (T1.block-1)) AND \n";
-        query += "   T2.block <= (T1.block | (T1.block-1))) OR \n";
-		query += "  T2.block = ((T1.block & ~(V.n-1))-1)); ";
+		if (args[0] != null) {
+			query += " ((T1.block >= (T0.block & (T0.block-1)) AND \n";
+	        query += "   T1.block <= (T0.block | (T0.block-1))) OR \n";
+			query += "  T1.block = ((T0.block & ~(V.n-1))-1)); ";
+		} else {
+			query += " ((T0.block >= (T1.block & (T1.block-1)) AND \n";
+	        query += "   T0.block <= (T1.block | (T1.block-1))) OR \n";
+			query += "  T0.block = ((T1.block & ~(V.n-1)) | V.n)); ";
+		}
 		return query;
 	}
 

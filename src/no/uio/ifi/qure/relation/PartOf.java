@@ -15,85 +15,82 @@ import no.uio.ifi.qure.space.*;
 
 public class PartOf extends AtomicRelation {
 
-	private final int a1, a2, r1, r2;
+	private final int a0, a1, r0, r1;
 
-	public PartOf(int r1, int r2, int a1, int a2) {
+	public PartOf(int r0, int r1, int a0, int a1) {
+		this.a0 = a0;
 		this.a1 = a1;
-		this.a2 = a2;
+		this.r0 = r0;
 		this.r1 = r1;
-		this.r2 = r2;
 	}
 
 	public int getArity() { return 2; }
 
-	public Integer getArgRole(Integer pos) { return (pos.equals(a1)) ? r1 : r2; }
+	public Integer getArgRole(Integer pos) { return (pos.equals(a0)) ? r0 : r1; }
 
 	public boolean relatesArg(int arg) {
-		return a1 == arg || a2 == arg;
+		return a0 == arg || a1 == arg;
 	}
 
 	public String toString() {
-		return "po(<" + r1 + "," + a1 + ">, <" + r2 + "," + a2 + ">)";
+		return "po(<" + r0 + "," + a0 + ">, <" + r1 + "," + a1 + ">)";
 	}
 
 	public String toBTSQL(Integer[] args, Config config) {
-		if (args[0] == null && args[1] == null) {
-			return toBTSQLBoth(config);
-		} else if (args[0] == null) {
-			return toBTSQL1(args[1], config);
-		} else if (args[1] == null) {
-			return toBTSQL2(args[0], config);
+		if (args[0] != null && args[1] == null) {
+			return toBTSQL2(args, config);
 		} else {
-			return toBTSQLNone(args, config);
+			return toBTSQL1(args, config);
 		}
 	}
 
-	private String toBTSQL1(int gid, Config config) {
-		return null; // TODO
+	private String toBTSQL1Approx(Integer[] args, Config config) {
+		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, args);
+		String query = "SELECT " + selFroWhe[0] + ", T0.block\n";
+		query += "FROM " + selFroWhe[1] + "\n";
+		query += "WHERE ";
+		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
+		query += "T0.role % 2 != 0 AND\n";
+		query += "T0.block >= (T1.block & (T1.block-1)) AND\n";
+		query += "T0.block <= (T1.block | (T1.block-1))";
+		return query;
 	}
 
-	private String toBTSQL2(int gid, Config config) {
-		return null; // TODO
+	private String toBTSQL1(Integer[] args, Config config) {
+		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, args);
+		String query = "WITH \n";
+		query += "possible AS (" + toBTSQL1Approx(args, config) + "),\n";
+		query += "posGids AS (SELECT DISTINCT v" + a0 + ", v" + a1 + " FROM possible),\n";
+		query += "posBlocks AS (SELECT DISTINCT block FROM possible),\n";
+		query += "rem AS (SELECT v" + a0 + ", v" + a1 + "\n";
+		query += "        FROM (SELECT " + selFroWhe[0] + ", T0.block\n";
+		query += "              FROM " + selFroWhe[1] + ", posGids AS Pos\n";
+		query += "              WHERE T0.role & 1 != 0 AND Pos.v" + a0 + " = T0.gid) AS Pos\n";
+		query += "          LEFT OUTER JOIN posBlocks B ON (Pos.block = B.block)\n";
+		query += "        WHERE B.block IS NULL)\n";
+
+		query += "SELECT P.v" + a0 + ", P.v" + a1 + "\n";
+		query += "FROM posGids AS P LEFT OUTER JOIN rem AS R ON (P.v" + a0 + " = R.v" + a0 + " AND P.v" + a1 + " = R.v" + a1 + ")\n";
+		query += "WHERE R.v" + a0 + " IS NULL";
+		return query;
 	}
 
-	private String toBTSQLBoth(Config config) {
-		return null; // TODO
-	}
-
-	private String toBTSQLNone(Integer[] agrs, Config config) {
+	private String toBTSQL2(Integer[] args, Config config) {
 		return null; // TODO
 	}
 
 	public String toGeoSQL(Integer[] args, Config config) {
-		if (args[0] == null && args[1] == null) {
-			return toGeoSQLBoth(config);
-		} else if (args[0] == null) {
-			return toGeoSQL1(args[1], config);
-		} else if (args[1] == null) {
-			return toGeoSQL2(args[0], config);
-		} else {
-			return toGeoSQLNone(args, config);
-		}
-	}
-
-	private String toGeoSQL1(int gid, Config config) {
-		return null; // TODO
-	}
-
-	private String toGeoSQL2(int gid, Config config) {
-		return null; // TODO
-	}
-
-	private String toGeoSQLBoth(Config config) {
-		return null; // TODO
-	}
-
-	private String toGeoSQLNone(Integer[] agrs, Config config) {
-		return null; // TODO
+		String[] selFroWhe = makeSelectFromWhereParts(config.geoTableName, config.uriColumn, args);
+		String query = "SELECT " + selFroWhe[0] + "\n";
+		query += "FROM " + selFroWhe[1] + "\n";
+		query += "WHERE ";
+		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND ";
+		query += "ST_coveredBy(T0.geom, T1.geom);";
+		return query;
 	}
 
 	public boolean isIntrinsic(SID[] tuple) {
-		return tuple[a1].getID() == tuple[a2].getID() && stricterRole(tuple[a1].getRole(), tuple[a2].getRole());
+		return tuple[a0].getID() == tuple[a1].getID() && stricterRole(tuple[a0].getRole(), tuple[a1].getRole());
 	}
 
 	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
@@ -108,14 +105,14 @@ public class PartOf extends AtomicRelation {
 			Overlaps ovr = (Overlaps) r;
 			if (ovr.getArity() == 1) {
 				Integer oRole = Utils.getOnlySome(ovr.getRoles());
+				if (stricterRole(r0, oRole)) {
+					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+					unifier.put(a0, 0);
+					unifiers.add(unifier);
+				}
 				if (stricterRole(r1, oRole)) {
 					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
 					unifier.put(a1, 0);
-					unifiers.add(unifier);
-				}
-				if (stricterRole(r2, oRole)) {
-					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
-					unifier.put(a2, 0);
 					unifiers.add(unifier);
 				}
 			} else {
@@ -123,19 +120,19 @@ public class PartOf extends AtomicRelation {
 				// First argument must overlap one of the arguments, and
 				// second argument must contain the other argument.
 				// We only add one unifier between partOf and Overlaps, but expand before eval
-				if (strictnessRelated(r1, ovr.getArgRole(a1)) &&
-				    stricterRole(r2, ovr.getArgRole(a2))) {
+				if (strictnessRelated(r0, ovr.getArgRole(a0)) &&
+				    stricterRole(r1, ovr.getArgRole(a1))) {
 
 					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+					unifier.put(new Integer(a0), new Integer(a0));
 					unifier.put(new Integer(a1), new Integer(a1));
-					unifier.put(new Integer(a2), new Integer(a2));
 					unifiers.add(unifier);
-				} else if (strictnessRelated(r1, ovr.getArgRole(a2)) &&
-				    stricterRole(r2, ovr.getArgRole(a1))) {
+				} else if (strictnessRelated(r0, ovr.getArgRole(a1)) &&
+				    stricterRole(r1, ovr.getArgRole(a0))) {
 
 					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
-					unifier.put(new Integer(a1), new Integer(a2));
-					unifier.put(new Integer(a2), new Integer(a1));
+					unifier.put(new Integer(a0), new Integer(a1));
+					unifier.put(new Integer(a1), new Integer(a0));
 					unifiers.add(unifier);
 				}
 			}
@@ -143,10 +140,10 @@ public class PartOf extends AtomicRelation {
 			PartOf pr = (PartOf) r;
 			// First argument must be less strict than r's first argument, and
 			// second argument must be stricter than  r's other argument.
-			if (stricterRole(pr.r1, r1) && stricterRole(r2, pr.r2)) {
+			if (stricterRole(pr.r0, r0) && stricterRole(r1, pr.r1)) {
 				Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+				unifier.put(new Integer(a0), new Integer(pr.a0));
 				unifier.put(new Integer(a1), new Integer(pr.a1));
-				unifier.put(new Integer(a2), new Integer(pr.a2));
 			}
 		}
 		return (unifiers.isEmpty()) ? null : unifiers;
@@ -157,33 +154,33 @@ public class PartOf extends AtomicRelation {
 		if (!(o instanceof PartOf)) return false;
 
 		PartOf opo = (PartOf) o;
-		return a1 == opo.a1 && a2 == opo.a2 && r1 == opo.r1 && r2 == opo.r2;
+		return a0 == opo.a0 && a1 == opo.a1 && r0 == opo.r0 && r1 == opo.r1;
 	}
 
 	@Override
 	public int hashCode() {
-		return (r1+a1) + 2*(r2+a2);
+		return (r0+a0) + 2*(r1+a1);
 	}
 
 	public boolean eval(Space[] spaceArgs) {
-    	return spaceArgs[a1].partOf(spaceArgs[a2]);
+    	return spaceArgs[a0].partOf(spaceArgs[a1]);
 	}
 
 	public Set<AtomicRelation> getAtomicRelations() {
 
 		Set<AtomicRelation> rels = new HashSet<AtomicRelation>();
-		if (a1 == a2) {
-			rels.add(new PartOf(r1, r2, 0, 0));
+		if (a0 == a1) {
+			rels.add(new PartOf(r0, r1, 0, 0));
 		} else {
-			rels.add(new PartOf(r1, r2, 0, 1));
+			rels.add(new PartOf(r0, r1, 0, 1));
 		}
 		return rels;
 	}
 
 	public Set<Integer> getRoles() {
 		Set<Integer> rs = new HashSet<Integer>();
+		rs.add(r0);
 		rs.add(r1);
-		rs.add(r2);
 		return rs;
 	}
 
