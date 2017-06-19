@@ -22,8 +22,6 @@ public abstract class AtomicRelation extends Relation {
 
 	public abstract Integer getArgRole(Integer pos);
 
-	public abstract int getArity();
-
 	public abstract Table evalAll(SpaceProvider spaces);
 
 	public abstract Table evalAll(SpaceProvider spaces, Table possible);

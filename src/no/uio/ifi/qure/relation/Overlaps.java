@@ -75,7 +75,7 @@ public class Overlaps extends AtomicRelation {
 		if (getArity() == 2) {
 			return toBTSQL2(args, config);
 		} else {
-			return ""; // Base query on implied Overlaps of lower arity
+			return null; // Base query on implied Overlaps of lower arity
 		}
 	}
 
@@ -95,7 +95,7 @@ public class Overlaps extends AtomicRelation {
 		if (args[0] != null) {
 			query += " ((T1.block >= (T0.block & (T0.block-1)) AND \n";
 	        query += "   T1.block <= (T0.block | (T0.block-1))) OR \n";
-			query += "  T1.block = ((T0.block & ~(V.n-1))-1)); ";
+			query += "  T1.block = ((T0.block & ~(V.n-1)) | V.n)); ";
 		} else {
 			query += " ((T0.block >= (T1.block & (T1.block-1)) AND \n";
 	        query += "   T0.block <= (T1.block | (T1.block-1))) OR \n";
@@ -133,9 +133,7 @@ public class Overlaps extends AtomicRelation {
 
 	public Integer getArgRole(Integer arg) { return argRole.get(arg); }
 
-	public int getArity() {
-		return argRole.keySet().size();
-	}
+	public Set<Integer> getArguments() { return argRole.keySet(); }
 
 	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
 

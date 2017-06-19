@@ -71,6 +71,34 @@ public class DBDataProvider implements RawDataProvider<String> {
 		return insertUris;
 	}
 
+	public Set<Integer> getAllURIs() {
+
+		Set<Integer> uris = new HashSet<Integer>();
+
+		try {
+			Class.forName(config.jdbcDriver);
+			connect = DriverManager.getConnection(config.connectionStr);
+			statement = connect.createStatement();
+
+			String queryBT = "SELECT DISTINCT " + config.uriColumn + " FROM " + config.btTableName + ";";
+			statement.execute(queryBT);
+			resultSet = statement.getResultSet();
+			while (resultSet.next()) uris.add(resultSet.getInt(1));
+ 
+		} catch (SQLException e) {
+			System.err.println("SQLError: " + e.toString());
+			System.err.println(e.getNextException());
+		} catch (Exception e) {
+			System.err.println("Error in queryForInsert(): " + e.toString());
+			e.printStackTrace();
+			System.exit(1);
+		} finally {
+			close();
+		}
+
+		return uris;
+	}
+
 	public DBUnparsedIterator getExternalOverlapping(String whereClause) {
 
 		String query = config.geoQuerySelectFromStr;

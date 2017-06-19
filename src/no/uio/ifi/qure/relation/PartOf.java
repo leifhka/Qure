@@ -25,6 +25,13 @@ public class PartOf extends AtomicRelation {
 	}
 
 	public int getArity() { return 2; }
+	
+	public Set<Integer> getArguments() {
+		Set<Integer> res = new HashSet<Integer>();
+		res.add(a0);
+		res.add(a1);
+		return res;
+	}
 
 	public Integer getArgRole(Integer pos) { return (pos.equals(a0)) ? r0 : r1; }
 
@@ -46,12 +53,12 @@ public class PartOf extends AtomicRelation {
 
 	private String toBTSQL1Approx(Integer[] args, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, args);
-		String query = "SELECT " + selFroWhe[0] + ", T0.block\n";
+		String query = "SELECT DISTINCT " + selFroWhe[0] + ", T0.block\n";
 		query += "FROM " + selFroWhe[1] + "\n";
 		query += "WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
 		query += "T0.role % 2 != 0 AND\n";
-		query += "T0.block >= (T1.block & (T1.block-1)) AND\n";
+		query += "T0.block > (T1.block & (T1.block-1)) AND\n";
 		query += "T0.block <= (T1.block | (T1.block-1))";
 		return query;
 	}
@@ -62,14 +69,14 @@ public class PartOf extends AtomicRelation {
 		query += "possible AS (" + toBTSQL1Approx(args, config) + "),\n";
 		query += "posGids AS (SELECT DISTINCT v" + a0 + ", v" + a1 + " FROM possible),\n";
 		query += "posBlocks AS (SELECT DISTINCT block FROM possible),\n";
-		query += "rem AS (SELECT v" + a0 + ", v" + a1 + "\n";
-		query += "        FROM (SELECT " + selFroWhe[0] + ", T0.block\n";
+		query += "rem AS (SELECT DISTINCT v" + a0 + ", v" + a1 + "\n";
+		query += "        FROM (SELECT DISTINCT " + selFroWhe[0] + ", T0.block\n";
 		query += "              FROM " + selFroWhe[1] + ", posGids AS Pos\n";
 		query += "              WHERE T0.role & 1 != 0 AND Pos.v" + a0 + " = T0.gid) AS Pos\n";
 		query += "          LEFT OUTER JOIN posBlocks B ON (Pos.block = B.block)\n";
 		query += "        WHERE B.block IS NULL)\n";
 
-		query += "SELECT P.v" + a0 + ", P.v" + a1 + "\n";
+		query += "SELECT DISTINCT P.v" + a0 + ", P.v" + a1 + "\n";
 		query += "FROM posGids AS P LEFT OUTER JOIN rem AS R ON (P.v" + a0 + " = R.v" + a0 + " AND P.v" + a1 + " = R.v" + a1 + ")\n";
 		query += "WHERE R.v" + a0 + " IS NULL";
 		return query;

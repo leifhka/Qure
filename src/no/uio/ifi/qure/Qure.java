@@ -1,14 +1,6 @@
 package no.uio.ifi.qure;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collection;
-import java.util.Scanner;
-import java.util.Iterator;
+import java.util.*;
 
 import java.sql.DatabaseMetaData;
 import java.sql.Connection;
@@ -43,17 +35,10 @@ public class Qure {
 	public static void main(String[] args) {
 
 		Config config = new Config("tiny", "qtst", 4, 1, 10);
-		int gid = 0;
-		String btQuery = (new Overlaps(0,0,0,1)).toBTSQL(new Integer[]{null,gid}, config);
-		String geoQuery = (new Overlaps(0,0,0,1)).toGeoSQL(new Integer[]{null,gid}, config);
-		System.out.println(btQuery + "\n");
-		runQuery(btQuery, config);
-		System.out.println("\n");
-		System.out.println(geoQuery + "\n");
-		runQuery(geoQuery, config);
+		checkCorrectness(config);
 
 		ArrayList<Config> rfs = new ArrayList<Config>();
-		//rfs.add(config);
+		rfs.add(config);
 		//rfs.add(new Config("dallas", "cblb", 15, 30, 10));
 		//rfs.add(new Config("dallas", "f3", 13, 3, 30, 10));
 		//rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
@@ -672,27 +657,76 @@ public class Qure {
 		}
 	}
 
-	public static void runQuery(String query, Config config) {
+	public static void checkCorrectness(Config config) {
+		System.out.println("Checking correctness...");
+		boolean err = false;
+		Set<Integer> ids = (new DBDataProvider(config)).getAllURIs();
+		for (Relation rel : config.relationSet.getRelations()) {
+			for (Integer id : ids) {
+				for (int i = 0; i < rel.getArity(); i++) {
+					Integer[] args = new Integer[rel.getArity()];
+					args[i] = id;
+					String btQ = rel.toBTSQL(args, config);
+					String geoQ = rel.toGeoSQL(args, config);
+					if (btQ == null || geoQ == null) continue;
+					Set<List<Integer>> btRes = runQuery(btQ, config);
+					Set<List<Integer>> geoRes = runQuery(geoQ, config);
+					for (List<Integer> t : btRes) {
+						if (!geoRes.contains(t)) {
+							err = true;
+							System.out.println(t.toString() + " in bt, not in geo for " + rel.toString() + " on " + Arrays.toString(args) + "!");
+						} else {
+							geoRes.remove(t);
+						}
+					}
+					if (!geoRes.isEmpty()) {
+						err = true;
+						System.out.println("Geo contains following not contained in bt for " + rel.toString() + ":");
+						for (List<Integer> t : geoRes) {
+							System.out.println(" -> " + t.toString());
+						}
+					}
+				}
+			}
+		}
+		if (!err) System.out.println("All correct!");
+	}
+
+	public static void printQueryResult(Set<List<Integer>> res) {
+		for (List<Integer> row : res) {
+			System.out.println(row.toString());
+		}
+	}
+
+	public static Set<List<Integer>> runQuery(String query, Config config) {
+		if (query == null) return new HashSet<List<Integer>>();
 		try {
 			Class.forName(config.jdbcDriver);
 
 			connect = DriverManager.getConnection(config.connectionStr);
 			statement = connect.createStatement();
 
-			long before, after;
-
-			before = System.currentTimeMillis();
 			statement.execute(query);
 			resultSet = statement.getResultSet();
-			after = System.currentTimeMillis();
-			while (resultSet.next()) { System.out.println(resultSet.getInt(1) + ", " + resultSet.getInt(2)); }
-			System.out.println("Time: " + (after-before));
-			//takeTime(before, after, config.rawBTTableName, "query time", true, true, "query.txt", true);
+			
+			Set<List<Integer>> res = new HashSet<List<Integer>>();
+			int columnCount = resultSet.getMetaData().getColumnCount();
+			while (resultSet.next()) {
+				List<Integer> row = new ArrayList<Integer>();
+				for (int i = 0; i < columnCount; i++) {
+					row.add(i, resultSet.getInt(i+1));
+				}
+				res.add(row);
+			}
+			return res;
 		} catch (Exception ex) {
+			System.out.println("Error on query:\n " + query);
 			ex.printStackTrace();
+			System.exit(1);
 		} finally {
 			close();
 		}
+		return null;
 	}
 
 	public static void runQueryBM(Config config) {

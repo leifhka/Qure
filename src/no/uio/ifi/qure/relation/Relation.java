@@ -25,6 +25,12 @@ public abstract class Relation {
 
 	public abstract Set<Integer> getRoles();
 
+	public abstract Set<Integer> getArguments();
+
+	public int getArity() {
+		return getArguments().size();
+	}
+
 	public abstract boolean isConjunctive(boolean insideNgeation);
 
 	@Override
@@ -136,6 +142,10 @@ class And extends Relation {
 		return Utils.union(conj1.getRoles(), conj2.getRoles());
 	}
 
+	public Set<Integer> getArguments() {
+		return Utils.union(conj1.getArguments(), conj2.getArguments());
+	}
+
 	public boolean isConjunctive(boolean insideNgeation) {
 		return conj1.isConjunctive(insideNgeation) && conj2.isConjunctive(insideNgeation);
 	}
@@ -203,6 +213,10 @@ class Not extends Relation {
 
 	public Set<Integer> getRoles() {
 		return rel.getRoles();
+	}
+
+	public Set<Integer> getArguments() {
+		return rel.getArguments();
 	}
 
 	public boolean isConjunctive(boolean insideNgeation) {

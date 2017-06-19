@@ -28,6 +28,13 @@ public class Before extends AtomicRelation {
 	public int getArity() { return 2; }
 
 	public Integer getArgRole(Integer pos) { return (pos.equals(a1)) ? r1 : r2; }
+	
+	public Set<Integer> getArguments() {
+		Set<Integer> res = new HashSet<Integer>();
+		res.add(a1);
+		res.add(a2);
+		return res;
+	}
 
 	public boolean relatesArg(int arg) {
 		return a1 == arg || a2 == arg;
