@@ -34,7 +34,7 @@ public class Qure {
 
 	public static void main(String[] args) {
 
-		Config config = new Config("tiny", "qtst", 4, 1, 10);
+		Config config = new Config("tiny", "sbq", 4, 1, 10);
 		checkCorrectness(config);
 
 		ArrayList<Config> rfs = new ArrayList<Config>();
@@ -681,7 +681,7 @@ public class Qure {
 					}
 					if (!geoRes.isEmpty()) {
 						err = true;
-						System.out.println("Geo contains following not contained in bt for " + rel.toString() + ":");
+						System.out.println("Geo contains following not contained in bt for " + rel.toString() + " on " + Arrays.toString(args) + ":");
 						for (List<Integer> t : geoRes) {
 							System.out.println(" -> " + t.toString());
 						}

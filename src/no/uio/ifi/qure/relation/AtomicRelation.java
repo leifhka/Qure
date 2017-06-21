@@ -11,6 +11,7 @@ import java.util.Arrays;
 import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.traversal.*;
 import no.uio.ifi.qure.space.*;
+import no.uio.ifi.qure.Config;
 
 
 public abstract class AtomicRelation extends Relation {
@@ -61,4 +62,17 @@ public abstract class AtomicRelation extends Relation {
 		}
 		return new String[]{select, from, where};
 	}
+
+	public String makeValuesFrom(Config config) {
+		String res = "SELECT (1" + ((config.blockSize > 31) ? "::bigint" : "") + " << N.n) ";
+		res += "FROM (VALUES ";
+		String sep = "";
+		for (int i = 1; i < config.blockSize; i++) {
+			res += sep + "(" + i + ")";
+			sep = ", ";
+		}
+		res += ") AS N(n)";
+		return res;
+	}
+
 }

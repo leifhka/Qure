@@ -82,11 +82,8 @@ public class Overlaps extends AtomicRelation {
 	private String toBTSQL2(Integer[] args, Config config) {
 		String[] sfw = makeSelectFromWhereParts(config.btTableName, config.uriColumn, args);
 		
-		String from = sfw[1];
-	    from += ",\n(SELECT (1::bigint << N.n)\n"; 
-	    from += " FROM (VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12), (13),\n"; 
-	    from += "              (14), (15), (16), (17), (18), (19), (20), (21), (22), (23), (24), (25),\n"; 
-	    from += "              (26), (27), (28), (29), (30), (31)) AS N(n)) AS V(n)";
+		String from = sfw[1] + ",\n";
+	    from += "(" + makeValuesFrom(config) + ") AS V(n)";
 	    
 		String query = "SELECT DISTINCT " + sfw[0] + "\n";
 		query += " FROM " + from + "\n";
