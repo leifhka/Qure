@@ -43,37 +43,37 @@ public class PartOf extends AtomicRelation {
 		return "po(<" + r0 + "," + a0 + ">, <" + r1 + "," + a1 + ">)";
 	}
 
-	public String toBTSQL(Integer[] args, Config config) {
-		if (args[a0] != null && args[a1] == null) {
-			return toBTSQL2(args, config);
+	public String toBTSQL(Integer[] vals, Config config) {
+		if (vals[a0] != null && vals[a1] == null) {
+			return toBTSQL2(vals, config);
 		} else {
-			return toBTSQL1(args, config);
+			return toBTSQL1(vals, config);
 		}
 	}
 
-	private String toBTSQL1Approx(Integer[] args, Config config) {
-		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, args);
-		String query = "    SELECT DISTINCT " + selFroWhe[0] + ", T0.block\n";
+	private String toBTSQL1Approx(Integer[] vals, Config config) {
+		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
+		String query = "    SELECT DISTINCT " + selFroWhe[0] + ", T" + a0 + ".block\n";
 		query += "    FROM " + selFroWhe[1] + "\n";
 		query += "    WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
-		query += "      T0.role % 2 != 0 AND\n";
-		query += "      T0.block > (T1.block & (T1.block-1)) AND\n";
-		query += "      T0.block <= (T1.block | (T1.block-1))";
+		query += "      T" + a0 + ".role % 2 != 0 AND\n";
+		query += "      T" + a0 + ".block > (T" + a1 + ".block & (T" + a1 + ".block-1)) AND\n";
+		query += "      T" + a0 + ".block <= (T" + a1 + ".block | (T" + a1 + ".block-1))";
 		return query;
 	}
 
-	private String toBTSQL1(Integer[] args, Config config) {
-		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, args);
+	private String toBTSQL1(Integer[] vals, Config config) {
+		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "WITH \n";
-		query += "possible AS (\n" + toBTSQL1Approx(args, config) + "),\n";
+		query += "possible AS (\n" + toBTSQL1Approx(vals, config) + "),\n";
 		query += "posGids AS (SELECT DISTINCT v" + a0 + ", v" + a1 + " FROM possible),\n";
 		query += "posBlocks AS (SELECT DISTINCT block FROM possible),\n";
 		query += "rem AS (\n";
 		query += "   SELECT DISTINCT v" + a0 + ", v" + a1 + "\n";
-		query += "   FROM (SELECT DISTINCT " + selFroWhe[0] + ", T0.block\n";
+		query += "   FROM (SELECT DISTINCT " + selFroWhe[0] + ", T" + a0 + ".block\n";
 		query += "         FROM " + selFroWhe[1] + ", posGids AS Pos\n";
-		query += "         WHERE T0.role & 1 != 0 AND Pos.v" + a0 + " = T0.gid) AS AllBlocks\n";
+		query += "         WHERE T" + a0 + ".role & 1 != 0 AND Pos.v" + a0 + " = T" + a0 + ".gid) AS AllBlocks\n";
 		query += "     LEFT OUTER JOIN posBlocks Approx ON (AllBlocks.block = Approx.block)\n";
 		query += "   WHERE Approx.block IS NULL)\n";
 
@@ -83,45 +83,45 @@ public class PartOf extends AtomicRelation {
 		return query;
 	}
 
-	private String toBTSQL2Approx(Integer[] args, Config config) {
-		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, args);
-		String query = "    SELECT DISTINCT T1." + config.uriColumn + " AS v" + a1 + ", T0.block\n";
+	private String toBTSQL2Approx(Integer[] vals, Config config) {
+		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
+		String query = "    SELECT DISTINCT T" + a1 + "." + config.uriColumn + " AS v" + a1 + ", T" + a0 + ".block\n";
 		query += "    FROM " + selFroWhe[1] + ",\n";
 		query += "         (" + makeValuesFrom(config) + ") AS V(n)\n";
 		query += "    WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
-		query += "      T0.role & 1 != 0 AND\n";
-		query += "      (T0.block = T1.block OR\n";
-		query += "       (T0.block != T0.block & ~(V.n-1) AND\n";
-		query += "        T1.block = ((T0.block & ~(V.n-1)) | V.n)))";
+		query += "      T" + a0 + ".role & 1 != 0 AND\n";
+		query += "      (T" + a0 + ".block = T" + a1 + ".block OR\n";
+		query += "       (T" + a0 + ".block != T" + a0 + ".block & ~(V.n-1) AND\n";
+		query += "        T" + a1 + ".block = ((T" + a0 + ".block & ~(V.n-1)) | V.n)))";
 		return query;
 	}
 
-	private String toBTSQL2(Integer[] args, Config config) {
-		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, args);
+	private String toBTSQL2(Integer[] vals, Config config) {
+		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 
 		String query = "WITH \n";
-		query += "  possible AS (\n" + toBTSQL2Approx(args, config) + "),\n";
+		query += "  possible AS (\n" + toBTSQL2Approx(vals, config) + "),\n";
 		query += "  posGids AS (SELECT DISTINCT v" + a1 + " FROM possible),\n";
-		query += "  allBlocks AS (SELECT DISTINCT block FROM " + config.btTableName + " WHERE gid = " + args[a0] + " AND role & 1 != 0),\n";
+		query += "  allBlocks AS (SELECT DISTINCT block FROM " + config.btTableName + " WHERE gid = " + vals[a0] + " AND role & 1 != 0),\n";
 		query += "  rem AS (\n";
 		query += "        SELECT DISTINCT v" + a1 + "\n";
 		query += "        FROM posGids AS Pos,\n";
 		query += "             allBlocks AS AB\n";
 		query += "        WHERE (Pos.v" + a1 + ", AB.block) NOT IN (SELECT * FROM possible))\n";
-		query += "SELECT DISTINCT " + args[a0] + " AS v" + a0 + ", P.v" + a1 + "\n";
+		query += "SELECT DISTINCT " + vals[a0] + " AS v" + a0 + ", P.v" + a1 + "\n";
 		query += "FROM posGids AS P LEFT OUTER JOIN rem AS R ON (P.v" + a1 + " = R.v" + a1 + ")\n";
 		query += "WHERE R.v" + a1 + " IS NULL";
 		return query;
 	}
 
-	public String toGeoSQL(Integer[] args, Config config) {
-		String[] selFroWhe = makeSelectFromWhereParts(config.geoTableName, config.uriColumn, args);
+	public String toGeoSQL(Integer[] vals, Config config) {
+		String[] selFroWhe = makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
 		String query = "SELECT " + selFroWhe[0] + "\n";
 		query += "FROM " + selFroWhe[1] + "\n";
 		query += "WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND ";
-		query += "ST_coveredBy(T0.geom, T1.geom);";
+		query += "ST_coveredBy(T" + a0 + ".geom, T" + a1 + ".geom);";
 		return query;
 	}
 

@@ -15,22 +15,25 @@ import no.uio.ifi.qure.space.*;
 
 public class Overlaps extends AtomicRelation {
 
-	private Map<Integer, Integer> argRole;
+	private final Map<Integer, Integer> argRole;
+	private final int[] args;
 
 	public Overlaps(int r, int a) {
 		argRole= new HashMap<Integer, Integer>();
 		argRole.put(a, r);
+		args = new int[]{a};
 	}
 
-	public Overlaps(int r1, int r2, int a1, int a2) {
+	public Overlaps(int r0, int r1, int a0, int a1) {
 
 		argRole= new HashMap<Integer, Integer>();
-		if (a1 == a2) {
-    		argRole.put(a1, (r1 | r2));
+		if (a0 == a1) {
+    		argRole.put(a0, (r0 | r1));
 		} else {
-        	argRole.put(a1, r1);
-    		argRole.put(a2, r2);
+        	argRole.put(a0, r0);
+    		argRole.put(a1, r1);
     	}		
+		args = new int[]{a0, a1};
 	}
 
 	public Overlaps(int[] rs, int[] as) {
@@ -42,27 +45,31 @@ public class Overlaps extends AtomicRelation {
 		for (int i = 0; i < as.length; i++) {
 			argRole.put(as[i], argRole.get(as[i]) | rs[i]);
 		}
+		args = as;
 	}
 
 	public Overlaps(Map<Integer, Integer> argRole) {
 		this.argRole = argRole;
+		args = new int[argRole.keySet().size()];
+		int i = 0;
+		for (Integer k : argRole.keySet()) args[i++] = k;
 	}
 
 	public boolean relatesArg(int arg) {
 		return argRole.containsKey(arg);
 	}
 		
-	public String toGeoSQL(Integer[] args, Config config) { //TODO
+	public String toGeoSQL(Integer[] vals, Config config) { //TODO
 		if (getArity() == 2) {
-			return toGeoSQL2(args, config);
+			return toGeoSQL2(vals, config);
 		} else {
 			return ""; // Base query on implied Overlaps of lower arity
 		}
 	}
 
-	private String toGeoSQL2(Integer[] args, Config config) {
+	private String toGeoSQL2(Integer[] vals, Config config) {
 
-		String[] sfw = makeSelectFromWhereParts(config.geoTableName, config.uriColumn, args);
+		String[] sfw = makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
 		String query = "SELECT " + sfw[0] + "\n";
 		query += "FROM " + sfw[1] + "\n";
 		query += "WHERE ";
@@ -71,16 +78,24 @@ public class Overlaps extends AtomicRelation {
 		return query;
 	}
 
-	public String toBTSQL(Integer[] args, Config config) { //TODO
+	public String toBTSQL(Integer[] vals, Config config) { //TODO
 		if (getArity() == 2) {
-			return toBTSQL2(args, config);
+			return toBTSQL2(vals, config);
 		} else {
 			return null; // Base query on implied Overlaps of lower arity
 		}
 	}
 
-	private String toBTSQL2(Integer[] args, Config config) {
-		String[] sfw = makeSelectFromWhereParts(config.btTableName, config.uriColumn, args);
+	private String makeBlockOverlapsWhere(String table0, String table1) {
+		String query = "";
+		query += " ((" + table1 + ".block >= (" + table0 + ".block & (" + table0 + ".block-1)) AND \n";
+        query += "   " + table1 + ".block <= (" + table0 + ".block | (" + table0 + ".block-1))) OR \n";
+		query += "  " + table1 + ".block = ((" + table0 + ".block & ~(V.n-1)) | V.n))";
+		return query;
+	}
+
+	private String toBTSQL2(Integer[] vals, Config config) {
+		String[] sfw = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		
 		String from = sfw[1] + ",\n";
 	    from += "(" + makeValuesFrom(config) + ") AS V(n)";
@@ -89,14 +104,15 @@ public class Overlaps extends AtomicRelation {
 		query += " FROM " + from + "\n";
 		query += " WHERE ";
 		if (!sfw[2].equals("")) query += sfw[2] + " AND \n";
-		if (args[0] != null) {
-			query += " ((T1.block >= (T0.block & (T0.block-1)) AND \n";
-	        query += "   T1.block <= (T0.block | (T0.block-1))) OR \n";
-			query += "  T1.block = ((T0.block & ~(V.n-1)) | V.n)); ";
+		for (int i = 0; i < args.length; i++) {
+			if (argRole.get(args[i]) != 0) {
+				query += "T" + args[i] + ".role & " + argRole.get(args[i]) + " != 0 AND\n";
+			}
+		}
+		if (vals[0] != null) {
+			query += makeBlockOverlapsWhere("T" + args[1], "T" + args[0]) + ";";
 		} else {
-			query += " ((T0.block >= (T1.block & (T1.block-1)) AND \n";
-	        query += "   T0.block <= (T1.block | (T1.block-1))) OR \n";
-			query += "  T0.block = ((T1.block & ~(V.n-1)) | V.n)); ";
+			query += makeBlockOverlapsWhere("T" + args[0], "T" + args[1]) + ";";
 		}
 		return query;
 	}

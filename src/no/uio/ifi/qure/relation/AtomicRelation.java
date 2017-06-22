@@ -47,15 +47,15 @@ public abstract class AtomicRelation extends Relation {
 		return sids;
 	}
 
-	public String[] makeSelectFromWhereParts(String tableName, String uriColumn, Integer[] args) {
+	public String[] makeSelectFromWhereParts(String tableName, String uriColumn, Integer[] vals) {
 		String select = "", from = "", where = "", sepSelFro = "", sepWhere = "";
-		for (int i = 0; i < args.length; i++) {
+		for (int i = 0; i < vals.length; i++) {
 			if (relatesArg(i)) {
 				select += sepSelFro + "T" + i + "." + uriColumn + " AS " + "v" + i;
 				from += sepSelFro + tableName + " AS T" + i;
 				sepSelFro = ", ";
-				if (args[i] != null) {
-					where += sepWhere + "T" + i + "." + uriColumn + " = " + args[i];
+				if (vals[i] != null) {
+					where += sepWhere + "T" + i + "." + uriColumn + " = " + vals[i];
 					sepWhere = " AND ";
 				}
 			}
