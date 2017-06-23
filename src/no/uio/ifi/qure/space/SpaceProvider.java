@@ -45,6 +45,8 @@ public interface SpaceProvider {
 
 	public void populateWithExternalOverlapping();
 
+	public String toSQL(AtomicRelation rel, Integer[] vals, Config config);
+
 	public default List<Space> toSpaces(List<SID> tuple) {
 		List<Space> sps = new ArrayList<Space>(tuple.size());
 		for (SID s : tuple) {

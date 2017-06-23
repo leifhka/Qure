@@ -203,4 +203,8 @@ public class TimeProvider implements SpaceProvider {
 
 		return result;
 	}
+
+	public String toSQL(AtomicRelation rel, Integer[] vals, Config config) {
+		return null;
+	}
 }

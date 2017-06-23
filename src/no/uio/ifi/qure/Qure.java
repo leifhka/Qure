@@ -30,11 +30,14 @@ public class Qure {
 	private static PreparedStatement preparedStatement = null;
 	private static ResultSet resultSet = null;
 
+	private static SpaceProvider geometries;
+
 	private static Map<String, Long> times = new HashMap<String, Long>();
 
 	public static void main(String[] args) {
 
 		Config config = new Config("tiny", "sbq", 4, 1, 10);
+		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		checkCorrectness(config);
 
 		ArrayList<Config> rfs = new ArrayList<Config>();
@@ -167,7 +170,7 @@ public class Qure {
 
 		if (config.verbose) printConfig(config);
 
-		SpaceProvider geometries = new no.uio.ifi.qure.space.GeometryProvider(config, new DBDataProvider(config));
+		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		geometries.populateBulk();
 		SpaceToBintree gtb = new SpaceToBintree(config);
 
@@ -667,7 +670,7 @@ public class Qure {
 					Integer[] args = new Integer[rel.getArity()];
 					args[i] = id;
 					String btQ = rel.toBTSQL(args, config);
-					String geoQ = rel.toGeoSQL(args, config);
+					String geoQ = rel.toGeoSQL(args, config, geometries);
 					if (btQ == null || geoQ == null) continue;
 					Set<List<Integer>> btRes = runQuery(btQ, config);
 					Set<List<Integer>> geoRes = runQuery(geoQ, config);

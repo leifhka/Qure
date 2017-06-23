@@ -33,6 +33,14 @@ public class PartOf extends AtomicRelation {
 		return res;
 	}
 
+	public int getArg(int a) {
+		if (a == 0) {
+			return a0;
+		} else {
+			return a1;
+		}
+	}
+
 	public Integer getArgRole(Integer pos) { return (pos.equals(a0)) ? r0 : r1; }
 
 	public boolean relatesArg(int arg) {
@@ -57,7 +65,8 @@ public class PartOf extends AtomicRelation {
 		query += "    FROM " + selFroWhe[1] + "\n";
 		query += "    WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
-		query += "      T" + a0 + ".role % 2 != 0 AND\n";
+		query += "      T" + a0 + ".role & " + (1 | r0) + " != 0 AND\n";
+		if (r1 != 0) query += "      T" + a1 + ".role & " + r1 + " != 0 AND\n";
 		query += "      T" + a0 + ".block > (T" + a1 + ".block & (T" + a1 + ".block-1)) AND\n";
 		query += "      T" + a0 + ".block <= (T" + a1 + ".block | (T" + a1 + ".block-1))";
 		return query;
@@ -73,7 +82,7 @@ public class PartOf extends AtomicRelation {
 		query += "   SELECT DISTINCT v" + a0 + ", v" + a1 + "\n";
 		query += "   FROM (SELECT DISTINCT " + selFroWhe[0] + ", T" + a0 + ".block\n";
 		query += "         FROM " + selFroWhe[1] + ", posGids AS Pos\n";
-		query += "         WHERE T" + a0 + ".role & 1 != 0 AND Pos.v" + a0 + " = T" + a0 + ".gid) AS AllBlocks\n";
+		query += "         WHERE T" + a0 + ".role & " + (1 | r0) + " != 0 AND Pos.v" + a0 + " = T" + a0 + ".gid) AS AllBlocks\n";
 		query += "     LEFT OUTER JOIN posBlocks Approx ON (AllBlocks.block = Approx.block)\n";
 		query += "   WHERE Approx.block IS NULL)\n";
 
@@ -90,7 +99,8 @@ public class PartOf extends AtomicRelation {
 		query += "         (" + makeValuesFrom(config) + ") AS V(n)\n";
 		query += "    WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
-		query += "      T" + a0 + ".role & 1 != 0 AND\n";
+		query += "      T" + a0 + ".role & " + (1 | r0) + " != 0 AND\n";
+		if (r1 != 0) query += "      T" + a1 + ".role & " + r1 + " != 0 AND\n";
 		query += "      (T" + a0 + ".block = T" + a1 + ".block OR\n";
 		query += "       (T" + a0 + ".block != T" + a0 + ".block & ~(V.n-1) AND\n";
 		query += "        T" + a1 + ".block = ((T" + a0 + ".block & ~(V.n-1)) | V.n)))";
@@ -103,7 +113,7 @@ public class PartOf extends AtomicRelation {
 		String query = "WITH \n";
 		query += "  possible AS (\n" + toBTSQL2Approx(vals, config) + "),\n";
 		query += "  posGids AS (SELECT DISTINCT v" + a1 + " FROM possible),\n";
-		query += "  allBlocks AS (SELECT DISTINCT block FROM " + config.btTableName + " WHERE gid = " + vals[a0] + " AND role & 1 != 0),\n";
+		query += "  allBlocks AS (SELECT DISTINCT block FROM " + config.btTableName + " WHERE gid = " + vals[a0] + " AND role & " + (1 | r0) + " != 0),\n";
 		query += "  rem AS (\n";
 		query += "        SELECT DISTINCT v" + a1 + "\n";
 		query += "        FROM posGids AS Pos,\n";
@@ -115,14 +125,8 @@ public class PartOf extends AtomicRelation {
 		return query;
 	}
 
-	public String toGeoSQL(Integer[] vals, Config config) {
-		String[] selFroWhe = makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
-		String query = "SELECT " + selFroWhe[0] + "\n";
-		query += "FROM " + selFroWhe[1] + "\n";
-		query += "WHERE ";
-		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND ";
-		query += "ST_coveredBy(T" + a0 + ".geom, T" + a1 + ".geom);";
-		return query;
+	public String toGeoSQL(Integer[] vals, Config config, SpaceProvider sp) {
+		return sp.toSQL(this, vals, config);
 	}
 
 	public boolean isIntrinsic(SID[] tuple) {

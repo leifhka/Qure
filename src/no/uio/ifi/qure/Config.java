@@ -27,8 +27,8 @@ public class Config {
 	public double minRatio = 0.9;
 	public int maxSplits = 7;
 
-	public RelationSet relationSet = RelationSet.getSimple(3);
-	//public RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
+	//public RelationSet relationSet = RelationSet.getSimple(3);
+	public RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
  
 	public Config(String table, String suff, int representationDepth, 
 				  int blockMemberCount, int maxSplits) {
@@ -62,7 +62,7 @@ public class Config {
 	};
 
 	public int blockSize = 31;
-	public boolean compactBlocks = true;
+	public boolean compactBlocks = false;
 	public String dbName = "test";
 	public String dbPWD = "test";
 	public String dbUsername = "leifhka";

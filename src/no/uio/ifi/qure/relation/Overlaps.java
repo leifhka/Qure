@@ -59,25 +59,6 @@ public class Overlaps extends AtomicRelation {
 		return argRole.containsKey(arg);
 	}
 		
-	public String toGeoSQL(Integer[] vals, Config config) { //TODO
-		if (getArity() == 2) {
-			return toGeoSQL2(vals, config);
-		} else {
-			return ""; // Base query on implied Overlaps of lower arity
-		}
-	}
-
-	private String toGeoSQL2(Integer[] vals, Config config) {
-
-		String[] sfw = makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
-		String query = "SELECT " + sfw[0] + "\n";
-		query += "FROM " + sfw[1] + "\n";
-		query += "WHERE ";
-		if (!sfw[2].equals("")) query += sfw[2] + " AND\n";
-		query += "ST_intersects(T0.geom, T1.geom);";
-		return query;
-	}
-
 	public String toBTSQL(Integer[] vals, Config config) { //TODO
 		if (getArity() == 2) {
 			return toBTSQL2(vals, config);
@@ -110,11 +91,15 @@ public class Overlaps extends AtomicRelation {
 			}
 		}
 		if (vals[0] != null) {
-			query += makeBlockOverlapsWhere("T" + args[1], "T" + args[0]) + ";";
+			query += makeBlockOverlapsWhere("T" + args[1], "T" + args[0]);
 		} else {
-			query += makeBlockOverlapsWhere("T" + args[0], "T" + args[1]) + ";";
+			query += makeBlockOverlapsWhere("T" + args[0], "T" + args[1]);
 		}
 		return query;
+	}
+
+	public String toGeoSQL(Integer[] vals, Config config, SpaceProvider sp) {
+		return sp.toSQL(this, vals, config);
 	}
 
 	public String toString() {

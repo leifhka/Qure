@@ -44,60 +44,12 @@ public class Before extends AtomicRelation {
 		return "bf(<" + r1 + "," + a1 + ">, <" + r2 + "," + a2 + ">)";
 	}
 
-	public String toBTSQL(Integer[] args, Config config) {
-		if (args[0] == null && args[1] == null) {
-			return toBTSQLBoth(config);
-		} else if (args[0] == null) {
-			return toBTSQL1(args[1], config);
-		} else if (args[1] == null) {
-			return toBTSQL2(args[0], config);
-		} else {
-			return toBTSQLNone(args, config);
-		}
+	public String toBTSQL(Integer[] vals, Config config) { //TODO
+		return null;
 	}
 
-	private String toBTSQL1(int gid, Config config) {
-		return null; // TODO
-	}
-
-	private String toBTSQL2(int gid, Config config) {
-		return null; // TODO
-	}
-
-	private String toBTSQLBoth(Config config) {
-		return null; // TODO
-	}
-
-	private String toBTSQLNone(Integer[] agrs, Config config) {
-		return null; // TODO
-	}
-
-	public String toGeoSQL(Integer[] args, Config config) {
-		if (args[0] == null && args[1] == null) {
-			return toGeoSQLBoth(config);
-		} else if (args[0] == null) {
-			return toGeoSQL1(args[1], config);
-		} else if (args[1] == null) {
-			return toGeoSQL2(args[0], config);
-		} else {
-			return toGeoSQLNone(args, config);
-		}
-	}
-
-	private String toGeoSQL1(int gid, Config config) {
-		return null; // TODO
-	}
-
-	private String toGeoSQL2(int gid, Config config) {
-		return null; // TODO
-	}
-
-	private String toGeoSQLBoth(Config config) {
-		return null; // TODO
-	}
-
-	private String toGeoSQLNone(Integer[] agrs, Config config) {
-		return null; // TODO
+	public String toGeoSQL(Integer[] vals, Config config, SpaceProvider sp) {
+		return sp.toSQL(this, vals, config);
 	}
 
 	public boolean isValid() {

@@ -253,4 +253,44 @@ public class GeometryProvider implements SpaceProvider {
 		}
 		return result;
 	}
+
+	public String toSQL(AtomicRelation rel, Integer[] vals, Config config) {
+		if (rel instanceof Overlaps) {
+			return toSQLOV((Overlaps) rel, vals, config);
+		} else if (rel instanceof PartOf) {
+			return toSQLPO((PartOf) rel, vals, config);
+		} else {
+			return null; // Before does not make sense for geometries
+		}
+	}
+
+	private String toSQLOV(Overlaps rel, Integer[] vals, Config config) { //TODO
+		if (rel.getArity() == 2) {
+			return toSQLOV2(rel, vals, config);
+		} else {
+			return null; // Base query on implied Overlaps of lower arity
+		}
+	}
+
+	private String toSQLOV2(Overlaps rel, Integer[] vals, Config config) {
+
+		String[] sfw = rel.makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
+		String query = "SELECT " + sfw[0] + "\n";
+		query += "FROM " + sfw[1] + "\n";
+		query += "WHERE ";
+		if (!sfw[2].equals("")) query += sfw[2] + " AND\n";
+		query += "ST_intersects(T0.geom, T1.geom)";
+		return query;
+	}
+
+	private String toSQLPO(PartOf rel, Integer[] vals, Config config) {
+		String[] selFroWhe = rel.makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
+		String query = "SELECT " + selFroWhe[0] + "\n";
+		query += "FROM " + selFroWhe[1] + "\n";
+		query += "WHERE ";
+		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND ";
+		query += "ST_coveredBy(T" + rel.getArg(0) + ".geom, T" + rel.getArg(1) + ".geom)";
+		return query;
+	}
+
 }
