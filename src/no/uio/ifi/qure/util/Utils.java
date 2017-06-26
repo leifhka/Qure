@@ -1,13 +1,6 @@
 package no.uio.ifi.qure.util;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Iterator;
+import java.util.*;
 
 import no.uio.ifi.qure.space.Space;
 import no.uio.ifi.qure.traversal.SID;
@@ -217,8 +210,7 @@ public class Utils {
 		return new Pair<T, Set<T>>(some, ns);
 	}
 
-	public static <T> T getOnlySome(Set<T> s) {
-		Set<T> ns = new HashSet<T>();
+	public static <T> T unpackSingleton(Collection<T> s) {
 		Iterator<T> iter = s.iterator();
 
 		if (!iter.hasNext()) {

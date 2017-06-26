@@ -144,7 +144,7 @@ public class PartOf extends AtomicRelation {
 		if (r instanceof Overlaps) {
 			Overlaps ovr = (Overlaps) r;
 			if (ovr.getArity() == 1) {
-				Integer oRole = Utils.getOnlySome(ovr.getRoles());
+				Integer oRole = Utils.unpackSingleton(ovr.getRoles());
 				if (stricterRole(r0, oRole)) {
 					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
 					unifier.put(a0, 0);

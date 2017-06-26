@@ -133,6 +133,8 @@ public class Overlaps extends AtomicRelation {
 
 	public Set<Integer> getArguments() { return argRole.keySet(); }
 
+	public Set<Integer> getRoles() { return new HashSet<Integer>(argRole.values()); }
+
 	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
 
 		if (!(r instanceof Overlaps)) {
@@ -246,10 +248,6 @@ public class Overlaps extends AtomicRelation {
 		return rels;
 	}
 
-	public Set<Integer> getRoles() {
-		return new HashSet<Integer>(argRole.values());
-	}
-
 	private Map<Integer, Set<SID>> getRoleToSID(Set<SID> tuple) {
 		Map<Integer, Set<SID>> roleToSID = new HashMap<Integer, Set<SID>>();
 		for (Integer role : getRoles()) {
@@ -303,10 +301,10 @@ public class Overlaps extends AtomicRelation {
 	public Table evalAll(SpaceProvider spaces) {
 		// Must be a unary role-relation
 		Table table = new Table(this);
-		Integer role = argRole.get(Utils.getOnlySome(argRole.keySet()));
+		Integer role = Utils.unpackSingleton(argRole.values());
 
 		for (SID sid : spaces.keySet()) {
-			if (role.equals(sid.getRole())) {
+			if (strictnessRelated(role, sid.getRole())) {
 				SID[] tuple = new SID[1];
 				tuple[0] = sid;
 				table.addTuple(tuple);
@@ -320,7 +318,7 @@ public class Overlaps extends AtomicRelation {
 
 		for (SID[] tuple : possible.getTuples()) {
 			if (getArity() == 1) {
-				if (spaces.get(tuple[0]) != null) {
+				if (strictnessRelated(tuple[0].getRole(), Utils.unpackSingleton(argRole.values()))) {
 					table.addTuple(tuple);
 				}
 			} else if (eval(toSpaces(tuple, spaces))) {
