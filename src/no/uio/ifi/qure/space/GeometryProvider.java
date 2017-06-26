@@ -279,15 +279,17 @@ public class GeometryProvider implements SpaceProvider {
 		query += "FROM " + sfw[1] + "\n";
 		query += "WHERE ";
 		if (!sfw[2].equals("")) query += sfw[2] + " AND\n";
+
 		Set<Integer> roles = rel.getRoles();
 		if (roles.size() > 1) return null; // Does not make sense for geometries (yet)
 		Integer role = Utils.unpackSingleton(roles);
+
 		if (role == 0) {
 			query += "ST_intersects(T0.geom, T1.geom)";
 		} else if (role == GeometrySpace.INTERIOR) {
-			query += "ST_crosses(T0.geom, T1.geom)"; // TODO: Not quite correct (in general, also inefficient)
+			query += "ST_intersects(T0.geom, T1.geom) AND NOT ST_touches(T0.geom, T1.geom)"; // TODO: Not efficient (in general)
 		} else if (role == GeometrySpace.BOUNDARY) {
-			query += "ST_touches(T0.geom, T1.geom)";
+			query += "ST_intersects(ST_boundary(T0.geom), ST_boundary(T1.geom))"; // TODO: Not efficient (in general)
 		} else {
 			return null; // Undefined role, maybe throw exception here (TODO)
 		}
