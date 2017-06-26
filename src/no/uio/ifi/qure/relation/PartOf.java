@@ -206,7 +206,7 @@ public class PartOf extends AtomicRelation {
     	return spaceArgs[a0].partOf(spaceArgs[a1]);
 	}
 
-	public Set<AtomicRelation> getAtomicRelations() {
+	public Set<AtomicRelation> getNormalizedAtomicRelations() {
 
 		Set<AtomicRelation> rels = new HashSet<AtomicRelation>();
 		if (a0 == a1) {
@@ -251,6 +251,4 @@ public class PartOf extends AtomicRelation {
 		res[1] = tuple[0];
 		return res;
 	}
-
-	public boolean isConjunctive(boolean insideNgeation) { return true; }
 }

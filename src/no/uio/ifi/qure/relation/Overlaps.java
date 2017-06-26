@@ -226,7 +226,7 @@ public class Overlaps extends AtomicRelation {
 		return sm.fst.overlaps(sm.snd);
 	}
 
-	public Set<AtomicRelation> getAtomicRelations() {
+	public Set<AtomicRelation> getNormalizedAtomicRelations() {
 
 		Map<Integer, Integer> argNormMap = new HashMap<Integer, Integer>();
 		int i = 0;
@@ -329,7 +329,5 @@ public class Overlaps extends AtomicRelation {
 		}
     	return table;
 	}
-
-	public boolean isConjunctive(boolean insideNgeation) { return true; }
 }
 

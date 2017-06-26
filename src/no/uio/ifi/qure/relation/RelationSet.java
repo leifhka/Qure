@@ -59,7 +59,7 @@ public class RelationSet {
 		highestArity = 0;
 
 		for (Relation r : relations) {
-			for (AtomicRelation a : r.getAtomicRelations()) {
+			for (AtomicRelation a : r.getNormalizedAtomicRelations()) {
 				atomicRels.add(a);
 				for (Integer role : a.getRoles()) {
 					roles.add(role);

@@ -31,6 +31,16 @@ public abstract class AtomicRelation extends Relation {
 
 	public abstract boolean relatesArg(int arg);
 
+	public Set<AtomicRelation> getPositiveAtomicRelations() {
+		Set<AtomicRelation> r = new HashSet<AtomicRelation>();
+		r.add(this);
+		return r;
+	}
+
+	public Set<AtomicRelation> getNegativeAtomicRelations() {
+		return new HashSet<AtomicRelation>();
+	}
+
 	public Space[] toSpaces(SID[] args, SpaceProvider spaces) {
 		Space[] sps = new Space[args.length];
 		for (int i = 0; i < sps.length; i++) {

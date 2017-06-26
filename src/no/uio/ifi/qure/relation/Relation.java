@@ -15,29 +15,91 @@ import no.uio.ifi.qure.space.*;
 
 public abstract class Relation {
 
-	public abstract String toBTSQL(Integer[] vals, Config config);
-
-	public abstract String toGeoSQL(Integer[] vals, Config config, SpaceProvider sp);
-
 	public abstract boolean eval(Space[] args);
 
-	public abstract Set<AtomicRelation> getAtomicRelations();
+	public abstract Set<AtomicRelation> getNormalizedAtomicRelations();
 
+	public abstract Set<AtomicRelation> getPositiveAtomicRelations();
+
+	public abstract Set<AtomicRelation> getNegativeAtomicRelations();
+	
 	public abstract Set<Integer> getRoles();
 
 	public abstract Set<Integer> getArguments();
-
-	public int getArity() {
-		return getArguments().size();
-	}
-
-	public abstract boolean isConjunctive(boolean insideNgeation);
 
 	@Override
 	public abstract boolean equals(Object o);
 
 	@Override
 	public abstract int hashCode();
+
+	private String makeIdentityRelation(String table, String column) {
+		String sel = "SELECT ";
+		String from = " FROM ";
+		String del = "";
+		for (int i = 0; i < getArity(); i++) {
+			sel += del + "T" + i + "." + column + " AS v" + i;
+			from += del + table + " AS T" + i;
+			del = ", ";
+		}
+		return sel + from;
+	}
+
+	public String toBTSQL(Integer[] vals, Config config) {
+		Set<AtomicRelation> ps = getPositiveAtomicRelations();
+		Set<AtomicRelation> ns = getNegativeAtomicRelations();
+
+		String query;
+		if (ps.isEmpty()) {
+			query = makeIdentityRelation(config.btTableName, config.uriColumn);
+		} else {
+			query = "SELECT * FROM ";
+			String del = "";
+			int i = 0;
+			for (AtomicRelation ar : ps) {
+				query += del + "(" + ar.toBTSQL(vals, config) + ") AS T" + i;
+				i++;
+				del = " NATURAL JOIN ";
+			}
+		}
+
+		if (!ns.isEmpty()) {
+			for (AtomicRelation ar : ns) {
+				query = "(" + query + ") EXCEPT (" + ar.toBTSQL(vals, config) + ")";
+			}
+		}
+		return query;
+	}
+
+	public String toGeoSQL(Integer[] vals, Config config, SpaceProvider spaces) {
+		Set<AtomicRelation> ps = getPositiveAtomicRelations();
+		Set<AtomicRelation> ns = getNegativeAtomicRelations();
+
+		String query;
+		if (ps.isEmpty()) {
+			query = makeIdentityRelation(config.geoTableName, config.uriColumn);
+		} else {
+			query = "SELECT * FROM ";
+			String del = "";
+			int i = 0;
+			for (AtomicRelation ar : ps) {
+				query += del + "(" + ar.toGeoSQL(vals, config, spaces) + ") AS T" + i;
+				i++;
+				del = " NATURAL JOIN ";
+			}
+		}
+
+		if (!ns.isEmpty()) {
+			for (AtomicRelation ar : ns) {
+				query = "(" + query + ") EXCEPT (" + ar.toGeoSQL(vals, config, spaces) + ")";
+			}
+		}
+		return query;
+	}
+
+	public int getArity() {
+		return getArguments().size();
+	}
 
 	public boolean eval(Space s1, Space s2) {
 		Space[] l = new Space[2];
@@ -46,20 +108,17 @@ public abstract class Relation {
 		return eval(l);
 	}
 
-	public static Relation overlaps(int r1, int r2, int a1, int a2) { return new Overlaps(r1, r2, a1, a2); }
+	public static AtomicRelation overlaps(int r1, int r2, int a1, int a2) { return new Overlaps(r1, r2, a1, a2); }
 
-	public static Relation overlaps(int[] rs, int[] as) { return new Overlaps(rs, as); }
+	public static AtomicRelation overlaps(int[] rs, int[] as) { return new Overlaps(rs, as); }
 
-	public static Relation partOf(int r1, int r2, int a1, int a2) { return new PartOf(r1, r2, a1, a2); }
+	public static AtomicRelation partOf(int r1, int r2, int a1, int a2) { return new PartOf(r1, r2, a1, a2); }
 
-	public static Relation before(int r1, int r2, int a1, int a2) { return new Before(r1, r2, a1, a2); }
+	public static AtomicRelation before(int r1, int r2, int a1, int a2) { return new Before(r1, r2, a1, a2); }
 
 	public Relation and(Relation o) { return new And(this, o); }
 
-	public static Relation not(Relation o) { return new Not(o); }
-
-	public boolean isConjunctive() { return isConjunctive(false); }
-
+	public static Relation not(AtomicRelation o) { return new Not(o); }
 
 	public static boolean stricterRole(int i, int j) {
 		return (i & j) == j;
@@ -106,36 +165,20 @@ class And extends Relation {
 		return conj1.toString() + " /\\ " + conj2.toString();
 	}
 
-	public String toBTSQL(Integer[] vals, Config config) {
-		if (conj1 instanceof Not && conj2 instanceof Not) {
-			return null;
-		} else if (conj1 instanceof Not) {
-			return "(" + conj2.toBTSQL(vals, config) + ") EXCEPT (" + ((Not) conj1).getInnerRelation().toBTSQL(vals, config) + ")";
-		} else if (conj2 instanceof Not) {
-			return "(" + conj1.toBTSQL(vals, config) + ") EXCEPT (" + ((Not) conj2).getInnerRelation().toBTSQL(vals, config) + ")";
-		} else {
-			return "(SELECT * FROM (" + conj1.toBTSQL(vals, config) + ") T0 NATURAL JOIN (" + conj2.toBTSQL(vals, config) + ") T1)";
-		}
-	}
-
-	public String toGeoSQL(Integer[] vals, Config config, SpaceProvider sp) {
-		if (conj1 instanceof Not && conj2 instanceof Not) {
-			return "((" + conj1.toGeoSQL(vals, config, sp) + ") EXCEPT ( " + ((Not) conj2).getInnerRelation().toGeoSQL(vals, config, sp) + "))";
-		} else if (conj1 instanceof Not) {
-			return "((" + conj2.toGeoSQL(vals, config, sp) + ") EXCEPT (" + ((Not) conj1).getInnerRelation().toGeoSQL(vals, config, sp) + "))";
-		} else if (conj2 instanceof Not) {
-			return "((" + conj1.toGeoSQL(vals, config, sp) + ") EXCEPT (" + ((Not) conj2).getInnerRelation().toGeoSQL(vals, config, sp) + "))";
-		} else {
-			return "(SELECT * FROM (" + conj1.toGeoSQL(vals, config, sp) + ") T0 NATURAL JOIN (" + conj2.toGeoSQL(vals, config, sp) + ") T1)";
-		}
-	}
-
 	public boolean eval(Space[] args) {
 		return conj1.eval(args) && conj2.eval(args);
 	}
 
-	public Set<AtomicRelation> getAtomicRelations() {
-		return Utils.union(conj1.getAtomicRelations(), conj2.getAtomicRelations());
+	public Set<AtomicRelation> getNormalizedAtomicRelations() {
+		return Utils.union(conj1.getNormalizedAtomicRelations(), conj2.getNormalizedAtomicRelations());
+	}
+
+	public Set<AtomicRelation> getPositiveAtomicRelations() {
+		return Utils.union(conj1.getPositiveAtomicRelations(), conj2.getPositiveAtomicRelations());
+	}
+
+	public Set<AtomicRelation> getNegativeAtomicRelations() {
+		return Utils.union(conj1.getNegativeAtomicRelations(), conj2.getNegativeAtomicRelations());
 	}
 
 	public Set<Integer> getRoles() {
@@ -145,21 +188,15 @@ class And extends Relation {
 	public Set<Integer> getArguments() {
 		return Utils.union(conj1.getArguments(), conj2.getArguments());
 	}
-
-	public boolean isConjunctive(boolean insideNgeation) {
-		return conj1.isConjunctive(insideNgeation) && conj2.isConjunctive(insideNgeation);
-	}
 }
 
 class Not extends Relation {
 
-	private Relation rel;
+	private AtomicRelation rel;
 
-	public Not(Relation rel) {
+	public Not(AtomicRelation rel) {
 		this.rel = rel;
 	}
-
-	public Relation getInnerRelation() { return rel; }
 
 	@Override
 	public boolean equals(Object o) {
@@ -178,37 +215,23 @@ class Not extends Relation {
 		return "~" + rel.toString();
 	}
 
-	public String toBTSQL(Integer[] vals, Config config) {
-		String sel = "";
-		String from = "";
-		String sep = "";
-		for (int i = 0; i < vals.length; i++) {
-			sel += sep + "T" + i + "." + config.uriColumn + " AS v" + i;
-			from += sep + config.btTableName + " AS T" + i;
-			sep = ", ";
-		}
-		return "(SELECT " + sel + " FROM " + from + ") EXCEPT (" + rel.toBTSQL(vals, config) + ")";
-	}
-
-	public String toGeoSQL(Integer[] vals, Config config, SpaceProvider sp) {
-		String sel = "";
-		String from = "";
-		String sep = "";
-		for (int i = 0; i < vals.length; i++) {
-			sel += sep + "T" + i + "." + config.uriColumn + " AS v" + i;
-			from += sep + config.geoTableName + " AS T" + i;
-			sep = ", ";
-		}
-		return "(SELECT " + sel + " FROM " + from + ") EXCEPT (" + rel.toGeoSQL(vals, config, sp) + ")";
-	}
-
 	public boolean eval(Space[] args) {
 		return !rel.eval(args);
 	}
 
 
-	public Set<AtomicRelation> getAtomicRelations() {
-		return rel.getAtomicRelations();
+	public Set<AtomicRelation> getNormalizedAtomicRelations() {
+		return rel.getNormalizedAtomicRelations();
+	}
+
+	public Set<AtomicRelation> getPositiveAtomicRelations() {
+		return new HashSet<AtomicRelation>();
+	}
+
+	public Set<AtomicRelation> getNegativeAtomicRelations() {
+		Set<AtomicRelation> r = new HashSet<AtomicRelation>();
+		r.add(rel);
+		return r;
 	}
 
 	public Set<Integer> getRoles() {
@@ -218,13 +241,4 @@ class Not extends Relation {
 	public Set<Integer> getArguments() {
 		return rel.getArguments();
 	}
-
-	public boolean isConjunctive(boolean insideNgeation) {
-		if (insideNgeation)
-			return false;
-		else 
-			return rel.isConjunctive(true);
-	}
 }
-
-

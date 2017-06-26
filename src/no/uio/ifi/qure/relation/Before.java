@@ -95,7 +95,7 @@ public class Before extends AtomicRelation {
     	return spaceArgs[a1].before(spaceArgs[a2]);
 	}
 
-	public Set<AtomicRelation> getAtomicRelations() {
+	public Set<AtomicRelation> getNormalizedAtomicRelations() {
 
 		Set<AtomicRelation> rels = new HashSet<AtomicRelation>();
 		if (a1 == a2) {
@@ -129,7 +129,5 @@ public class Before extends AtomicRelation {
     	}
     	return table;
 	}
-
-	public boolean isConjunctive(boolean insideNgeation) { return true; }
 }
 
