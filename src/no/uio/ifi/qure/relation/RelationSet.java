@@ -66,7 +66,7 @@ public class RelationSet {
 			for (AtomicRelation a : r.getNormalizedAtomicRelations()) {
 				atomicRels.add(a);
 				for (Integer role : a.getRoles()) {
-					roles.add(role);
+					if (role != 0) roles.add(role);
 				}
 				if (a.getArity() > highestArity) {
 					highestArity = a.getArity();
@@ -79,6 +79,7 @@ public class RelationSet {
 		}
 
 		// Add unary role-relations
+		atomicRels.add(new Overlaps(0,0));
 		for (Integer role : roles) {
 			atomicRels.add(new Overlaps(role, 0));
 		}
