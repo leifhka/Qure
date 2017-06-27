@@ -152,7 +152,7 @@ public class GeometrySpace implements Space {
 		if (role == 0) {
 			return this;
 		} else if (role == BOUNDARY) {
-			return new GeometrySpace(geo.getBoundary(), precModel);
+			return new GeometrySpace((new GeometryPrecisionReducer(precModel)).reduce(geo.getBoundary()), precModel);
 		} else if (role == INTERIOR) {
 			// For closed line-strings and points, the boundary is empty, this the interior is this
 			if (geo.getBoundary().isEmpty()) return this;
@@ -171,7 +171,7 @@ public class GeometrySpace implements Space {
 				Geometry dGeo = (new GeometryPrecisionReducer(precModel)).reduce(bGeo); 
 				iGeo = geo.difference(dGeo); 
 			}
-			return new GeometrySpace(iGeo, precModel);
+			return new GeometrySpace((new GeometryPrecisionReducer(precModel)).reduce(iGeo), precModel);
 		} else {
 			// Boundary and interior is disjoint, so we return empty space
 			assert(role == (BOUNDARY | INTERIOR));
