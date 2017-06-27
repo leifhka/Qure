@@ -65,8 +65,8 @@ public class PartOf extends AtomicRelation {
 		query += "    FROM " + selFroWhe[1] + "\n";
 		query += "    WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
-		query += "      T" + a0 + ".role & " + (1 | r0) + " != 0 AND\n";
-		if (r1 != 0) query += "      T" + a1 + ".role & " + r1 + " != 0 AND\n";
+		query += "      T" + a0 + ".role & " + (1 | (r0 << 1)) + " != 0 AND\n";
+		if (r1 != 0) query += "      T" + a1 + ".role & " + (r1 << 1) + " != 0 AND\n";
 		query += "      T" + a0 + ".block > (T" + a1 + ".block & (T" + a1 + ".block-1)) AND\n";
 		query += "      T" + a0 + ".block <= (T" + a1 + ".block | (T" + a1 + ".block-1))";
 		return query;
@@ -82,11 +82,11 @@ public class PartOf extends AtomicRelation {
 		query += "   SELECT DISTINCT v" + a0 + ", v" + a1 + "\n";
 		query += "   FROM (SELECT DISTINCT " + selFroWhe[0] + ", T" + a0 + ".block\n";
 		query += "         FROM " + selFroWhe[1] + ", posGids AS Pos\n";
-		query += "         WHERE T" + a0 + ".role & " + (1 | r0) + " != 0 AND Pos.v" + a0 + " = T" + a0 + ".gid) AS AllBlocks\n";
+		query += "         WHERE T" + a0 + ".role & " + (1 | (r0 << 1)) + " != 0 AND Pos.v" + a0 + " = T" + a0 + ".gid) AS AllBlocks\n";
 		query += "     LEFT OUTER JOIN posBlocks Approx ON (AllBlocks.block = Approx.block)\n";
 		query += "   WHERE Approx.block IS NULL)\n";
 
-		query += "SELECT DISTINCT P.v" + a0 + ", P.v" + a1 + "\n";
+		query += "SELECT DISTINCT P.v" + Math.min(a0,a1) + ", P.v" + Math.max(a0,a1) + "\n";
 		query += "FROM posGids AS P LEFT OUTER JOIN rem AS R ON (P.v" + a0 + " = R.v" + a0 + " AND P.v" + a1 + " = R.v" + a1 + ")\n";
 		query += "WHERE R.v" + a0 + " IS NULL";
 		return query;
@@ -99,8 +99,8 @@ public class PartOf extends AtomicRelation {
 		query += "         (" + makeValuesFrom(config) + ") AS V(n)\n";
 		query += "    WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
-		query += "      T" + a0 + ".role & " + (1 | r0) + " != 0 AND\n";
-		if (r1 != 0) query += "      T" + a1 + ".role & " + r1 + " != 0 AND\n";
+		query += "      T" + a0 + ".role & " + (1 | (r0 << 1)) + " != 0 AND\n";
+		if (r1 != 0) query += "      T" + a1 + ".role & " + (r1 << 1) + " != 0 AND\n";
 		query += "      (T" + a0 + ".block = T" + a1 + ".block OR\n";
 		query += "       (T" + a0 + ".block != T" + a0 + ".block & ~(V.n-1) AND\n";
 		query += "        T" + a1 + ".block = ((T" + a0 + ".block & ~(V.n-1)) | V.n)))";
@@ -119,7 +119,11 @@ public class PartOf extends AtomicRelation {
 		query += "        FROM posGids AS Pos,\n";
 		query += "             allBlocks AS AB\n";
 		query += "        WHERE (Pos.v" + a1 + ", AB.block) NOT IN (SELECT * FROM possible))\n";
-		query += "SELECT DISTINCT " + vals[a0] + " AS v" + a0 + ", P.v" + a1 + "\n";
+		if (a0 < a1) {
+			query += "SELECT DISTINCT " + vals[a0] + " AS v" + a0 + ", P.v" + a1 + "\n";
+		} else {
+			query += "SELECT DISTINCT P.v" + a1 + ", " + vals[a0] + " AS v" + a0 + "\n";
+		}
 		query += "FROM posGids AS P LEFT OUTER JOIN rem AS R ON (P.v" + a1 + " = R.v" + a1 + ")\n";
 		query += "WHERE R.v" + a1 + " IS NULL";
 		return query;

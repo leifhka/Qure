@@ -28,6 +28,10 @@ public class RelationSet {
 	private Map<AtomicRelation, Set<AtomicRelation>> impliedBy;
 	private Map<Pair<AtomicRelation, AtomicRelation>, Set<Map<Integer, Integer>>> unifiers;
 
+	public RelationSet() {
+		relations = new HashSet<Relation>();
+	}
+
 	public RelationSet(Set<Relation> relations) {
 		this.relations = relations;
 		initRolesAndAtomic();
@@ -321,25 +325,69 @@ public class RelationSet {
 
 	public static RelationSet getRCC8(int i, int b) {
 		Set<Relation> rcc8 = new HashSet<Relation>();
-		rcc8.add(not(overlaps(0, 0, 0, 1)));                                                      // DJ
-		rcc8.add(overlaps(0, 0, 0, 1).and(not(overlaps(i, i, 0, 1))));                            // EC
-		rcc8.add(overlaps(i, i, 0, 1).and(not(partOf(0, 0, 0, 1))).and(not(partOf(0, 0, 1, 0)))); // PO
-		rcc8.add(partOf(0, 0, 0, 1).and(partOf(0, 0, 1, 0)));                                     // EQ
-		rcc8.add(partOf(0, 0, 0, 1).and(overlaps(b, b, 0, 1)).and(not(partOf(0, 0, 1, 0))));      // TPP
-		rcc8.add(partOf(0, 0, 0, 1).and(not(overlaps(b, b, 0, 1))));                              // NTPP
+
+		Relation dj = not(overlaps(0, 0, 0, 1));
+		dj.setName("DJ");
+		rcc8.add(dj);
+
+		Relation ec = overlaps(0, 0, 0, 1).and(not(overlaps(i, i, 0, 1)));
+		ec.setName("EC");
+		rcc8.add(ec);
+
+		Relation po = overlaps(i, i, 0, 1).and(not(partOf(0, 0, 0, 1))).and(not(partOf(0, 0, 1, 0)));
+		po.setName("PO");
+		rcc8.add(po);
+
+		Relation eq = partOf(0, 0, 0, 1).and(partOf(0, 0, 1, 0));
+		eq.setName("EQ");
+		rcc8.add(eq);
+
+		Relation tpp = partOf(0, 0, 0, 1).and(overlaps(b, b, 0, 1)).and(not(partOf(0, 0, 1, 0)));
+		tpp.setName("TPP");
+		rcc8.add(tpp);
+
+		Relation ntpp = partOf(0, 0, 0, 1).and(not(overlaps(b, b, 0, 1)));
+		ntpp.setName("NTPP");
+		rcc8.add(ntpp);
+
 		return new RelationSet(rcc8, "RCC8");
 	}
 
 	public static RelationSet getAllensIntervalAlgebra(int f, int i, int l) {
     	Set<Relation> allen = new HashSet<Relation>();
-    	allen.add(before(f, l, 0, 1));                                                             // before
-    	allen.add(partOf(f, l, 0, 1).and(partOf(l, f, 1, 0)));                                     // meets
-    	allen.add(overlaps(i, i, 0, 1).and(not(partOf(0, 0, 0, 1))).and(not(partOf(0, 0, 1, 0)))); // overlaps
-    	allen.add(partOf(0, 0, 0, 1).and(partOf(0, 0, 1, 0)));                                     // equal
-    	allen.add(partOf(l, l, 0, 1).and(partOf(l, l, 1, 0)).and(partOf(f, i, 0, 1)));             // starts
-    	allen.add(partOf(l, i, 0, 1).and(partOf(f, i, 0, 1)));                                     // during
-    	allen.add(partOf(f, f, 0, 1).and(partOf(f, f, 1, 0)).and(partOf(l, i, 0, 1)));             // ends
-    	allen.add(before(f, l, 1, 0));                                                             // after
+
+		Relation before = before(f, l, 0, 1);
+		before.setName("Before");
+    	allen.add(before);
+
+    	Relation meets = partOf(f, l, 0, 1).and(partOf(l, f, 1, 0));
+    	meets.setName("Meets");
+    	allen.add(meets);
+
+    	Relation overlaps = overlaps(i, i, 0, 1).and(not(partOf(0, 0, 0, 1))).and(not(partOf(0, 0, 1, 0)));
+    	overlaps.setName("Overlaps");
+    	allen.add(overlaps);
+
+    	Relation equal = partOf(0, 0, 0, 1).and(partOf(0, 0, 1, 0));
+    	equal.setName("Equal");
+    	allen.add(equal);
+
+    	Relation starts = partOf(l, l, 0, 1).and(partOf(l, l, 1, 0)).and(partOf(f, i, 0, 1));
+    	starts.setName("Starts");
+    	allen.add(starts);
+
+    	Relation during = partOf(l, i, 0, 1).and(partOf(f, i, 0, 1));
+    	during.setName("During");
+    	allen.add(during);
+
+    	Relation ends = partOf(f, f, 0, 1).and(partOf(f, f, 1, 0)).and(partOf(l, i, 0, 1));
+    	ends.setName("Ends");
+    	allen.add(ends);
+
+    	Relation after = before(f, l, 1, 0);
+    	after.setName("After");
+    	allen.add(after);
+
 		return new RelationSet(allen, "allen");
 	}
 

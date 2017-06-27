@@ -15,6 +15,8 @@ import no.uio.ifi.qure.space.*;
 
 public abstract class Relation {
 
+	private String name;
+
 	public abstract boolean eval(Space[] args);
 
 	public abstract Set<AtomicRelation> getNormalizedAtomicRelations();
@@ -26,6 +28,10 @@ public abstract class Relation {
 	public abstract Set<Integer> getRoles();
 
 	public abstract Set<Integer> getArguments();
+
+	public String getName() { return name; }
+
+	public void setName(String name) { this.name = name; }
 
 	@Override
 	public abstract boolean equals(Object o);
