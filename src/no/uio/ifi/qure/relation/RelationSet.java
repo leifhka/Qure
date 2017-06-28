@@ -66,7 +66,7 @@ public class RelationSet {
 			for (AtomicRelation a : r.getNormalizedAtomicRelations()) {
 				atomicRels.add(a);
 				for (Integer role : a.getRoles()) {
-					if (role != 0) roles.add(role);
+					roles.add(role);
 				}
 				if (a.getArity() > highestArity) {
 					highestArity = a.getArity();
