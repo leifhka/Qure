@@ -56,8 +56,8 @@ public class Before extends AtomicRelation {
 		return false;
 	}
 
-	public boolean isIntrinsic(SID[] tuple) {
-		return tuple[a1].getID() == tuple[a2].getID() && strictnessRelated(tuple[a1].getRole(), tuple[a2].getRole());
+	public boolean isIntrinsic(Integer[] tuple) {
+		return tuple[a1] == tuple[a2] && strictnessRelated(r1, r2);
 	}
 
 	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
@@ -122,8 +122,8 @@ public class Before extends AtomicRelation {
 
 		Table table = new Table(this);
 
-    	for (SID[] tuple : possible.getTuples()) {
-			if (eval(toSpaces(tuple, spaces))) {
+    	for (Integer[] tuple : possible.getTuples()) {
+			if (eval(toSpaces(toSIDs(tuple), spaces))) {
 				table.addTuple(tuple);
 	    	}
     	}

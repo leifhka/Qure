@@ -133,8 +133,8 @@ public class PartOf extends AtomicRelation {
 		return sp.toSQL(this, vals, config);
 	}
 
-	public boolean isIntrinsic(SID[] tuple) {
-		return tuple[a0].getID() == tuple[a1].getID() && stricterRole(tuple[a0].getRole(), tuple[a1].getRole());
+	public boolean isIntrinsic(Integer[] tuple) {
+		return tuple[a0] == tuple[a1] && stricterRole(r0, r1);
 	}
 
 	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
@@ -237,20 +237,20 @@ public class PartOf extends AtomicRelation {
 
 		Table table = new Table(this);
 
-    	for (SID[] tuple : possible.getTuples()) {
-			if (eval(toSpaces(tuple, spaces))) {
+    	for (Integer[] tuple : possible.getTuples()) {
+			if (eval(toSpaces(toSIDs(tuple), spaces))) {
 				table.addTuple(tuple);
 	    	}
-	    	SID[] rev = reverse(tuple);
-			if (eval(toSpaces(rev, spaces))) {
+	    	Integer[] rev = reverse(tuple);
+			if (eval(toSpaces(toSIDs(rev), spaces))) {
 				table.addTuple(rev);
 	    	}
     	}
     	return table;
 	}
 
-	private SID[] reverse(SID[] tuple) {
-		SID[] res = new SID[2];
+	private Integer[] reverse(Integer[] tuple) {
+		Integer[] res = new Integer[2];
 		res[0] = tuple[1];
 		res[1] = tuple[0];
 		return res;

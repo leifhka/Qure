@@ -249,8 +249,8 @@ public class RelationSet {
 		Set<Set<SID>> ovs = new HashSet<Set<SID>>();
 		for (AtomicRelation rel : getAtomicRelations()) {
 			if (rel instanceof Overlaps && rel.getArity() >= 2) {
-				for (SID[] sids : tables.get(rel).getTuples()) {
-					ovs.add(Utils.asSet(sids));
+				for (Integer[] tuple : tables.get(rel).getTuples()) {
+					ovs.add(Utils.asSet(rel.toSIDs(tuple)));
 				}
 			}
 		}
@@ -261,7 +261,9 @@ public class RelationSet {
 		Set<SID[]> partOfs = new HashSet<SID[]>();
 		for (AtomicRelation rel : getAtomicRelations()) {
 			if (rel instanceof PartOf) {
-				partOfs.addAll(tables.get(rel).getTuples());
+				for (Integer[] tuple : tables.get(rel).getTuples()) {
+					partOfs.add(rel.toSIDs(tuple));
+				}
 			}
 		}
 		return partOfs;
@@ -271,7 +273,9 @@ public class RelationSet {
 		Set<SID[]> befores = new HashSet<SID[]>();
 		for (AtomicRelation rel : getAtomicRelations()) {
 			if (rel instanceof Before) {
-				befores.addAll(tables.get(rel).getTuples());
+				for (Integer[] tuple : tables.get(rel).getTuples()) {
+					befores.add(rel.toSIDs(tuple));
+				}
 			}
 		}
 		return befores;
@@ -312,7 +316,8 @@ public class RelationSet {
 					// We first join the tables of the actual tuples in the implied relations
 					Table joined = getJoinedTable(rel, tables);
 					// And then filter these possible tuples on the actual relationships
-					tables.put(rel, rel.evalAll(spaces, joined));
+					Table actual = rel.evalAll(spaces, joined);
+					tables.put(rel, actual);
 				} else {
 					// Leaf-relation, thus we need to check all constructable tuples from spaces
 					tables.put(rel, rel.evalAll(spaces));

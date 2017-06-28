@@ -27,20 +27,30 @@ public class RelationshipGraph {
 		before = new HashMap<SID, Set<SID>>();
 
 		for (SID uri : uris) {
-			partOf.put(uri, new HashSet<SID>());
-			hasPart.put(uri, new HashSet<SID>());
-			before.put(uri, new HashSet<SID>());
+			addUri(uri);
+		}
+		for (SID uri : uris) {
+			for (Integer role : Relation.getStricter(relations.getRoles(), uri.getRole())) {
+				SID part = new SID(uri.getID(), role);
+				if (uris.contains(part)) {
+					addCoveredBy(part, uri);
+				}
+			}
 		}
 		overlapsNodeId = 0;
+	}
+
+	private void addUri(SID uri) {
+		topmostNodes.add(uri);
+		partOf.put(uri, new HashSet<SID>());
+		hasPart.put(uri, new HashSet<SID>());
+		before.put(uri, new HashSet<SID>());
 	}
 
 	public void addUris(Set<SID> newUris) {
 		for (SID uri : newUris) {
 			if (!hasPart.containsKey(uri)) {
-				topmostNodes.add(uri);
-				partOf.put(uri, new HashSet<SID>());
-				hasPart.put(uri, new HashSet<SID>());
-				before.put(uri, new HashSet<SID>());
+				addUri(uri);
 			}
 		}
 	}
@@ -48,9 +58,7 @@ public class RelationshipGraph {
 	private SID newOverlapsNode() {
 		overlapsNodeId--;
 		SID ovSID = new SID(overlapsNodeId);
-		partOf.put(ovSID, new HashSet<SID>());
-		hasPart.put(ovSID, new HashSet<SID>());
-		before.put(ovSID, new HashSet<SID>());
+		addUri(ovSID);
 		return ovSID;
 	}
 

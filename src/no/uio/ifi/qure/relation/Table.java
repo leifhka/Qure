@@ -15,36 +15,36 @@ import no.uio.ifi.qure.traversal.*;
 
 public class Table {
 
-	private final Set<SID[]> tuples;
-	private final List<Map<SID, Set<SID[]>>> indecies;
+	private final Set<Integer[]> tuples;
+	private final List<Map<Integer, Set<Integer[]>>> indecies;
 	private final AtomicRelation rel;
 
-	private Set<Set<SID>> checked; // Used if rel is Overlaps to remove dedundant tuples
+	private Set<Set<Integer>> checked; // Used if rel is Overlaps to remove dedundant tuples
 
 	public Table(AtomicRelation rel) {
 		this.rel = rel;
-		tuples = new HashSet<SID[]>();
-		indecies = new ArrayList<Map<SID, Set<SID[]>>>();
-		checked = new HashSet<Set<SID>>();
+		tuples = new HashSet<Integer[]>();
+		indecies = new ArrayList<Map<Integer, Set<Integer[]>>>();
+		checked = new HashSet<Set<Integer>>();
 
 		for (int i = 0; i < rel.getArity(); i++) {
-			indecies.add(new HashMap<SID, Set<SID[]>>());
+			indecies.add(new HashMap<Integer, Set<Integer[]>>());
 		}
 	}
 	
 	public static Table getUniversalTable(AtomicRelation rel) {
 		Table res = new Table(rel);
-		res.addTuple(new SID[rel.getArity()]);
+		res.addTuple(new Integer[rel.getArity()]);
 		return res;
 	}
 
-	public Set<SID[]> getTuples() { return tuples; }
+	public Set<Integer[]> getTuples() { return tuples; }
 
 	public AtomicRelation getRelation() { return rel; }
 
 	public String toString() {
 		String res = "";
-		for (SID[] t : getTuples()) {
+		for (Integer[] t : getTuples()) {
 			res += Arrays.toString(t) + "\n";
 		}
 		return res;
@@ -61,24 +61,24 @@ public class Table {
 	}
 
 	public void addAll(Table other) {
-		for (SID[] tuple : other.getTuples()) {
+		for (Integer[] tuple : other.getTuples()) {
 			addTuple(tuple);
 		}
 	}
 	
 	public int size() { return tuples.size(); }
 
-	public void addAllTuples(Set<SID[]> tuples) {
-		for (SID[] tuple : tuples) {
+	public void addAllTuples(Set<Integer[]> tuples) {
+		for (Integer[] tuple : tuples) {
 			addTuple(tuple);
 		}
 	}
 
-	public void addTuple(SID[] tuple) {
+	public void addTuple(Integer[] tuple) {
 		tuples.add(tuple);
 		for (int i = 0; i < tuple.length; i++) {
 			if (tuple[i] != null) {
-				indecies.get(i).putIfAbsent(tuple[i], new HashSet<SID[]>());
+				indecies.get(i).putIfAbsent(tuple[i], new HashSet<Integer[]>());
 				indecies.get(i).get(tuple[i]).add(tuple);
 			}
 		}
@@ -87,8 +87,8 @@ public class Table {
 	/**
 	 * Returns the tuple-join of t1 and t2 with null being a wild-card
 	 */
-	public static SID[] joinWUni(SID[] t1, SID[] t2, Map<Integer, Integer> uni) {
-		SID[] res = new SID[t1.length];
+	public static Integer[] joinWUni(Integer[] t1, Integer[] t2, Map<Integer, Integer> uni) {
+		Integer[] res = new Integer[t1.length];
 		for (int i = 0; i < t1.length; i++) {
 			if (uni.containsKey(i)) {
 				res[i] = t2[uni.get(i)]; // Equal if t2 has i, as gathered from getJoinableWUni
@@ -99,16 +99,16 @@ public class Table {
 		return res;
 	}
 
-	public Set<SID[]> getJoinableWUni(SID[] tuple, Map<Integer, Integer> uni) {
+	public Set<Integer[]> getJoinableWUni(Integer[] tuple, Map<Integer, Integer> uni) {
 
 		Pair<Integer, Set<Integer>> somePos = Utils.getSome(uni.keySet());
-		SID someSID = tuple[uni.get(somePos.fst)];
+		Integer someInteger = tuple[uni.get(somePos.fst)];
 
-		Set<SID[]> res;
-		if (!indecies.get(somePos.fst).containsKey(someSID)) {
-			res = new HashSet<SID[]>(getTuples());
+		Set<Integer[]> res;
+		if (!indecies.get(somePos.fst).containsKey(someInteger)) {
+			res = new HashSet<Integer[]>(getTuples());
 		} else { 
-			res = new HashSet<SID[]>(indecies.get(somePos.fst).get(someSID));
+			res = new HashSet<Integer[]>(indecies.get(somePos.fst).get(someInteger));
 		}
 
 		for (Integer i : somePos.snd) {
@@ -124,10 +124,10 @@ public class Table {
 	 */
 	public Table join(AtomicRelation newRel, Table other, Map<Integer, Integer> uni) {
 		Table res = new Table(newRel);
-		for (SID[] tuple : other.getTuples()) {
-			for (SID[] joinable : getJoinableWUni(tuple, uni)) {
-				SID[] joined = joinWUni(joinable, tuple, uni);
-				Set<SID> sidSet = Utils.asSet(joined);
+		for (Integer[] tuple : other.getTuples()) {
+			for (Integer[] joinable : getJoinableWUni(tuple, uni)) {
+				Integer[] joined = joinWUni(joinable, tuple, uni);
+				Set<Integer> sidSet = Utils.asSet(joined);
 				if (!rel.isIntrinsic(joined) && !checked.contains(sidSet)) {
 					res.addTuple(joined);
 					if (rel instanceof Overlaps) {

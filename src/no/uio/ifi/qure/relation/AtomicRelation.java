@@ -27,7 +27,7 @@ public abstract class AtomicRelation extends Relation {
 
 	public abstract Table evalAll(SpaceProvider spaces, Table possible);
 
-	public abstract boolean isIntrinsic(SID[] tuple);
+	public abstract boolean isIntrinsic(Integer[] tuple);
 
 	public abstract boolean relatesArg(int arg);
 
@@ -52,6 +52,7 @@ public abstract class AtomicRelation extends Relation {
 	public SID[] toSIDs(Integer[] tuple) {
 		SID[] sids = new SID[tuple.length];
 		for (int i = 0; i < tuple.length; i++) {
+			if (tuple[i] == null) continue;
 			sids[i] = new SID(tuple[i], getArgRole(i));
 		}
 		return sids;
