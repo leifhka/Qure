@@ -45,7 +45,15 @@ public class Before extends AtomicRelation {
 	}
 
 	public String toBTSQL(Integer[] vals, Config config) { //TODO
-		return null;
+		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
+		String query = "    SELECT DISTINCT " + selFroWhe[0] + "\n";
+		query += "    FROM " + selFroWhe[1] + "\n";
+		query += "    WHERE ";
+		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
+		if (r0 != 0) query += "      T" + a0 + ".role & " + (r0 << 1) + " != 0 AND\n";
+		if (r1 != 0) query += "      T" + a1 + ".role & " + (r1 << 1) + " != 0 AND\n";
+		query += "      T" + a0 + ".block < T" + a1 + ".block";
+		return query;
 	}
 
 	public String toGeoSQL(Integer[] vals, Config config, SpaceProvider sp) {
