@@ -55,6 +55,10 @@ public class Overlaps extends AtomicRelation {
 		for (Integer k : argRole.keySet()) args[i++] = k;
 	}
 
+	public int getArg(int i) {
+		return args[i];
+	}
+
 	public boolean relatesArg(int arg) {
 		return argRole.containsKey(arg);
 	}

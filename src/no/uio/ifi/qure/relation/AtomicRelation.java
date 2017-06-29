@@ -31,6 +31,8 @@ public abstract class AtomicRelation extends Relation {
 
 	public abstract boolean relatesArg(int arg);
 
+	public abstract int getArg(int i);
+
 	public Set<AtomicRelation> getPositiveAtomicRelations() {
 		Set<AtomicRelation> r = new HashSet<AtomicRelation>();
 		r.add(this);

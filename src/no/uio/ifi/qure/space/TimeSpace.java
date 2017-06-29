@@ -127,7 +127,7 @@ public class TimeSpace implements Space {
 		if (!(o instanceof TimeSpace)) return false;
 
 		TimeSpace ots = (TimeSpace) o;
-		return !intersection(ots).equals(this);
+		return intersection(ots).equals(this);
 	}
 
 	private boolean isPoint() {

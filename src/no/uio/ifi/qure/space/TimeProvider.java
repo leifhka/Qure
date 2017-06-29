@@ -205,6 +205,20 @@ public class TimeProvider implements SpaceProvider {
 	}
 
 	public String toSQL(AtomicRelation rel, Integer[] vals, Config config) {
-		return null;
+		String[] selFroWhe = rel.makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
+		String select = "SELECT " + selFroWhe[0] + "\n";
+		String from = "FROM " + selFroWhe[1] + "\n";
+		String where = "WHERE " + selFroWhe[2] + " AND\n";
+		if (rel instanceof Overlaps) {
+			where += "((T" + rel.getArg(0) + ".starttime <= T" + rel.getArg(1) + ".stoptime AND T" + rel.getArg(1) + ".stoptime <= T" + rel.getArg(0) + ".stoptime) OR ";
+			where += "(T" + rel.getArg(1) + ".starttime <= T" + rel.getArg(0) + ".stoptime AND T" + rel.getArg(0) + ".stoptime <= T" + rel.getArg(1) + ".stoptime))";
+		} else if (rel instanceof PartOf) {
+			where += "T" + rel.getArg(1) + ".starttime <= T" + rel.getArg(0) + ".starttime AND T" + rel.getArg(0) + ".stoptime <= T" + rel.getArg(1) + ".stoptime";
+		} else if (rel instanceof Before) {
+			where += "BEFORE(T" + rel.getArg(0) + ".stoptime, T" + rel.getArg(1) + ".starttime)";
+		} else {
+			return null;
+		}
+		return select + from + where;
 	}
 }
