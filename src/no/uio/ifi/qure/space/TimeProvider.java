@@ -204,11 +204,25 @@ public class TimeProvider implements SpaceProvider {
 		return result;
 	}
 
-	public String toSQL(AtomicRelation rel, Integer[] vals, Config config) {
+	private String[] getRolePart(int role, String table) {
+		return null; //TODO
+	}
+
+	private String[][] getRoleParts(AtomicRelation rel, int args) {
+		String[][] argRoleParts = new String[args][];
+		for (int i = 0; i < args; i++) {
+			argRoleParts[i] = getRolePart(rel.getArgRole(i), "T." + i);
+		}
+		return argRoleParts;
+	}
+
+	public String toSQL(AtomicRelation rel, String[] vals, Config config) {
 		String[] selFroWhe = rel.makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
+		String[][] roleParts = getRoleParts(rel, vals.length);
 		String select = "SELECT " + selFroWhe[0] + "\n";
 		String from = "FROM " + selFroWhe[1] + "\n";
-		String where = "WHERE " + selFroWhe[2] + " AND\n";
+		String where = "WHERE ";
+		if (!selFroWhe[2].equals("")) where += selFroWhe[2] + " AND\n";
 		if (rel instanceof Overlaps) {
 			where += "((T" + rel.getArg(0) + ".starttime <= T" + rel.getArg(1) + ".stoptime AND T" + rel.getArg(1) + ".stoptime <= T" + rel.getArg(0) + ".stoptime) OR ";
 			where += "(T" + rel.getArg(1) + ".starttime <= T" + rel.getArg(0) + ".stoptime AND T" + rel.getArg(0) + ".stoptime <= T" + rel.getArg(1) + ".stoptime))";

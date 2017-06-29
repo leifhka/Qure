@@ -36,9 +36,10 @@ public class Qure {
 
 	public static void main(String[] args) {
 
-		Config config = new Config("tiny", "sbq", 4, 1, 10);
-		geometries = new GeometryProvider(config, new DBDataProvider(config));
-		checkCorrectness(config);
+		Config config = new Config("tiny_time", "tf", 4, 1, 10);
+		//Config config = new Config("tiny", "nbl", 4, 1, 10);
+		//geometries = new GeometryProvider(config, new DBDataProvider(config));
+		geometries = new TimeProvider(config, new DBDataProvider(config));
 
 		ArrayList<Config> rfs = new ArrayList<Config>();
 		rfs.add(config);
@@ -55,6 +56,11 @@ public class Qure {
 		//times = new HashMap<String, Long>();
 		//runAllInsertBM(configs, 100, 20, false);
 		//runAllInsertBM(rfs, 100, 20, true);
+
+		//RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
+		//Relation r = partOf(0,0,1,0);//.and(not(partOf(0,0,1,0)));
+		//RelationSet relationSet = new RelationSet(); relationSet = relationSet.add(r);
+		checkCorrectness(config, config.relationSet, 7);
 	}
 
 	private static void runMany(Collection<Config> configs) {
@@ -170,7 +176,6 @@ public class Qure {
 
 		if (config.verbose) printConfig(config);
 
-		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		geometries.populateBulk();
 		SpaceToBintree gtb = new SpaceToBintree(config);
 
@@ -660,15 +665,17 @@ public class Qure {
 		}
 	}
 
-	public static void checkCorrectness(Config config) {
+	public static void checkCorrectness(Config config, RelationSet relations, int n) {
 		System.out.println("Checking correctness...");
 		boolean err = false;
-		Set<Integer> ids = (new DBDataProvider(config)).getAllURIs();
-		for (Relation rel : config.relationSet.getRelations()) {
+		List<Integer> allIds = new ArrayList<Integer>((new DBDataProvider(config)).getAllURIs());
+		Collections.shuffle(allIds);
+		List<Integer> ids = allIds.subList(0, n);
+		for (Relation rel : relations.getRelations()) {
 			for (Integer id : ids) {
 				for (int i = 0; i < rel.getArity(); i++) {
-					Integer[] args = new Integer[rel.getArity()];
-					args[i] = id;
+					String[] args = new String[rel.getArity()];
+					args[i] = ""+id;
 					String btQ = rel.toBTSQL(args, config);
 					String geoQ = rel.toGeoSQL(args, config, geometries);
 					if (btQ == null || geoQ == null) continue;

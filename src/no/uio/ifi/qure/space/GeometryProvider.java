@@ -254,7 +254,7 @@ public class GeometryProvider implements SpaceProvider {
 		return result;
 	}
 
-	public String toSQL(AtomicRelation rel, Integer[] vals, Config config) {
+	public String toSQL(AtomicRelation rel, String[] vals, Config config) {
 		if (rel instanceof Overlaps) {
 			return toSQLOV((Overlaps) rel, vals, config);
 		} else if (rel instanceof PartOf) {
@@ -264,7 +264,7 @@ public class GeometryProvider implements SpaceProvider {
 		}
 	}
 
-	private String toSQLOV(Overlaps rel, Integer[] vals, Config config) { //TODO
+	private String toSQLOV(Overlaps rel, String[] vals, Config config) { //TODO
 		if (rel.getArity() == 2) {
 			return toSQLOV2(rel, vals, config);
 		} else {
@@ -272,7 +272,7 @@ public class GeometryProvider implements SpaceProvider {
 		}
 	}
 
-	private String toSQLOV2(Overlaps rel, Integer[] vals, Config config) {
+	private String toSQLOV2(Overlaps rel, String[] vals, Config config) {
 
 		String[] sfw = rel.makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
 		String query = "SELECT " + sfw[0] + "\n";
@@ -296,7 +296,7 @@ public class GeometryProvider implements SpaceProvider {
 		return query;
 	}
 
-	private String toSQLPO(PartOf rel, Integer[] vals, Config config) {
+	private String toSQLPO(PartOf rel, String[] vals, Config config) {
 		String[] selFroWhe = rel.makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
 		String query = "SELECT " + selFroWhe[0] + "\n";
 		query += "FROM " + selFroWhe[1] + "\n";

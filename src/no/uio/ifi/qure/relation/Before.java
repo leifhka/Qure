@@ -50,7 +50,7 @@ public class Before extends AtomicRelation {
 		return "bf(<" + r0 + "," + a0 + ">, <" + r1 + "," + a1 + ">)";
 	}
 
-	public String toBTSQL(Integer[] vals, Config config) { //TODO
+	public String toBTSQL(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "    SELECT DISTINCT " + selFroWhe[0] + "\n";
 		query += "    FROM " + selFroWhe[1] + "\n";
@@ -62,7 +62,7 @@ public class Before extends AtomicRelation {
 		return query;
 	}
 
-	public String toGeoSQL(Integer[] vals, Config config, SpaceProvider sp) {
+	public String toGeoSQL(String[] vals, Config config, SpaceProvider sp) {
 		return sp.toSQL(this, vals, config);
 	}
 

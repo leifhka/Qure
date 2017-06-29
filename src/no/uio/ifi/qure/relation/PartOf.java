@@ -51,7 +51,7 @@ public class PartOf extends AtomicRelation {
 		return "po(<" + r0 + "," + a0 + ">, <" + r1 + "," + a1 + ">)";
 	}
 
-	public String toBTSQL(Integer[] vals, Config config) {
+	public String toBTSQL(String[] vals, Config config) {
 		if (vals[a0] != null && vals[a1] == null) {
 			return toBTSQL2(vals, config);
 		} else {
@@ -59,7 +59,7 @@ public class PartOf extends AtomicRelation {
 		}
 	}
 
-	private String toBTSQL1Approx(Integer[] vals, Config config) {
+	private String toBTSQL1Approx(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "    SELECT DISTINCT " + selFroWhe[0] + ", T" + a0 + ".block\n";
 		query += "    FROM " + selFroWhe[1] + "\n";
@@ -72,7 +72,7 @@ public class PartOf extends AtomicRelation {
 		return query;
 	}
 
-	private String toBTSQL1(Integer[] vals, Config config) {
+	private String toBTSQL1(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "WITH \n";
 		query += "possible AS (\n" + toBTSQL1Approx(vals, config) + "),\n";
@@ -92,7 +92,7 @@ public class PartOf extends AtomicRelation {
 		return query;
 	}
 
-	private String toBTSQL2Approx(Integer[] vals, Config config) {
+	private String toBTSQL2Approx(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "    SELECT DISTINCT T" + a1 + "." + config.uriColumn + " AS v" + a1 + ", T" + a0 + ".block\n";
 		query += "    FROM " + selFroWhe[1] + ",\n";
@@ -107,7 +107,7 @@ public class PartOf extends AtomicRelation {
 		return query;
 	}
 
-	private String toBTSQL2(Integer[] vals, Config config) {
+	private String toBTSQL2(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 
 		String query = "WITH \n";
@@ -129,7 +129,7 @@ public class PartOf extends AtomicRelation {
 		return query;
 	}
 
-	public String toGeoSQL(Integer[] vals, Config config, SpaceProvider sp) {
+	public String toGeoSQL(String[] vals, Config config, SpaceProvider sp) {
 		return sp.toSQL(this, vals, config);
 	}
 

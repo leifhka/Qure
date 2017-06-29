@@ -51,7 +51,7 @@ public abstract class Relation {
 		return sel + from;
 	}
 
-	public String toBTSQL(Integer[] vals, Config config) {
+	public String toBTSQL(String[] vals, Config config) {
 		Set<AtomicRelation> ps = getPositiveAtomicRelations();
 		Set<AtomicRelation> ns = getNegativeAtomicRelations();
 
@@ -77,7 +77,7 @@ public abstract class Relation {
 		return query;
 	}
 
-	public String toGeoSQL(Integer[] vals, Config config, SpaceProvider spaces) {
+	public String toGeoSQL(String[] vals, Config config, SpaceProvider spaces) {
 		Set<AtomicRelation> ps = getPositiveAtomicRelations();
 		Set<AtomicRelation> ns = getNegativeAtomicRelations();
 

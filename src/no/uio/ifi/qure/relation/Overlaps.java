@@ -63,7 +63,7 @@ public class Overlaps extends AtomicRelation {
 		return argRole.containsKey(arg);
 	}
 		
-	public String toBTSQL(Integer[] vals, Config config) { //TODO
+	public String toBTSQL(String[] vals, Config config) { //TODO
 		if (getArity() == 2) {
 			return toBTSQL2(vals, config);
 		} else {
@@ -79,7 +79,7 @@ public class Overlaps extends AtomicRelation {
 		return query;
 	}
 
-	private String toBTSQL2(Integer[] vals, Config config) {
+	private String toBTSQL2(String[] vals, Config config) {
 		String[] sfw = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		
 		String from = sfw[1] + ",\n";
@@ -102,7 +102,7 @@ public class Overlaps extends AtomicRelation {
 		return query;
 	}
 
-	public String toGeoSQL(Integer[] vals, Config config, SpaceProvider sp) {
+	public String toGeoSQL(String[] vals, Config config, SpaceProvider sp) {
 		return sp.toSQL(this, vals, config);
 	}
 
