@@ -194,22 +194,6 @@ public class RelationSet {
 		return maxArr;
     }
 
-	// TODO: Does not work, need to take unifier into account
-	public static AtomicRelation getSmallestRelationWithHighestArity(Set<AtomicRelation> rels,
-	                                                                 Map<AtomicRelation, Set<SID[]>> tuples) {
-		Pair<AtomicRelation, Set<AtomicRelation>> some = Utils.getSome(getRelationsWithArity(getHighestArity(rels), rels));
-		AtomicRelation sha = some.fst;
-		int smallest = tuples.get(sha).size();
-		for (AtomicRelation rel : some.snd) {
-			int s = tuples.get(rel).size();
-			if (s < smallest) {
-				smallest = s;
-				sha = rel;
-			}
-		}
-		return sha;
-	}
-
 	public static Set<AtomicRelation> getRelationsWithArity(int arr, Set<AtomicRelation> rels) {
 		Set<AtomicRelation> result = new HashSet<AtomicRelation>();
 		
