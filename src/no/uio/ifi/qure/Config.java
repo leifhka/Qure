@@ -61,17 +61,16 @@ public class Config {
 		}
 	};
 
-	public int blockSize = 31;
+	public int blockSize = 63;
 	public boolean compactBlocks = false;
 	public String dbName = "test";
 	public String dbPWD = "test";
 	public String dbUsername = "leifhka";
 	public String uriColumn = "gid";
-	//public String uriColumn = "trip_id";
 	public String blockColumn = "block";
-	public String geoColumn = "geom";
+	//public String geoColumn = "geom";
 	public int limit = 1000000;
-	//public String geoColumn = "starttime, stoptime";
+	public String geoColumn = "starttime, stoptime";
 	public String universeTable = "qure.universes";
 	public boolean convertUriToInt = true;
 
