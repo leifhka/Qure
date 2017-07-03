@@ -2,7 +2,8 @@
 
 * Implement toSQL for before-relation.
 * Implement new algorithm without redundant witnesses and split index from wit.
-  * (1)Do not intersect each space with node's extent. (Allows us to check containment)
+  * (1) Merge Development with Master
+  * (1) Do not intersect each space with node's extent. (Allows us to check containment)
   * (10) Keep graph from one leaf-node to next
   * (10) Only make representations for and delete (from RelationshipGraph) each SID not overlapping any unvisited leaf-nodes
   * (10) Whenever an overlaps-node is added to a representation (according to prev. point) keep it in graph as long as it has parents, but mark it as added,
