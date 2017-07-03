@@ -32,7 +32,7 @@ public class RelationshipGraph {
 		for (SID uri : uris) {
 			for (Integer role : Relation.getStricter(relations.getRoles(), uri.getRole())) {
 				SID part = new SID(uri.getID(), role);
-				if (uris.contains(part)) {
+				if (uris.contains(part) && !uri.equals(part)) {
 					addCoveredBy(part, uri);
 				}
 			}
@@ -174,7 +174,7 @@ public class RelationshipGraph {
 
 	private boolean overlaps(Set<SID> parents) {
 
-		// We check redundancy by trying to find a common pred (ov. node) for parents.
+		// We check overlaps by trying to find a common pred (ov. node) for parents.
 		Iterator<SID> parIter = parents.iterator();
 		SID par = parIter.next();
 		// Init commonPreds to contain all overlapsNodes from one parent
@@ -206,6 +206,7 @@ public class RelationshipGraph {
 		for (SID parent : partOf.get(uri)) {
 			hasPart.get(parent).remove(uri);
 		}
+		hasPart.remove(uri);
 		partOf.remove(uri);
 		before.remove(uri);
 	}
@@ -321,58 +322,83 @@ public class RelationshipGraph {
 		return order;
 	}
 
-	// TODO: Long method, split into smaller!
-	public Representation constructRepresentation() { 
-
-		// Construct sufficient unique parts and order nodes according to infix traversal
-		Block[] witnessesArr = Block.makeNDistinct(partOf.keySet().size()+1);
-		SID[] order = getNodesOrder();
-
-		Map<SID, Bintree> localRep = new HashMap<SID, Bintree>();
-		Map<SID, Block> wit = new HashMap<SID, Block>();
-
+	private void distributeUniqueParts(SID[] order, Block[] witnessesArr, Map<SID, Bintree> localRep, Map<SID, Block> wit) {
 		// Distribute unique parts
+		int k = 0;
 		for (int i = 0; i < order.length; i++) {
 
-			Block bt = block.append(witnessesArr[i]);
+			if (!isOverlapsNode(order[i]) && relations.getRoles().size() > 1 && order[i].getRole() == 0) continue;
+			Block bt = block.append(witnessesArr[k++]);
 			localRep.put(order[i], Bintree.fromBlock(bt));
 	
 			if (!isOverlapsNode(order[i])) {
 				wit.put(order[i], bt);
 			}
 		}
+	}
 
+	private void propagateParts(Map<SID, Bintree> localRep) {
 		// Propagate node's representations according to containments
 		for (SID uri : hasPart.keySet()) {
 			Bintree nodeBT = localRep.get(uri);
 
-			for (SID pred : hasPart.get(uri)) {
+			Set<SID> cotro = new HashSet<SID>(hasPart.get(uri)); // Children of this role-part only, not stricter roles
+			for (Integer role : relations.getRoles()) {
+				if (role != uri.getRole() && Relation.stricterRole(role, uri.getRole())) {
+					SID c = new SID(uri.getID(), role);
+					if (!hasPart.containsKey(c)) continue;
+					cotro.removeAll(hasPart.get(c));
+					cotro.remove(c);
+				}
+			}
+
+			for (SID pred : cotro) {
 				nodeBT = nodeBT.union(localRep.get(pred));
 			}
 			localRep.put(uri, nodeBT);
 		}
+	}
+
+	private void finalizeRepresenataion(Map<SID, Bintree> localRep, Map<SID, Block> wit, Map<Integer, Bintree> finalRep) {
 
 		// Set unique part-blocks and add to final representation
-		Map<Integer, Bintree> urisRep = new HashMap<Integer, Bintree>();
 		for (SID uri : localRep.keySet()) {
 			if (!isOverlapsNode(uri)) {
 				Set<Block> bs = localRep.get(uri).normalize().getBlocks();
-				Block w = wit.get(uri);
 				Set<Block> cbs = new HashSet<Block>();
+				Block w = wit.get(uri);
 				for (Block b : bs) {
-					if (w.blockPartOf(b)) {
+					if (w != null && w.blockPartOf(b)) {
 						cbs.add(b.setUniquePart(true).addRole(uri.getRole()));
 					} else {
 						cbs.add(b.addRole(uri.getRole()));
 					}
 				}
-				if (!urisRep.containsKey(uri.getID())) {
-					urisRep.put(uri.getID(), new Bintree(cbs));
+				if (!finalRep.containsKey(uri.getID())) {
+					finalRep.put(uri.getID(), new Bintree(cbs));
 				} else {
-					urisRep.put(uri.getID(), urisRep.get(uri.getID()).union(new Bintree(cbs)));
+					finalRep.put(uri.getID(), finalRep.get(uri.getID()).union(new Bintree(cbs)));
 				}
 			}
 		}
-		return new Representation(urisRep);
+	}
+
+	public Representation constructRepresentation() {
+
+		// Construct sufficient unique parts and order nodes according to infix traversal
+		Block[] witnessesArr = Block.makeNDistinct(partOf.keySet().size()+1);
+		SID[] order = getNodesOrder();
+
+		Map<SID, Bintree> localRep = new HashMap<SID, Bintree>();
+		for (SID s : hasPart.keySet()) localRep.put(s, new Bintree());
+		Map<SID, Block> wit = new HashMap<SID, Block>();
+
+		distributeUniqueParts(order, witnessesArr, localRep, wit);
+		propagateParts(localRep);
+
+		Map<Integer, Bintree> finalRep = new HashMap<Integer, Bintree>();
+		finalizeRepresenataion(localRep, wit, finalRep);
+
+		return new Representation(finalRep);
 	}
 }

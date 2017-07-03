@@ -14,6 +14,11 @@ public class Bintree {
 	private int hashCode;
 	private boolean hashCodeSet;
 
+	public Bintree() {
+		this.bt = new HashSet<Block>();
+		normalized = true;
+	}
+
 	public Bintree(Set<Block> bt) {
 		this.bt = bt;
 		normalized = false;
