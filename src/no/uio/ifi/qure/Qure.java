@@ -36,20 +36,15 @@ public class Qure {
 
 	public static void main(String[] args) {
 
-		Config config = new Config("tiny_time", "tf", 4, 1, 10);
+		Config config = new Config("tiny_time", "tf2", 4, 1, 10);
 		//Config config = new Config("tiny", "nbl", 4, 1, 10);
 		//geometries = new GeometryProvider(config, new DBDataProvider(config));
 		geometries = new TimeProvider(config, new DBDataProvider(config));
 
 		ArrayList<Config> rfs = new ArrayList<Config>();
 		rfs.add(config);
-		//rfs.add(new Config("dallas", "cblb", 15, 30, 10));
-		//rfs.add(new Config("dallas", "f3", 13, 3, 30, 10));
-		//rfs.add(new Config("osm_dk", "upsa", 15, 3, 30, 10));
-		//rfs.add(new Config("npd",	"upsa", 10, 3, 30, 10));
-		//rfs.add(new Config("dallas", "upsa", 13, 3, 30, 10));
 
-		//runMany(rfs);
+		runMany(rfs);
 		//writeDBSizes(rfs);
 		//times = new HashMap<String, Long>();
 		//runManyQueryBM(rfs);
