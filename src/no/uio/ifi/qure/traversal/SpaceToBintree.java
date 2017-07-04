@@ -43,7 +43,7 @@ public class SpaceToBintree {
 		Block.setBlockSize(config.blockSize, relationSet.getAtomicRoles().size());
 		TreeNode root = new TreeNode(Block.getTopBlock(), spaces, evenSplits, 0, config);
 		root.setReporter(prog.makeReporter());
-		Representation representation = traverseTree(root);
+		Representation representation = traverseTreePar(root, 4);
 	   
 		if (config.verbose) prog.done();
 
@@ -63,7 +63,7 @@ public class SpaceToBintree {
 			}
 			node.deleteSpaces();
 		} else {
-			Pair<TreeNode, TreeNode> nodes = node.splitNodeEvenly();
+			Pair<TreeNode, TreeNode> nodes = node.splitNodeEvenly(config.numThreads);
 			node.deleteSpaces(); // Free memory
 
 			Representation newLeftRep = traverseTree(nodes.fst);
@@ -80,5 +80,68 @@ public class SpaceToBintree {
 			representation.addSplitBlock(node.getBlock(), node.getEvenSplitBlock());
 		}
 		return representation;
+	}
+
+		private Representation traverseTreePar(TreeNode node, int numThreads) {
+
+		Representation representation;
+
+		if (node.isEmpty() || (!node.hasEvenSplit() && config.atMaxDepth.test(node))) {
+
+			representation = node.makeRepresentation(config.relationSet);
+			if (config.verbose) {
+				node.getReporter().update(Math.pow(2, 1 + config.maxIterDepth - node.depth())-1);
+			}
+			node.deleteSpaces();
+		} else {
+			Pair<TreeNode, TreeNode> nodes = node.splitNodeEvenly(numThreads);
+			node.deleteSpaces(); // Free memory
+
+			if (numThreads <= 1) {
+				Representation newLeftRep = traverseTree(nodes.fst);
+				Representation newRightRep = traverseTree(nodes.snd);
+				representation = newLeftRep.merge(newRightRep);
+			} else {				
+				Representation newLeftRep = null, newRightRep = null;
+
+				TraverserThread leftThread = new TraverserThread(nodes.fst, numThreads/2);
+				TraverserThread rightThread = new TraverserThread(nodes.snd, numThreads/2);
+				leftThread.start();
+				rightThread.start();
+				try {
+					leftThread.join();
+					rightThread.join();
+				} catch (InterruptedException ex) {
+					ex.printStackTrace();
+					System.exit(1);
+				}
+		
+				representation = leftThread.rep.merge(rightThread.rep);
+			}
+
+			if (config.verbose) node.getReporter().update();
+		}
+
+		representation.addCovering(node.getCovering(), node.getBlock());
+
+		if (node.getEvenSplitBlock() != null) {
+			representation.addSplitBlock(node.getBlock(), node.getEvenSplitBlock());
+		}
+		return representation;
+	}
+
+	class TraverserThread extends Thread {
+		TreeNode node;
+		int numThreads;
+		Representation rep;
+
+		TraverserThread(TreeNode node, int numThreads) {
+			this.node = node;
+			this.numThreads = numThreads;
+		}
+
+		public void run() {
+			rep = traverseTreePar(node, numThreads);
+		}
 	}
 }

@@ -56,14 +56,14 @@ public class TreeNode {
 
 	public int depth() { return block.depth(); }
 
-	public Pair<TreeNode, TreeNode> splitNodeEvenly() {
+	public Pair<TreeNode, TreeNode> splitNodeEvenly(int numThreads) {
 
 		Pair<? extends SpaceProvider, ? extends SpaceProvider> sps;
 
 		if (evenSplits.containsKey(block)) {
-			sps = getSpaceProvider().splitProvider(split,evenSplits.get(block), getOverlappingURIs());
+			sps = getSpaceProvider().splitProvider(split, evenSplits.get(block), getOverlappingURIs());
 		} else {
-			EvenSplit evenSplit = getSpaceProvider().getEvenSplit(split, config);
+			EvenSplit evenSplit = getSpaceProvider().getEvenSplit(split, config.maxSplits, config.minRatio, numThreads);
 			evenSplitBlock = evenSplit.splitBlock; // Save for representation, will be written to DB
 			sps = getSpaceProvider().splitProvider(split, evenSplit);
 		}

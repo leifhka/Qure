@@ -103,7 +103,7 @@ public interface SpaceProvider {
 	}
 
 	// TODO: Long method, split into smaller 
-	public default EvenSplit getEvenSplit(int split, Config config) {
+	public default EvenSplit getEvenSplit(int split, int maxSplits, double minRatio, int numThreads) {
 
 		Space spL = makeEmptySpace(), spR = makeEmptySpace();
 		Pair<? extends Space, ? extends Space> splitLR = getUniverse().split(split);
@@ -111,8 +111,8 @@ public interface SpaceProvider {
 
 		Set<SID> undecided = new HashSet<SID>(keySet());
 		Set<SID> intL = new HashSet<SID>(), intR = new HashSet<SID>();
-		Set<SID> intSpL = Utils.getIntersecting(splitL, undecided, getSpaces(), config.numThreads);
-		Set<SID> intSpR = Utils.getIntersecting(splitR, undecided, getSpaces(), config.numThreads);
+		Set<SID> intSpL = Utils.getIntersecting(splitL, undecided, getSpaces(), numThreads);
+		Set<SID> intSpR = Utils.getIntersecting(splitR, undecided, getSpaces(), numThreads);
 
 		int diff = Math.abs(intSpL.size() - intSpR.size());
 		int bestDiff = diff;
@@ -124,7 +124,7 @@ public interface SpaceProvider {
 		int i = 0;
 		double ratio = ((double) Math.min(intSpR.size(), intSpL.size())) / Math.max(intSpR.size(), intSpL.size());
 
-		while (i++ < config.maxSplits && ratio < config.minRatio) {
+		while (i++ < maxSplits && ratio < minRatio) {
 
 			if (intAllR.size() > intAllL.size()) {
 
@@ -148,8 +148,8 @@ public interface SpaceProvider {
 			splitL = splitLR.fst.toUniverse();
 			splitR = splitLR.snd.toUniverse();
 
-			intSpL = Utils.getIntersecting(splitL, undecided, getSpaces(), config.numThreads);
-			intSpR = Utils.getIntersecting(splitR, undecided, getSpaces(), config.numThreads);
+			intSpL = Utils.getIntersecting(splitL, undecided, getSpaces(), numThreads);
+			intSpR = Utils.getIntersecting(splitR, undecided, getSpaces(), numThreads);
 
 			intAllL = Utils.union(intL, intSpL);
 			intAllR = Utils.union(intR, intSpR);
