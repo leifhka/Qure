@@ -95,9 +95,9 @@ public class Overlaps extends AtomicRelation {
 			}
 		}
 		if (vals[0] != null) {
-			query += makeBlockOverlapsWhere("T" + args[1], "T" + args[0]);
-		} else {
 			query += makeBlockOverlapsWhere("T" + args[0], "T" + args[1]);
+		} else {
+			query += makeBlockOverlapsWhere("T" + args[1], "T" + args[0]);
 		}
 		return query;
 	}

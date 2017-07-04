@@ -54,14 +54,16 @@ public class PartOf extends AtomicRelation {
 	public String toBTSQL(String[] vals, Config config) {
 		if (vals[a0] != null && vals[a1] == null) {
 			return toBTSQL2(vals, config);
-		} else {
+		} else if (vals[a1] != null) {
 			return toBTSQL1(vals, config);
+		} else {
+			return null; //TODO
 		}
 	}
 
 	private String toBTSQL1Approx(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
-		String query = "    SELECT DISTINCT " + selFroWhe[0] + ", T" + a0 + ".block\n";
+		String query = "    SELECT DISTINCT T" + a0 + ".gid AS v" + a0 + ", T" + a0 + ".block\n";
 		query += "    FROM " + selFroWhe[1] + "\n";
 		query += "    WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
@@ -76,18 +78,14 @@ public class PartOf extends AtomicRelation {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "WITH \n";
 		query += "possible AS (\n" + toBTSQL1Approx(vals, config) + "),\n";
-		query += "posGids AS (SELECT DISTINCT v" + a0 + ", v" + a1 + " FROM possible),\n";
-		query += "posBlocks AS (SELECT DISTINCT block FROM possible),\n";
-		query += "rem AS (\n";
-		query += "   SELECT DISTINCT v" + a0 + ", v" + a1 + "\n";
-		query += "   FROM (SELECT DISTINCT " + selFroWhe[0] + ", T" + a0 + ".block\n";
-		query += "         FROM " + selFroWhe[1] + ", posGids AS Pos\n";
-		query += "         WHERE T" + a0 + ".role & " + (1 | (r0 << 1)) + " != 0 AND Pos.v" + a0 + " = T" + a0 + ".gid) AS AllBlocks\n";
-		query += "     LEFT OUTER JOIN posBlocks Approx ON (AllBlocks.block = Approx.block)\n";
-		query += "   WHERE Approx.block IS NULL)\n";
+		query += "posGids AS (SELECT DISTINCT v" + a0 + " FROM possible),\n";
+		query += "rem AS (SELECT DISTINCT T." + config.uriColumn + " AS v" + a0 + " FROM " + config.btTableName + " AS T, posGids AS Pos WHERE T.role & " + (1 | (r0 << 1)) + " != 0 AND Pos.v" + a0 + " = T.gid AND (T.gid, T.block) NOT IN (SELECT * FROM possible))\n";
 
-		query += "SELECT DISTINCT P.v" + Math.min(a0,a1) + ", P.v" + Math.max(a0,a1) + "\n";
-		query += "FROM posGids AS P LEFT OUTER JOIN rem AS R ON (P.v" + a0 + " = R.v" + a0 + " AND P.v" + a1 + " = R.v" + a1 + ")\n";
+		String a0Sel = "P.v" + a0;
+		String a1Sel = vals[1] + " AS v" + a1;
+		String selStr = (a0 < a1) ?  a0Sel + ", " + a1Sel : a1Sel + ", " + a0Sel;
+		query += "SELECT DISTINCT " + selStr + "\n";
+		query += "FROM posGids AS P LEFT OUTER JOIN rem AS R ON (P.v" + a0 + " = R.v" + a0 + ")\n";
 		query += "WHERE R.v" + a0 + " IS NULL";
 		return query;
 	}
