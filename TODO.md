@@ -19,6 +19,7 @@
   * (10) Only make representations for and delete (from RelationshipGraph) each SID not overlapping any unvisited leaf-nodes
   * (10) Add covering SIDs to overlaps-set, but also set to overlap all other overlapping SIDs.
   * (10) Compute only relationships for tuples containing at least one new SID (not overlapping visited leaf-nodes)
-  * (10) Whenever an overlaps-node is added to a representation (according to prev. point) keep it in graph as long as it has parents, but mark it as added,
-    and remove the removed SID from its parents. Remove the 'added' mark if overlap becomes extended with new parents. Do not add an added node to a rep.
+  * (10) Whenever an overlaps-node is added to a representation (according to prev. point) keep it in graph as long as it has
+    parents, but mark it as added, and remove the removed SID from its parents. Remove the 'added' mark if overlap becomes
+    extended with new parents. Do not add an added node to a rep.
   * (5) Store blocks for index structure while traversing
