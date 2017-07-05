@@ -229,8 +229,12 @@ public class Overlaps extends AtomicRelation {
 	}
 
 	public boolean eval(Space[] spaceArgs) {
-		Pair<Space, Set<Space>> sm = Utils.getSome(Utils.asSet(spaceArgs));
-		return sm.fst.overlaps(sm.snd);
+		if (getArity() == 2) {
+			return spaceArgs[0].overlaps(spaceArgs[1]);
+		} else {
+			Pair<Space, Set<Space>> sm = Utils.getSome(Utils.asSet(spaceArgs));
+			return sm.fst.overlaps(sm.snd);
+		}
 	}
 
 	public Set<AtomicRelation> getNormalizedAtomicRelations() {

@@ -101,6 +101,26 @@ public class RelationSet {
 		}
 	}
 
+	private void computeAllImplications(Set<AtomicRelation> fromRels, Set<AtomicRelation> toRels, Map<AtomicRelation, Set<AtomicRelation>> implies,
+	                                    Map<AtomicRelation, Set<AtomicRelation>> impliedBy,
+	                                    Map<Pair<AtomicRelation, AtomicRelation>, Set<Map<Integer, Integer>>> unifiers) {
+
+		// Naive computation of all implications, with transitive closure
+		// As the set of atomic relations has a low cardinality, a naive solution suffices
+		for (AtomicRelation rel1 : fromRels) {
+			for (AtomicRelation rel2 : toRels) {
+				if (rel1.equals(rel2)) continue;
+
+				Set<Map<Integer, Integer>> unis = rel1.impliesNonEmpty(rel2);
+				if (unis != null) {
+					implies.get(rel1).add(rel2);
+					impliedBy.get(rel2).add(rel1);
+					unifiers.put(new Pair<AtomicRelation, AtomicRelation>(rel1, rel2), unis);
+				}
+			}
+		}
+	}
+
 	private void computeImplicationGraph() {
 
 		implies = new HashMap<AtomicRelation, Set<AtomicRelation>>();
@@ -112,20 +132,7 @@ public class RelationSet {
 			impliedBy.put(rel, new HashSet<AtomicRelation>());
 		}
 
-		// Naive computation of all implications, with transitive closure
-		// As the set of atomic relations has a low cardinality, a naive solution suffices
-		for (AtomicRelation rel1 : atomicRels) {
-			for (AtomicRelation rel2 : atomicRels) {
-				if (rel1.equals(rel2)) continue;
-
-				Set<Map<Integer, Integer>> unis = rel1.impliesNonEmpty(rel2);
-				if (unis != null) {
-					implies.get(rel1).add(rel2);
-					impliedBy.get(rel2).add(rel1);
-					unifiers.put(new Pair<AtomicRelation, AtomicRelation>(rel1, rel2), unis);
-				}
-			}
-		}
+		computeAllImplications(atomicRels, atomicRels, implies, impliedBy, unifiers);
 
 		// Remove transitive closure to obtain minimal implication graph and find all leaves
 		leaves = new HashSet<AtomicRelation>();
@@ -184,7 +191,7 @@ public class RelationSet {
         	}
     	}
     	return atomicRoles;
-    } 
+    }
 
     public static int getHighestArity(Set<AtomicRelation> rels) {
 		int maxArr = 0;
