@@ -74,7 +74,7 @@ public class SpaceToBintree {
 			if (config.verbose) node.getReporter().update();
 		}
 
-		representation.addCovering(node.getCovering(), node.getBlock());
+		representation.addCovering(node.getCovering(), node.getBlock(), config.relationSet.getRoles());
 
 		if (node.getEvenSplitBlock() != null) {
 			representation.addSplitBlock(node.getBlock(), node.getEvenSplitBlock());
@@ -122,7 +122,7 @@ public class SpaceToBintree {
 			if (config.verbose) node.getReporter().update();
 		}
 
-		representation.addCovering(node.getCovering(), node.getBlock());
+		representation.addCovering(node.getCovering(), node.getBlock(), config.relationSet.getRoles());
 
 		if (node.getEvenSplitBlock() != null) {
 			representation.addSplitBlock(node.getBlock(), node.getEvenSplitBlock());

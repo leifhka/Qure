@@ -4,8 +4,10 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Collection;
 import java.util.Set;
+import java.util.HashSet;
 
 import no.uio.ifi.qure.bintree.*;
+import no.uio.ifi.qure.relation.Relation;
 import no.uio.ifi.qure.space.Space;
 
 public class Representation {
@@ -52,7 +54,25 @@ public class Representation {
 		return this;
 	}
 
-	public void addCovering(Set<SID> covering, Block block) {
+	private Set<SID> getStrictest(Set<SID> covering, Set<Integer> roles) {
+		
+		Set<SID> strictest = new HashSet<SID>();
+		for (SID s : covering) {
+			boolean containsStricter = false;
+			for (Integer role : Relation.getStricter(roles, s.getRole())) {
+				if (covering.contains(new SID(s.getID(), role))) {
+					containsStricter = true;
+					break;
+				}
+			}
+			if (!containsStricter) strictest.add(s);
+		}
+		return strictest;
+	}
+
+	public void addCovering(Set<SID> covering, Block block, Set<Integer> roles) {
+		if (roles.size() > 1) covering = getStrictest(covering, roles);
+		
 		for (SID uri : covering) {
 			Bintree old = representation.get(uri.getID());
 			Bintree toAdd = Bintree.fromBlock(block.setUniquePart(true).addRole(uri.getRole()));
