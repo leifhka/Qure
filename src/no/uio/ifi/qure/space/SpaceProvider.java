@@ -23,6 +23,8 @@ public interface SpaceProvider {
 
 	public Map<SID, ? extends Space> getSpaces();
 
+	public void put(SID uri, Space space);
+
 	public Space getUniverse();
 
 	public Space makeEmptySpace();
@@ -39,6 +41,17 @@ public interface SpaceProvider {
 
 	public default int size() {
 		return keySet().size();
+	}
+
+	public default void expandWithRoles(Set<Integer> roles) {
+		for (Integer role : roles) {
+			if (role == 0) continue;
+			for (SID sid : keySet()) {
+				Space s = get(sid);
+				Space rs = s.getPart(role).intersection(getUniverse());
+				if (!rs.isEmpty()) put(new SID(sid.getID(), role), rs);
+			}
+		}
 	}
 
 	public Space get(SID uri);

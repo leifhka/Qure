@@ -12,27 +12,31 @@ public class RelationshipGraph {
 	private final Map<SID, Set<SID>> partOf;
 	private final Map<SID, Set<SID>> hasPart;
 	private final Map<SID, Set<SID>> before;
+	private final SpaceProvider spaces;
 	private final Set<SID> topmostNodes;
 	private int overlapsNodeId; // Always negative, and decreasing
 	private final Block block;
 	private final RelationSet relations;
 
-	public RelationshipGraph(Block block, Set<SID> uris, RelationSet relations) {
+	public RelationshipGraph(Block block, SpaceProvider spaces, RelationSet relations) {
 		this.block = block;
 		this.relations = relations;
+		this.spaces = spaces;
 
-		topmostNodes = new HashSet<SID>(uris); // Init all uris as roots, and remove if set parent of some node
+		//spaces.expandWithRoles(relations.getRoles());
+
+		topmostNodes = new HashSet<SID>(spaces.keySet()); // Init all uris as roots, and remove if set parent of some node
 		partOf = new HashMap<SID, Set<SID>>();
 		hasPart = new HashMap<SID, Set<SID>>();
 		before = new HashMap<SID, Set<SID>>();
 
-		for (SID uri : uris) {
+		for (SID uri : spaces.keySet()) {
 			addUri(uri);
 		}
-		for (SID uri : uris) {
+		for (SID uri : spaces.keySet()) {
 			for (Integer role : Relation.getStricter(relations.getRoles(), uri.getRole())) {
 				SID part = new SID(uri.getID(), role);
-				if (uris.contains(part) && !uri.equals(part)) {
+				if (spaces.keySet().contains(part) && !uri.equals(part)) {
 					addCoveredBy(part, uri);
 				}
 			}
@@ -224,14 +228,9 @@ public class RelationshipGraph {
 	public static RelationshipGraph makeRelationshipGraph(TreeNode spaceNode, RelationSet relations) {
 
 		SpaceProvider spaces = spaceNode.getSpaceProvider();
-		Set<SID> uris = spaceNode.getOverlappingURIs();
 
-		Map<SID, Set<SID>> intMap = new HashMap<SID, Set<SID>>();
-		for (SID uri : uris) {
-			intMap.put(uri, new HashSet<SID>());
-		}
-		RelationshipGraph graph = new RelationshipGraph(spaceNode.getBlock(), uris, relations);
-		graph.computeRelationshipGraphOpt(spaces);
+		RelationshipGraph graph = new RelationshipGraph(spaceNode.getBlock(), spaces, relations);
+		graph.computeRelationshipGraphOpt();
 
 		return graph;
 	}
@@ -255,7 +254,7 @@ public class RelationshipGraph {
 	 * the relationships topologically. It computes all satisfying tuples in each layer based on possible tuples
 	 * from the highest-arity relations from the lower level.
 	 */
-	private void computeRelationshipGraphOpt(SpaceProvider spaces) {
+	private void computeRelationshipGraphOpt() {
 		addRelationshipsToGraph(relations.computeRelationships(spaces));
 	}
 

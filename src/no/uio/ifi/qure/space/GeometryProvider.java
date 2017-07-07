@@ -97,6 +97,10 @@ public class GeometryProvider implements SpaceProvider {
 
 	public Set<SID> keySet() { return getSpaces().keySet(); }
 
+	public void put(SID uri, Space space) {
+		geometries.put(uri, (GeometrySpace) space);
+	}
+
 	public GeometrySpace makeEmptySpace() { 
 		return new GeometrySpace(geometryFactory.createPoint((CoordinateSequence) null),
 		                         config.geometryPrecision);
@@ -239,6 +243,7 @@ public class GeometryProvider implements SpaceProvider {
 			Geometry geo = parseGeometry(ups.unparsedSpace);
 			
 			if (geo != null && geo.isValid() && !geo.isEmpty()) {
+				//result.put(new SID(ups.uri, 0), new GeometrySpace(geo, config.geometryFactoryPrecision));
 				extractAndPutRoledGeos(ups.uri, new GeometrySpace(geo, config.geometryPrecision), roles, result);
     			totalParsed++;
 			}

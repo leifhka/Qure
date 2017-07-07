@@ -72,6 +72,10 @@ public class TimeProvider implements SpaceProvider {
 
 	public Map<SID, TimeSpace> getSpaces() { return times; }
 
+	public void put(SID uri, Space space) {
+		times.put(uri, (TimeSpace) space);
+	}
+
 	public TimeSpace getUniverse() { return universe; }
 
 	public Set<SID> getCoversUniverse() { return coversUniverse; }
