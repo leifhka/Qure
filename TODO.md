@@ -4,6 +4,7 @@
 * Implement compression of graphs on role-parts with equal relationships, e.g. set pi(i,a) = pi(b,a) if has same relationships
   and does not introduce new tuple in relations, or set overlaps-node o for ov(pi(i,a), c) equal to overlaps-node o' for
   ov(pi(b,a), c), if ov(pi(i,a),pi(b,a)) does not introduce new tuple in rels.
+* Remove redundant overlaps-comparisons in SpaceProvider's getEvenSplit (only need to check if 0-role overlaps)
 
 # Low prioriy TODOs:
 
