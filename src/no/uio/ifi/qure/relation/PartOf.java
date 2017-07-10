@@ -82,7 +82,7 @@ public class PartOf extends AtomicRelation {
 		query += "rem AS (SELECT DISTINCT T." + config.uriColumn + " AS v" + a0 + " FROM " + config.btTableName + " AS T, posGids AS Pos WHERE T.role & " + (1 | (r0 << 1)) + " != 0 AND Pos.v" + a0 + " = T.gid AND (T.gid, T.block) NOT IN (SELECT * FROM possible))\n";
 
 		String a0Sel = "P.v" + a0;
-		String a1Sel = vals[1] + " AS v" + a1;
+		String a1Sel = vals[a1] + " AS v" + a1;
 		String selStr = (a0 < a1) ?  a0Sel + ", " + a1Sel : a1Sel + ", " + a0Sel;
 		query += "SELECT DISTINCT " + selStr + "\n";
 		query += "FROM posGids AS P LEFT OUTER JOIN rem AS R ON (P.v" + a0 + " = R.v" + a0 + ")\n";
