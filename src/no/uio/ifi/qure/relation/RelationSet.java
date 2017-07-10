@@ -239,7 +239,7 @@ public class RelationSet {
 	private Set<Set<SID>> getAllOverlaps(Map<AtomicRelation, Table> tables) {
 		Set<Set<SID>> ovs = new HashSet<Set<SID>>();
 		for (AtomicRelation rel : getAtomicRelations()) {
-			if (rel instanceof Overlaps && rel.getArity() >= 2) {
+			if (rel instanceof Overlaps && rel.getArity() >= 2 && tables.get(rel) != null) {
 				for (Integer[] tuple : tables.get(rel).getTuples()) {
 					ovs.add(Utils.asSet(rel.toSIDs(tuple)));
 				}
@@ -251,7 +251,7 @@ public class RelationSet {
 	private Set<SID[]> getAllPartOfs(Map<AtomicRelation, Table> tables) {
 		Set<SID[]> partOfs = new HashSet<SID[]>();
 		for (AtomicRelation rel : getAtomicRelations()) {
-			if (rel instanceof PartOf) {
+			if (rel instanceof PartOf && tables.get(rel) != null) {
 				for (Integer[] tuple : tables.get(rel).getTuples()) {
 					partOfs.add(rel.toSIDs(tuple));
 				}
@@ -263,7 +263,7 @@ public class RelationSet {
 	private Set<SID[]> getAllBefores(Map<AtomicRelation, Table> tables) {
 		Set<SID[]> befores = new HashSet<SID[]>();
 		for (AtomicRelation rel : getAtomicRelations()) {
-			if (rel instanceof Before) {
+			if (rel instanceof Before && tables.get(rel) != null) {
 				for (Integer[] tuple : tables.get(rel).getTuples()) {
 					befores.add(rel.toSIDs(tuple));
 				}
@@ -352,8 +352,11 @@ public class RelationSet {
 
 	public static RelationSet getAllensIntervalAlgebra(int f, int i, int l) {
     	Set<Relation> allen = new HashSet<Relation>();
+    	allen.add(before(f, f, 0, 1));
+    	allen.add(before(l, l, 0, 1));
+    	allen.add(before(f, l, 0, 1));
 
-		Relation before = before(f, l, 0, 1);
+		Relation before = before(l, f, 0, 1);
 		before.setName("Before");
     	allen.add(before);
 
@@ -381,7 +384,7 @@ public class RelationSet {
     	ends.setName("Ends");
     	allen.add(ends);
 
-    	Relation after = before(f, l, 1, 0);
+    	Relation after = before(l, f, 1, 0);
     	after.setName("After");
     	allen.add(after);
 

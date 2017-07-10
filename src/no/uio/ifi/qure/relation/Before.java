@@ -52,13 +52,13 @@ public class Before extends AtomicRelation {
 
 	public String toBTSQL(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
-		String query = "    SELECT DISTINCT " + selFroWhe[0] + "\n";
-		query += "    FROM " + selFroWhe[1] + "\n";
-		query += "    WHERE ";
+		String query = "SELECT DISTINCT " + selFroWhe[0] + "\n";
+		query += "  FROM " + selFroWhe[1] + "\n";
+		query += "  WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
-		if (r0 != 0) query += "      T" + a0 + ".role & " + (r0 << 1) + " != 0 AND\n";
-		if (r0 != 0) query += "      T" + a0 + ".role & " + (r0 << 1) + " != 0 AND\n";
-		query += "      T" + a0 + ".block < T" + a0 + ".block";
+		if (r0 != 0) query += "  T" + a0 + ".role & " + (1 | (r0 << 1)) + " = " + (1 | (r0 << 1)) + " AND\n";
+		if (r1 != 0) query += "  T" + a1 + ".role & " + (1 | (r1 << 1)) + " = " + (1 | (r1 << 1)) + " AND\n";
+		query += "  T" + a0 + ".block < T" + a1 + ".block";
 		return query;
 	}
 
@@ -76,20 +76,31 @@ public class Before extends AtomicRelation {
 
 	public Set<Map<Integer, Integer>> impliesNonEmpty(AtomicRelation r) {
 
+		Set<Map<Integer, Integer>> unifiers = new HashSet<Map<Integer, Integer>>();
+
 		if (r instanceof Before) {
 			Before bfr = (Before) r;
 			if (a0 == bfr.a0 && stricterRole(bfr.r0, r0) &&
 			    a1 == bfr.a1 && stricterRole(bfr.r1, r1)) {
 
-				Set<Map<Integer, Integer>> unifiers = new HashSet<Map<Integer, Integer>>();
 				Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
 				unifier.put(new Integer(r0), new Integer(bfr.r0));
 				unifier.put(new Integer(r1), new Integer(bfr.r1));
 				unifiers.add(unifier);
-				return unifiers;
 			}
+		} else if (r instanceof Overlaps && r.getArity() == 1) {
+			if (stricterRole(r0, r.getArgRole(0))) {
+				Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+				unifier.put(0, 0);
+				unifiers.add(unifier);
+			}
+			if (stricterRole(r1, r.getArgRole(0))) {
+				Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
+				unifier.put(1, 0);
+				unifiers.add(unifier);
+			} 
 		}
-		return null;
+		return unifiers.isEmpty() ? null : unifiers;
 	}
 
 	@Override

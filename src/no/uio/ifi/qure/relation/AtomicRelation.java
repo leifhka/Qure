@@ -88,4 +88,10 @@ public abstract class AtomicRelation extends Relation {
 		return res;
 	}
 
+	public Integer[] reverse(Integer[] tuple) {
+		Integer[] res = new Integer[2];
+		res[0] = tuple[1];
+		res[1] = tuple[0];
+		return res;
+	}
 }

@@ -57,7 +57,7 @@ public class TimeProvider implements SpaceProvider {
 
 		updating = false;
 		UnparsedIterator<String> timeStrs = dataProvider.getSpaces();
-		times = parseTimes(timeStrs, config.verbose);
+		times = parseTimes(timeStrs, config.relationSet.getRoles(), config.verbose);
 		makeAndSetUniverse();
 	}
 
@@ -66,7 +66,7 @@ public class TimeProvider implements SpaceProvider {
 		updating = true;
 		Set<Integer> urisToInsert = dataProvider.getInsertURIs();
 		UnparsedIterator<String> wkbs = dataProvider.getSpaces(urisToInsert);
-		times = parseTimes(wkbs, config.verbose);
+		times = parseTimes(wkbs, config.relationSet.getRoles(), config.verbose);
 		obtainUniverse();
 	}
 
@@ -157,7 +157,7 @@ public class TimeProvider implements SpaceProvider {
 	public Map<SID, TimeSpace> getExternalOverlapping(Space s) {
 
 		UnparsedIterator<String> timeStrs = dataProvider.getExternalOverlapping(extTime());
-		Map<SID, TimeSpace> res = parseTimes(timeStrs, false);
+		Map<SID, TimeSpace> res = parseTimes(timeStrs, config.relationSet.getRoles(), false);
 		return res;
 	}
 
@@ -176,13 +176,28 @@ public class TimeProvider implements SpaceProvider {
 		return newTime;
 	}	
 
-	private Map<SID, TimeSpace> parseTimes(UnparsedIterator<String> timeStrs, boolean verbose) {
+	private void extractAndPutRoledTimes(int id, TimeSpace ts, Set<Integer> roles, Map<SID, TimeSpace> result) {
+
+		if (roles == null || roles.isEmpty()) { 
+			result.put(new SID(id), ts);
+		} else {
+			for (Integer role : roles) {
+				TimeSpace roledTS = ts.getPart(role);
+				if (!roledTS.isEmpty()) {
+					result.put(new SID(id, role), roledTS);
+				}
+			}
+		}
+	}
+
+	private Map<SID, TimeSpace> parseTimes(UnparsedIterator<String> timeStrs, Set<Integer> roles, boolean verbose) {
 
 		int total = timeStrs.size();
 		Progress prog = new Progress("Parsing timestamp pairs...", total, 1, "##0");  
 		prog.setConvertToLong(true);
 
 		Map<SID, TimeSpace> result = new HashMap<SID,TimeSpace>(total);
+		int totalParsed = 0;
 
 		if (verbose) prog.init();
 
@@ -191,15 +206,17 @@ public class TimeProvider implements SpaceProvider {
 			UnparsedSpace<String> ups = timeStrs.next();
 
 			TimeSpace newTime = parseTime(ups.unparsedSpace);
-		   
-			if (!newTime.isEmpty()) {
-				result.put(new SID(ups.uri), newTime);
+
+			if (newTime != null && !newTime.isEmpty()) {
+				extractAndPutRoledTimes(ups.uri, newTime, roles, result);
+    			totalParsed++;
 			}
+		   
 			if (verbose) prog.update();
 		}
 		if (verbose) {
 			prog.done();
-			int errors = total - result.values().size();
+			int errors = total - totalParsed;
 			if (errors > 0) System.out.println("Unable to parse " + errors + " timestamp pairs.");
 			System.out.println("Parsed " + result.values().size() + " timestamp pairs.");
 		}
@@ -207,32 +224,113 @@ public class TimeProvider implements SpaceProvider {
 		return result;
 	}
 
-	private String[] getRolePart(int role, String table) {
-		return null; //TODO
+	private String getOverlapsWhere(Overlaps rel, int i, int j) {
+		String where = "";
+		if (rel.getArgRole(i) == 0 && rel.getArgRole(j) == 0) { // 0, 0
+			where += "((T" + i + ".starttime <= T" + j + ".stoptime AND\n";
+			where += "  T" + j + ".stoptime <= T" + i + ".stoptime) OR ";
+			where += " (T" + j + ".starttime <= T" + i + ".stoptime AND\n";
+			where += "  T" + i + ".stoptime <= T" + j + ".stoptime))";
+		} else if ((rel.getArgRole(i) | TimeSpace.INTERIOR) == TimeSpace.INTERIOR && (rel.getArgRole(j) | TimeSpace.INTERIOR) == TimeSpace.INTERIOR) { // (0 OR INTERIOR), (0 OR INTERIOR), but not 0,0
+			where += "((T" + i + ".starttime < T" + j + ".stoptime AND\n";
+			where += "  T" + j + ".stoptime <= T" + i + ".stoptime) OR ";
+			where += " (T" + j + ".starttime < T" + i + ".stoptime AND\n";
+			where += "  T" + i + ".stoptime <= T" + j + ".stoptime))";
+		} else if (rel.getArgRole(i) == 0 && rel.getArgRole(j) == TimeSpace.FIRST) { // 0, FIRST
+			where += "(T" + i + ".starttime <= T" + j + ".starttime AND\n";
+			where += " T" + j + ".starttime <= T" + i + ".stoptime)";
+		} else if (rel.getArgRole(i) == 0 && rel.getArgRole(j) == TimeSpace.LAST) { // 0, LAST
+			where += "(T" + i + ".starttime <= T" + j + ".stoptime AND\n";
+			where += " T" + j + ".stoptime <= T" + i + ".stoptime)";
+		} else if (rel.getArgRole(i) == TimeSpace.INTERIOR && rel.getArgRole(j) == TimeSpace.FIRST) { // INTERIOR, FIRST
+			where += "(T" + i + ".starttime < T" + j + ".starttime AND\n";
+			where += " T" + j + ".starttime < T" + i + ".stoptime)";
+		} else if (rel.getArgRole(i) == TimeSpace.INTERIOR && rel.getArgRole(j) == TimeSpace.LAST) { // INTERIOR, LAST
+			where += "(T" + i + ".starttime < T" + j + ".stoptime AND\n";
+			where += " T" + j + ".stoptime < T" + i + ".stoptime)";
+		} else if (rel.getArgRole(i) == TimeSpace.FIRST && rel.getArgRole(j) == TimeSpace.FIRST) { // FIRST, FIRST
+			where += "(T" + i + ".starttime = T" + j + ".starttime)";
+		} else if (rel.getArgRole(i) == TimeSpace.FIRST && rel.getArgRole(j) == TimeSpace.LAST) { // FIRST, LAST
+			where += "(T" + i + ".starttime = T" + j + ".stoptime)";
+		} else if (rel.getArgRole(i) == TimeSpace.LAST && rel.getArgRole(j) == TimeSpace.LAST) { // LAST, LAST
+			where += "(T" + i + ".stoptime = T" + j + ".stoptime)";
+		} else {
+			System.err.println("Cannot make query for roles " + rel.toString());
+			System.exit(1);
+		}
+		return where;
 	}
 
-	private String[][] getRoleParts(AtomicRelation rel, int args) {
-		String[][] argRoleParts = new String[args][];
-		for (int i = 0; i < args; i++) {
-			argRoleParts[i] = getRolePart(rel.getArgRole(i), "T." + i);
+	private String getOverlapsWhere(Overlaps rel) {
+		String where = getOverlapsWhere(rel, rel.getArg(0), rel.getArg(1));
+		if (!where.equals("")) return where;
+		return getOverlapsWhere(rel, rel.getArg(1), rel.getArg(0));
+	}
+
+	private String getPartOfWhere(PartOf rel) {
+		int a0 = rel.getArg(0);
+		int a1 = rel.getArg(1);
+		String where = "";
+		if (rel.getArgRole(a0) == 0 && rel.getArgRole(a1) == 0) { // 0, 0
+			where += "(T" + a1 + ".starttime <= T" + a0 + ".starttime AND\n";
+			where += " T" + a0 + ".stoptime <= T" + a1 + ".stoptime)";
+		} else if (rel.getArgRole(a0) == TimeSpace.FIRST && rel.getArgRole(a1) == 0) { // FIRST, 0
+			where += "(T" + a1 + ".starttime <= T" + a0 + ".starttime AND\n";
+			where += " T" + a0 + ".starttime <= T" + a1 + ".stoptime)";
+		} else if (rel.getArgRole(a0) == TimeSpace.LAST && rel.getArgRole(a1) == 0) { // LAST, 0
+			where += "(T" + a1 + ".starttime <= T" + a0 + ".stoptime AND\n";
+			where += " T" + a0 + ".stoptime <= T" + a1 + ".stoptime)";
+		} else if (rel.getArgRole(a0) == TimeSpace.FIRST && rel.getArgRole(a1) == TimeSpace.INTERIOR) { // FIRST, INTERIOR
+			where += "(T" + a1 + ".starttime < T" + a0 + ".starttime AND\n";
+			where += " T" + a0 + ".starttime < T" + a1 + ".stoptime)";
+		} else if (rel.getArgRole(a0) == TimeSpace.LAST && rel.getArgRole(a1) == TimeSpace.INTERIOR) { // LAST, INTERIOR
+			where += "(T" + a1 + ".starttime < T" + a0 + ".stoptime AND\n";
+			where += " T" + a0 + ".stoptime < T" + a1 + ".stoptime)";
+		} else if (rel.getArgRole(a0) == TimeSpace.FIRST && rel.getArgRole(a1) == TimeSpace.FIRST) { // FIRST, FIRST
+			where += "(T" + a0 + ".starttime = T" + a1 + ".starttime)";
+		} else if (rel.getArgRole(a0) == TimeSpace.FIRST && rel.getArgRole(a1) == TimeSpace.LAST) { // FIRST, LAST
+			where += "(T" + a0 + ".starttime = T" + a1 + ".stoptime)";
+		} else if (rel.getArgRole(a0) == TimeSpace.LAST && rel.getArgRole(a1) == TimeSpace.FIRST) { // LAST, FIRST
+			where += "(T" + a0 + ".stoptime = T" + a1 + ".starttime)";
+		} else if (rel.getArgRole(a0) == TimeSpace.LAST && rel.getArgRole(a1) == TimeSpace.LAST) { // LAST, LAST
+			where += "(T" + a0 + ".stoptime = T" + a1 + ".stoptime)";
+		} else {
+			System.err.println("Cannot make query for roles " + rel.toString());
+			System.exit(1);
 		}
-		return argRoleParts;
+		return where;
+	}
+
+	private String getBeforeWhere(Before rel) {
+		int a0 = rel.getArg(0);
+		int a1 = rel.getArg(1);
+		String where = "";
+		if ((rel.getArgRole(a0) | TimeSpace.LAST) == TimeSpace.LAST && (rel.getArgRole(a1) | TimeSpace.FIRST) == TimeSpace.FIRST) {
+			where += "(T" + a0 + ".stoptime < T" + a1 + ".starttime)";
+		} else if ((rel.getArgRole(a0) | TimeSpace.FIRST) == TimeSpace.FIRST && (rel.getArgRole(a1) | TimeSpace.LAST) == TimeSpace.LAST) {
+			where += "(T" + a0 + ".starttime < T" + a1 + ".stoptime)";
+		} else if ((rel.getArgRole(a0) | TimeSpace.FIRST) == TimeSpace.FIRST && (rel.getArgRole(a1) | TimeSpace.FIRST) == TimeSpace.FIRST) {
+			where += "(T" + a0 + ".starttime < T" + a1 + ".starttime)";
+		} else if ((rel.getArgRole(a0) | TimeSpace.LAST) == TimeSpace.LAST && (rel.getArgRole(a1) | TimeSpace.LAST) == TimeSpace.LAST) {
+			where += "(T" + a0 + ".stoptime < T" + a1 + ".stoptime)";
+		}
+		return where;
 	}
 
 	public String toSQL(AtomicRelation rel, String[] vals, Config config) {
+
 		String[] selFroWhe = rel.makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
-		String[][] roleParts = getRoleParts(rel, vals.length);
 		String select = "SELECT " + selFroWhe[0] + "\n";
 		String from = "FROM " + selFroWhe[1] + "\n";
+
 		String where = "WHERE ";
 		if (!selFroWhe[2].equals("")) where += selFroWhe[2] + " AND\n";
 		if (rel instanceof Overlaps) {
-			where += "((T" + rel.getArg(0) + ".starttime <= T" + rel.getArg(1) + ".stoptime AND T" + rel.getArg(1) + ".stoptime <= T" + rel.getArg(0) + ".stoptime) OR ";
-			where += "(T" + rel.getArg(1) + ".starttime <= T" + rel.getArg(0) + ".stoptime AND T" + rel.getArg(0) + ".stoptime <= T" + rel.getArg(1) + ".stoptime))";
+			where += getOverlapsWhere((Overlaps) rel);
 		} else if (rel instanceof PartOf) {
-			where += "T" + rel.getArg(1) + ".starttime <= T" + rel.getArg(0) + ".starttime AND T" + rel.getArg(0) + ".stoptime <= T" + rel.getArg(1) + ".stoptime";
+			where += getPartOfWhere((PartOf) rel);
 		} else if (rel instanceof Before) {
-			where += "BEFORE(T" + rel.getArg(0) + ".stoptime, T" + rel.getArg(1) + ".starttime)";
+			where += getBeforeWhere((Before) rel);
 		} else {
 			return null;
 		}

@@ -242,7 +242,6 @@ public class GeometryProvider implements SpaceProvider {
 			Geometry geo = parseGeometry(ups.unparsedSpace);
 			
 			if (geo != null && geo.isValid() && !geo.isEmpty()) {
-				//result.put(new SID(ups.uri, 0), new GeometrySpace(geo, config.geometryFactoryPrecision));
 				extractAndPutRoledGeos(ups.uri, new GeometrySpace(geo, config.geometryPrecision), roles, result);
     			totalParsed++;
 			}

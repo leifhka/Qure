@@ -260,7 +260,8 @@ public class RelationshipGraph {
 
 	private boolean sameBefore(SID sid1, Set<SID> sids) {
 		for (SID sid2 : sids) {
-			if (!before.get(sid1).equals(before.get(sid2))) {
+			if (!before.get(sid1).containsAll(before.get(sid2)) ||
+			    !before.get(sid2).containsAll(before.get(sid1))) {
 				return false;
 			}
 		}
@@ -397,6 +398,8 @@ public class RelationshipGraph {
 
 		Map<Integer, Bintree> finalRep = new HashMap<Integer, Bintree>();
 		finalizeRepresenataion(localRep, wit, finalRep);
+		//System.out.println("\n" + before.toString());
+		//System.out.println("\n\n" + Arrays.toString(order));
 
 		return new Representation(finalRep);
 	}
