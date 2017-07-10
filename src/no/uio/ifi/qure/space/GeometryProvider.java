@@ -144,17 +144,16 @@ public class GeometryProvider implements SpaceProvider {
 		GeometrySpace uni = (GeometrySpace) spUni;
 		Set<SID> coversChildUniverse = new HashSet<SID>();
 		Map<SID, GeometrySpace> overlappingChildUniverse = new HashMap<SID, GeometrySpace>();
-		getIntersections(uni, ints, geometries, overlappingChildUniverse, coversChildUniverse);
+		getIntersections(uni, ints, overlappingChildUniverse, coversChildUniverse);
 
 		return new GeometryProvider(config, dataProvider, uni, overlappingChildUniverse, coversChildUniverse,
 		                            geometryFactory, updating);
 	}
 
-	private void getIntersections(GeometrySpace uni, Set<SID> elems,  Map<SID, GeometrySpace> geos,
-	                              Map<SID, GeometrySpace> overlapping, Set<SID> covers) {
+	private void getIntersections(GeometrySpace uni, Set<SID> elems, Map<SID, GeometrySpace> overlapping, Set<SID> covers) {
 
 		Map<SID, Space> spMap = new HashMap<SID, Space>();
-		Utils.getIntersections(uni, elems, geos, config.numThreads, spMap, covers);
+		getIntersections(uni, elems, config.numThreads, spMap, covers);
 
 		for (SID uri : spMap.keySet()) {
 			overlapping.put(uri, (GeometrySpace) spMap.get(uri));

@@ -119,17 +119,16 @@ public class TimeProvider implements SpaceProvider {
 		TimeSpace uni = (TimeSpace) spUni;
 		Set<SID> coversChildUniverse = new HashSet<SID>();
 		Map<SID, TimeSpace> overlappingChildUniverse = new HashMap<SID, TimeSpace>();
-		getIntersections(uni, ints, times, overlappingChildUniverse, coversChildUniverse);
+		getIntersections(uni, ints, overlappingChildUniverse, coversChildUniverse);
 
 		return new TimeProvider(config, dataProvider, uni, overlappingChildUniverse,
 		                        coversChildUniverse, updating);
 	}
 
-	private void getIntersections(TimeSpace uni, Set<SID> elems,  Map<SID, TimeSpace> tms,
-	                              Map<SID, TimeSpace> overlapping, Set<SID> covers) {
+	private void getIntersections(TimeSpace uni, Set<SID> elems, Map<SID, TimeSpace> overlapping, Set<SID> covers) {
 
 		Map<SID, Space> spMap = new HashMap<SID, Space>();
-		Utils.getIntersections(uni, elems, tms, config.numThreads, spMap, covers);
+		getIntersections(uni, elems, config.numThreads, spMap, covers);
 
 		for (SID uri : spMap.keySet()) overlapping.put(uri, (TimeSpace) spMap.get(uri));
 	}
