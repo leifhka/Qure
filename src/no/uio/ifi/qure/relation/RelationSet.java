@@ -22,6 +22,7 @@ public class RelationSet {
 	private Set<AtomicRelation> atomicRels;
 	private String name;
 	private int highestArity;
+	private Set<Pair<Integer, Integer>> canBeEquated;
 
 	private Set<AtomicRelation> leaves; // Used for implication graph
 	private Map<AtomicRelation, Set<AtomicRelation>> implies;
@@ -192,6 +193,30 @@ public class RelationSet {
     	}
     	return atomicRoles;
     }
+	private void computeCanBeEquated() {
+		canBeEquated = new HashSet<Pair<Integer, Integer>>();
+		for (Integer r1 : roles) {
+			for (Integer r2 : roles) {
+				if (r1 != r2 && checkCanBeEquated(r1, r2)) {
+					canBeEquated.add(new Pair<Integer, Integer>(Math.min(r1, r2), Math.max(r1, r2)));
+				}
+			}
+		}
+	}
+
+    public boolean checkCanBeEquated(int role1, int role2) {
+	    Set<Integer> roles = new HashSet<Integer>();
+	    roles.add(role1);
+	    roles.add(role2);
+	    for (AtomicRelation arel : atomicRels) {
+		    if (arel.getRoles().containsAll(roles)) {
+			    return false;
+		    }
+	    }
+	    return true;
+    }
+
+    public Set<Pair<Integer, Integer>> getCanBeEquated() { return canBeEquated; }
 
     public static int getHighestArity(Set<AtomicRelation> rels) {
 		int maxArr = 0;
@@ -352,9 +377,9 @@ public class RelationSet {
 
 	public static RelationSet getAllensIntervalAlgebra(int f, int i, int l) {
     	Set<Relation> allen = new HashSet<Relation>();
-    	allen.add(before(f, f, 0, 1));
-    	allen.add(before(l, l, 0, 1));
-    	allen.add(before(f, l, 0, 1));
+    	allen.add(before(f, f, 0, 1)); // Needed for correctness (TODO, automate adding this)
+    	allen.add(before(l, l, 0, 1)); // Needed for correctness (TODO, automate adding this)
+    	allen.add(before(f, l, 0, 1)); // Needed for correctness (TODO, automate adding this)
 
 		Relation before = before(l, f, 0, 1);
 		before.setName("Before");
