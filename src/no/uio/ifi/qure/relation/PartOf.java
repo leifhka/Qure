@@ -111,7 +111,7 @@ public class PartOf extends AtomicRelation {
 		String query = "WITH \n";
 		query += "  possible AS (\n" + toBTSQL2Approx(vals, config) + "),\n";
 		query += "  posGids AS (SELECT DISTINCT v" + a1 + " FROM possible),\n";
-		query += "  allBlocks AS (SELECT DISTINCT block FROM " + config.btTableName + " WHERE gid = " + vals[a0] + " AND role & " + (1 | r0) + " = " + (1 | r0) + "),\n";
+		query += "  allBlocks AS (SELECT DISTINCT block FROM " + config.btTableName + " WHERE gid = " + vals[a0] + " AND role & " + (1 | (r0 << 1)) + " = " + (1 | (r0 << 1)) + "),\n";
 		query += "  rem AS (\n";
 		query += "        SELECT DISTINCT v" + a1 + "\n";
 		query += "        FROM posGids AS Pos,\n";
