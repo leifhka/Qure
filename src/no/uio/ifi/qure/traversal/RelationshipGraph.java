@@ -12,6 +12,7 @@ public class RelationshipGraph {
 	private final Map<SID, Set<SID>> partOf;
 	private final Map<SID, Set<SID>> hasPart;
 	private final Map<SID, Set<SID>> before;
+	private final Map<SID, Set<SID>> after;
 	private final SpaceProvider spaces;
 	private final Set<SID> topmostNodes;
 	private int overlapsNodeId; // Always negative, and decreasing
@@ -29,6 +30,7 @@ public class RelationshipGraph {
 		partOf = new HashMap<SID, Set<SID>>();
 		hasPart = new HashMap<SID, Set<SID>>();
 		before = new HashMap<SID, Set<SID>>();
+		after = new HashMap<SID, Set<SID>>();
 
 		for (SID uri : spaces.keySet()) {
 			addUri(uri);
@@ -49,6 +51,7 @@ public class RelationshipGraph {
 		partOf.put(uri, new HashSet<SID>());
 		hasPart.put(uri, new HashSet<SID>());
 		before.put(uri, new HashSet<SID>());
+		after.put(uri, new HashSet<SID>());
 	}
 
 	public void addUris(Set<SID> newUris) {
@@ -114,6 +117,7 @@ public class RelationshipGraph {
 
 	private void addBefore(SID u1, SID u2) {
 		before.get(u1).add(u2);
+		after.get(u2).add(u1);
 	}
 
 	private SID addOverlapsWithoutRedundancyCheck(Set<SID> parents) {
@@ -261,7 +265,9 @@ public class RelationshipGraph {
 	private boolean sameBefore(SID sid1, Set<SID> sids) {
 		for (SID sid2 : sids) {
 			if (!before.get(sid1).containsAll(before.get(sid2)) ||
-			    !before.get(sid2).containsAll(before.get(sid1))) {
+			    !before.get(sid2).containsAll(before.get(sid1)) ||
+			    !after.get(sid1).containsAll(after.get(sid2)) ||
+			    !after.get(sid2).containsAll(after.get(sid1))) {
 				return false;
 			}
 		}
