@@ -379,6 +379,7 @@ public class RelationshipGraph {
 				return false;
 			}
 		}
+		return true;
 	}
 
 	private void equateRoleNodes() {
