@@ -36,10 +36,14 @@ public class Qure {
 
 	public static void main(String[] args) {
 
-		Config config = new Config("tiny_time", "tf2", 4, 1, 10);
+		//RelationSet relationSet = RelationSet.getSimple(2);
+		//RelationSet relationSet = RelationSet.getAllensIntervalAlgebra(TimeSpace.FIRST, TimeSpace.INTERIOR, TimeSpace.LAST);
+		RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
+
+		Config config = new Config("osm_ice", "rectsk", 15, 30, 10, relationSet);
 		//Config config = new Config("tiny", "nbl", 4, 1, 10);
-		//geometries = new GeometryProvider(config, new DBDataProvider(config));
-		geometries = new TimeProvider(config, new DBDataProvider(config));
+		geometries = new GeometryProvider(config, new DBDataProvider(config));
+		//geometries = new TimeProvider(config, new DBDataProvider(config));
 
 		ArrayList<Config> rfs = new ArrayList<Config>();
 		rfs.add(config);
@@ -52,10 +56,9 @@ public class Qure {
 		//runAllInsertBM(configs, 100, 20, false);
 		//runAllInsertBM(rfs, 100, 20, true);
 
-		//RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
 		//Relation r = partOf(0,0,1,0);//.and(not(partOf(0,0,1,0)));
 		//RelationSet relationSet = new RelationSet(); relationSet = relationSet.add(r);
-		checkCorrectness(config, config.relationSet, 7);
+		//checkCorrectness(config, config.relationSet, 7);
 	}
 
 	private static void runMany(Collection<Config> configs) {
@@ -592,7 +595,7 @@ public class Qure {
 				System.out.println(sqlex.getMessage());
 				System.out.print("Try to add a new table name suffix (or just hit return twice to abort): ");
 				Scanner scan = new Scanner(System.in).useDelimiter("[ \n]"); // Table name is only one word
-				config = new Config(config.rawGeoTableName, scan.next(), config.maxIterDepth, config.blockMemberCount, config.maxSplits);
+				config = new Config(config.rawGeoTableName, scan.next(), config.maxIterDepth, config.blockMemberCount, config.maxSplits, config.relationSet);
 				System.out.println("");
 
 				if (config.btTableName.equals("")) {

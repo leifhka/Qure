@@ -20,22 +20,22 @@ public class Config {
 
 	public int maxIterDepth;
 	public int blockMemberCount;
-	public int numThreads = 8;
+	public int numThreads = 16;
 	public int dim = 2;
 
 	//public int maxDiff = 25;
 	public double minRatio = 0.9;
 	public int maxSplits = 7;
 
-	//public RelationSet relationSet = RelationSet.getSimple(3);
-	public RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
+	public RelationSet relationSet;
  
 	public Config(String table, String suff, int representationDepth, 
-				  int blockMemberCount, int maxSplits) {
+				  int blockMemberCount, int maxSplits, RelationSet relationSet) {
 
 		this.maxIterDepth = representationDepth;
 		this.blockMemberCount = blockMemberCount;
 		this.maxSplits = maxSplits;
+		this.relationSet = relationSet;
 
 		rawGeoTableName = table;
 		geoTableName = "geo." + rawGeoTableName;
@@ -68,9 +68,9 @@ public class Config {
 	public String dbUsername = "leifhka";
 	public String uriColumn = "gid";
 	public String blockColumn = "block";
-	//public String geoColumn = "geom";
 	public int limit = 1000000;
-	public String geoColumn = "starttime, stoptime";
+	public String geoColumn = "geom";
+	//public String geoColumn = "starttime, stoptime";
 	public String universeTable = "qure.universes";
 	public boolean convertUriToInt = true;
 
