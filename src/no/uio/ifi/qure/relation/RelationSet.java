@@ -86,6 +86,7 @@ public class RelationSet {
 		}
 
 		computeImplicationGraph();
+		computeCanBeEquated();
 	}
 
 	private void removeTransitiveUnifiers(AtomicRelation rel) {
@@ -348,9 +349,9 @@ public class RelationSet {
 	public static RelationSet getRCC8(int i, int b) {
 		Set<Relation> rcc8 = new HashSet<Relation>();
 
-		Relation dj = not(overlaps(0, 0, 0, 1));
-		dj.setName("DJ");
-		rcc8.add(dj);
+		//Relation dj = not(overlaps(0, 0, 0, 1));
+		//dj.setName("DJ");
+		//rcc8.add(dj);
 
 		Relation ec = overlaps(0, 0, 0, 1).and(not(overlaps(i, i, 0, 1)));
 		ec.setName("EC");
