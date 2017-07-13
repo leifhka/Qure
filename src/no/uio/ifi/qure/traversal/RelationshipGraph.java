@@ -149,7 +149,7 @@ public class RelationshipGraph {
 
 		Set<SID> merged = new HashSet<SID>(sids);
 		for (SID p : sids) {
-			for (SID ov : hasPart.get(p)) {
+			for (SID ov : hasPart.get(p)) { // TODO: Get set of all parts first, then traverse (optimize)
 				if (isOverlapsNode(ov) && canBeMerged(Utils.union(sids, partOf.get(ov)), sids)) {
 					merged = Utils.union(sids, partOf.get(ov));
 				}
@@ -160,7 +160,7 @@ public class RelationshipGraph {
 
 	private boolean canBeMerged(Set<SID> toCheck, Set<SID> toAdd) {
 
-		for (Set<SID> subset : Utils.getSubsets(toCheck, 2, relations.getHighestArity())) {
+		for (Set<SID> subset : Utils.getSubsets(toCheck, 2, relations.getHighestArity())) { // TODO: Optimize getSubsets
 			if (subset.containsAll(toAdd)) continue; // toAdd not yet overlapping, but is going to be added
 			for (AtomicRelation rel : relations.getAtomicRelations()) {
 				if (rel instanceof Overlaps && ((Overlaps) rel).compatible(subset) && !overlaps(subset)) {
