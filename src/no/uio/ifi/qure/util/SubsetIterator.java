@@ -1,50 +1,60 @@
 package no.uio.ifi.qure.util;
 
 import java.util.*;
+import java.math.BigInteger;
 
 public class SubsetIterator<T> implements Iterator<Set<T>> {
-	private int minLen, maxLen, toGet, index, maxIndex;
+	private int curLen, maxLen;
+	private BigInteger toGet, maxToGet;
 	private Set<T> next;
 	private List<T> elems;
 	
 	public SubsetIterator(Set<T> set, int minLen, int maxLen) {
-		this.minLen = minLen;
 		this.maxLen = maxLen;
 		elems = new ArrayList<T>(set);
-		toGet = (1 << minLen) - 1; // Smallest number containing minLen 1s
-		index = toGet;
-		maxIndex = 1 << set.size();
-		setNextElem();
+		curLen = minLen;
+		toGet = (BigInteger.ONE.shiftLeft(curLen)).subtract(BigInteger.ONE); // Smallest number containing minLen 1s
+		maxToGet = toGet.shiftLeft(elems.size()-curLen);
 	}
+	
 	public boolean hasNext() {
-		return next != null;
+		return toGet.compareTo(maxToGet) < 0;
 	}
-	private void setNextElem() {
-		next = null;
-		while (index < maxIndex && next == null) {
-			int num1s = Integer.bitCount(toGet);
-			if (minLen <= num1s && num1s <= maxLen) {
-				next = getCurrentSubset();
-			}
-			index++;
-			toGet++;
+	
+	private void setNextToGet() {
+		if (toGet.compareTo(maxToGet) > 0 && curLen < maxLen) { 
+			curLen++;
+			toGet = (BigInteger.ONE.shiftLeft(curLen)).subtract(BigInteger.ONE); // Smallest number containing minLen 1s
+			maxToGet = toGet.shiftLeft(elems.size()-curLen);
+		} else {
+			// From Bit Twidling Hacks. Sets toGet to be the (lexicographically) next integer with same number of 1-bits.
+			BigInteger t = toGet.or(toGet.subtract(BigInteger.ONE)); // t gets toGet's least significant 0 bits set to 1
+			// Next set to 1 the most significant bit to change, 
+			// // set to 0 the least significant ones, and add the necessary 1 bits.
+			toGet = t.add(BigInteger.ONE)
+			         .or(t.not()
+			              .and(t.not()
+			                    .negate())
+			              .subtract(BigInteger.ONE)
+			              .shiftLeft(toGet.getLowestSetBit())
+			              .add(BigInteger.ONE));  
 		}
 	}
 	
 	public Set<T> next() {
-		Set<T> res = next;
-		setNextElem();
+		Set<T> res = getCurrentSubset();
+		setNextToGet();
 		return res;
 	}
 
 	private Set<T> getCurrentSubset() {
 		Set<T> result = new HashSet<T>();
-		int toGetC = toGet;
-		for (int i = 0; i < 32; i++) {
-			if (toGetC % 2 != 0) {
+		BigInteger toGetC = toGet;
+		for (int i = 0; i < elems.size(); i++) {
+			if (toGetC.mod(BigInteger.valueOf(2)).compareTo(BigInteger.ZERO) == 0) {
 				result.add(elems.get(i));
 			}
-			toGetC = toGetC >> 1;
+			toGetC = toGetC.shiftLeft(1);
 		}
 		return result;
 	}
