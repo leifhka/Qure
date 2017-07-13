@@ -147,12 +147,19 @@ public class RelationshipGraph {
 
 	private Set<SID> findMerge(Set<SID> sids) {
 
-		Set<SID> merged = new HashSet<SID>(sids);
+		Set<SID> possible = new HashSet<SID>();
 		for (SID p : sids) {
-			for (SID ov : hasPart.get(p)) { // TODO: Get set of all parts first, then traverse (optimize)
-				if (isOverlapsNode(ov) && canBeMerged(Utils.union(sids, partOf.get(ov)), sids)) {
-					merged = Utils.union(sids, partOf.get(ov));
+			for (SID ov : hasPart.get(p)) {
+				if (isOverlapsNode(ov)) {
+					possible.add(ov);
 				}
+			}
+		}
+
+		Set<SID> merged = new HashSet<SID>(sids);
+		for (SID ov : possible) {
+			if (canBeMerged(partOf.get(ov), sids)) {
+				merged = Utils.union(sids, partOf.get(ov));
 			}
 		}
 		return merged;
@@ -160,8 +167,10 @@ public class RelationshipGraph {
 
 	private boolean canBeMerged(Set<SID> toCheck, Set<SID> toAdd) {
 
-		for (Set<SID> subset : Utils.getSubsets(toCheck, 2, relations.getHighestArity())) { // TODO: Optimize getSubsets
-			if (subset.containsAll(toAdd)) continue; // toAdd not yet overlapping, but is going to be added
+		Iterator<Set<SID>> subsetIter = Utils.getSubsets(Utils.union(toAdd, toCheck), 2, relations.getHighestArity());
+		while (subsetIter.hasNext()) {
+			Set<SID> subset = subsetIter.next();
+			if (subset.containsAll(toAdd) || toCheck.containsAll(subset)) continue; // toAdd not yet overlapping, but is going to be added
 			for (AtomicRelation rel : relations.getAtomicRelations()) {
 				if (rel instanceof Overlaps && ((Overlaps) rel).compatible(subset) && !overlaps(subset)) {
 					return false;
@@ -178,14 +187,29 @@ public class RelationshipGraph {
 		removeOverlapsNodes(redundant);
 	}
 
+	private Pair<SID, Set<SID>> getNodeWithFewestParts(Set<SID> sids) {
+
+		Iterator<SID> iter = sids.iterator();
+		SID fewestParts = iter.next();
+		int numP = hasPart.get(fewestParts).size();
+		while (iter.hasNext()) {
+			SID nSid = iter.next();
+			int nNumP = hasPart.get(nSid).size();
+			if (nNumP < numP) {
+				fewestParts = nSid;
+				numP = nNumP;
+			}
+		}
+		return new Pair<SID, Set<SID>>(fewestParts, Utils.remove(sids, fewestParts));
+	}
+
 	private boolean overlaps(Set<SID> parents) {
 
 		// We check overlaps by trying to find a common pred (ov. node) for parents.
-		Iterator<SID> parIter = parents.iterator();
-		SID par = parIter.next();
+		Pair<SID, Set<SID>> fewestParts = getNodeWithFewestParts(parents);
 		// Init commonPreds to contain all overlapsNodes from one parent
-		Set<SID> commonPreds = new HashSet<SID>(hasPart.get(par));
-
+		Set<SID> commonPreds = new HashSet<SID>(hasPart.get(fewestParts.fst));
+		Iterator<SID> parIter = fewestParts.snd.iterator();
 		// We then intersects this set with all preds of rest of parents
 		while (parIter.hasNext() && !commonPreds.isEmpty()) {
 			commonPreds.retainAll(hasPart.get(parIter.next()));

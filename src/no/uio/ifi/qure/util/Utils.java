@@ -70,39 +70,28 @@ public class Utils {
 		return new HashSet<T>(Arrays.asList(ts));
 	}
 	
-	public static <T> Set<Set<T>> getSubsets(Set<T> set, int minLen, int maxLen) {
-		Set<Set<T>> subsets = new HashSet<Set<T>>();
-		generateAllSubsets(new HashSet<T>(), set, minLen, maxLen, subsets);
-		return subsets;
+	//public static <T> Set<Set<T>> getSubsets(Set<T> set, int minLen, int maxLen) {
+	//	Set<Set<T>> subsets = new HashSet<Set<T>>();
+	//	generateAllSubsets(new HashSet<T>(), set, minLen, maxLen, subsets);
+	//	return subsets;
+	//}
+
+	public static <T> Iterator<Set<T>> getSubsets(Set<T> set, int minLen) {
+		return getSubsets(set, minLen, set.size());
 	}
 
-	public static <T> Set<Set<T>> getSubsets(Set<T> set, int minLen) {
-		Set<Set<T>> subsets = new HashSet<Set<T>>();
-		generateAllSubsets(new HashSet<T>(), set, minLen, set.size(), subsets);
-		return subsets;
-	}
+	//private static <T> void generateAllSubsets(Set<T> generated, Set<T> remaining, int minLen, int maxLen, Set<Set<T>> res) {
+		//if (generated.size() > maxLen) return;
+//		
+		//if (generated.size() >= minLen) {
+			//res.add(generated);
+		//}
+		//for (T t : remaining) {
+			//generateAllSubsets(add(generated, t), remove(remaining, t), minLen, maxLen, res);
+		//}
+	//}
 
-	private static <T> void generateAllSubsets(Set<T> generated, Set<T> remaining, int minLen, int maxLen, Set<Set<T>> res) {
-		if (generated.size() > maxLen) return;
-		
-		if (generated.size() >= minLen) {
-			res.add(generated);
-		}
-		for (T t : remaining) {
-			generateAllSubsets(add(generated, t), remove(remaining, t), minLen, maxLen, res);
-		}
+	public static <T> Iterator<Set<T>> getSubsets(Set<T> set, int minLen, int maxLen) {
+		return new SubsetIterator<T>(set, minLen, maxLen);
 	}
-
-// Does not work:
-//	public static <T> T cloneByClass(T i) {
-//		T ni;
-//		try {
-//			Class<T> cls = i.getClass();
-//			ni = cls.newInstance();
-//		} catch (InstantiationException e) {
-//			e.printStackTrace();
-//			System.exit(1);
-//		}
-//		return ni;
-//	}
 }

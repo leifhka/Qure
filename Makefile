@@ -42,6 +42,7 @@ CLASSES = \
         util/Progress.java \
         util/Reporter.java \
         util/Pair.java \
+        util/SubsetIterator.java \
         util/Utils.java
 
 source_files = $(addprefix $(src_prefix), $(addprefix $(package_name), $(CLASSES)))
