@@ -40,7 +40,7 @@ public class Qure {
 		//RelationSet relationSet = RelationSet.getAllensIntervalAlgebra(TimeSpace.FIRST, TimeSpace.INTERIOR, TimeSpace.LAST);
 		RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
 
-		Config config = new Config("osm_ice", "rectsk", 15, 30, 10, relationSet);
+		Config config = new Config("osm_ice", "eqrnwr2", 13, 30, 10, relationSet);
 		//Config config = new Config("tiny", "nbl", 4, 1, 10);
 		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		//geometries = new TimeProvider(config, new DBDataProvider(config));
@@ -398,8 +398,14 @@ public class Qure {
 			statement.executeUpdate("CREATE INDEX " + config.rawBTTableName
 		                            + "_wit_index ON " + config.btTableName + "(block,gid) WHERE block % 2 != 0;");
 		} else {
-			statement.executeUpdate("CREATE INDEX " + config.rawBTTableName
-		                            + "_wit_index ON " + config.btTableName + "(block,gid) WHERE role % 2 != 0;");
+			for (Integer role : config.relationSet.getRoles()) {
+				if (role != 0) {
+					statement.executeUpdate("CREATE INDEX " + config.rawBTTableName
+				                            + "_role" + role + "_index ON " + config.btTableName + "(block,gid) WHERE role & "+ (role << 1) +" = "+ (role << 1) +";");
+				}
+				statement.executeUpdate("CREATE INDEX " + config.rawBTTableName
+			                            + "_rolewit" + role + "_index ON " + config.btTableName + "(block,gid) WHERE role & "+ ((role << 1)+1) +" = "+ ((role << 1)+1) +";");
+			}
 		}
 		if (config.verbose) System.out.println(" Done");
 	}
