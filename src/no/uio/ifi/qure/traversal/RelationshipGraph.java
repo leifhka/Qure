@@ -376,23 +376,16 @@ public class RelationshipGraph {
 		return order;
 	}
 
-	private boolean hasSameRelationships(SID s1, SID s2) {
-
-		if (!partOf.get(s1).equals(partOf.get(s2)) ||
-		    !before.get(s1).equals(before.get(s2)) ||
-		    !after.get(s1).equals(after.get(s2))) {
-
-			return false;
-		}
-		// Now only need to check if same overlaps and same non-overlaps parts
+	private boolean hasSameOverlapsAndParts(SID s1, SID s2) {
+		
 		Set<SID> s2Parts = new HashSet<SID>(hasPart.get(s2));
 		for (SID s1Part : hasPart.get(s1)) {
 			if (isOverlapsNode(s1Part)) {
 				boolean found = false;
+				Set<SID> ovs1 = Utils.remove(partOf.get(s1Part), s1);
 				for (SID s2Part : s2Parts) {
-					if (isOverlapsNode(s2Part) && partOf.get(s1Part).equals(partOf.get(s2Part))) {
+					if (isOverlapsNode(s2Part) && ovs1.equals(Utils.remove(partOf.get(s2Part), s2))) { //TODO: Something weird here, more nodes total with removal of s1 and s2(?)
 						found = true;
-						s2Parts.remove(s2Part);
 						break;
 					}
 				}
@@ -406,24 +399,54 @@ public class RelationshipGraph {
 		return true;
 	}
 
+	private boolean hasSameRelationships(SID s1, SID s2) {
+
+		if (!partOf.get(s1).equals(partOf.get(s2)) ||
+		    !before.get(s1).equals(before.get(s2)) ||
+		    !after.get(s1).equals(after.get(s2))) {
+
+			return false;
+		}
+		// Now only need to check if same overlaps and same non-overlaps parts
+		return hasSameOverlapsAndParts(s1, s2);
+	}
+
+	private void removeRedundantOverlapNodesAfterEquate(SID s) {
+		Set<Set<SID>> sOvs = new HashSet<Set<SID>>();
+		for (SID ovn : new HashSet<SID>(hasPart.get(s))) {
+			if (isOverlapsNode(ovn)) {
+				Set<SID> ov = partOf.get(ovn);
+				if (sOvs.contains(ov)) {
+					removeOverlapsNode(ovn);
+				} else {
+					sOvs.add(ov);
+				}
+			}
+		}
+	}
+
+	private void equateNodes(SID s1, SID s2) {
+		addCoveredBy(s1, s2);
+		addCoveredBy(s2, s1);
+		removeRedundantOverlapNodesAfterEquate(s1);
+	}
+
 	private void equateRoleNodes() {
 		Set<SID> checked = new HashSet<SID>();
 		for (Pair<Integer, Integer> cbe : relations.getCanBeEquated()) {
-			for (SID sid : partOf.keySet()) {
+			for (SID sid : new HashSet<SID>(partOf.keySet())) {
 				if (checked.contains(sid)) continue;
 
 				if (sid.getRole() == cbe.fst) {
 					SID sndRS = new SID(sid.getID(), cbe.snd);
 					if (partOf.containsKey(sndRS) && hasSameRelationships(sid, sndRS)) {
-						addCoveredBy(sid, sndRS);
-						addCoveredBy(sndRS, sid);
+						equateNodes(sid, sndRS);
 						checked.add(sndRS);
 					}
 				} else if (sid.getRole() == cbe.snd) {
 					SID fstRS = new SID(sid.getID(), cbe.fst);
 					if (partOf.containsKey(fstRS) && hasSameRelationships(sid, fstRS)) {
-						addCoveredBy(sid, fstRS);
-						addCoveredBy(fstRS, sid);
+						equateNodes(sid, fstRS);
 						checked.add(fstRS);
 					}
 				}
@@ -500,6 +523,7 @@ public class RelationshipGraph {
 
 	public Representation constructRepresentation() {
 
+		equateRoleNodes();
 		// Construct sufficient unique parts and order nodes according to infix traversal
 		Block[] witnessesArr = Block.makeNDistinct(partOf.keySet().size()+1);
 		List<Set<SID>> order = getNodesOrder();
