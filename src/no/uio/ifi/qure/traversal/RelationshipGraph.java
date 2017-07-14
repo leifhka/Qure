@@ -382,11 +382,15 @@ public class RelationshipGraph {
 		for (SID s1Part : hasPart.get(s1)) {
 			if (isOverlapsNode(s1Part)) {
 				boolean found = false;
-				Set<SID> ovs1 = Utils.remove(partOf.get(s1Part), s1);
+				Set<SID> ovs1 = Utils.remove(Utils.remove(partOf.get(s1Part), s1), s2);
 				for (SID s2Part : s2Parts) {
-					if (isOverlapsNode(s2Part) && ovs1.equals(Utils.remove(partOf.get(s2Part), s2))) { //TODO: Something weird here, more nodes total with removal of s1 and s2(?)
-						found = true;
-						break;
+					if (isOverlapsNode(s2Part)) {
+						Set<SID> ovs2 = Utils.remove(Utils.remove(partOf.get(s2Part), s2), s1);
+						if (ovs1.equals(ovs2)) {
+							found = true;
+							s2Parts.remove(s2Part);
+							break;
+						}
 					}
 				}
 				if (!found) {
@@ -394,9 +398,11 @@ public class RelationshipGraph {
 				}
 			} else if (!s2Parts.contains(s1Part)) {
 				return false;
+			} else {
+				s2Parts.remove(s1Part);
 			}
 		}
-		return true;
+		return s2Parts.isEmpty();
 	}
 
 	private boolean hasSameRelationships(SID s1, SID s2) {
@@ -524,6 +530,7 @@ public class RelationshipGraph {
 	public Representation constructRepresentation() {
 
 		equateRoleNodes();
+
 		// Construct sufficient unique parts and order nodes according to infix traversal
 		Block[] witnessesArr = Block.makeNDistinct(partOf.keySet().size()+1);
 		List<Set<SID>> order = getNodesOrder();
