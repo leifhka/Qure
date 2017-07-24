@@ -20,7 +20,7 @@ public class Config {
 
 	public int maxIterDepth;
 	public int blockMemberCount;
-	public int numThreads = 16;
+	public int numThreads = Runtime.getRuntime().availableProcessors()*4; //32;
 	public int dim = 2;
 
 	//public int maxDiff = 25;
@@ -81,7 +81,7 @@ public class Config {
 
 	public boolean verbose = true;
 	public int percentStep = 1;
-	public boolean writeBintreesToDB = true;
+	public boolean writeBintreesToDB = false;
 
 	public PrecisionModel geometryFactoryPrecision = new PrecisionModel();
 	public PrecisionModel geometryPrecision = new PrecisionModel(Math.pow(10, 10));
