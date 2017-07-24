@@ -69,6 +69,10 @@ public class Block {
 		return (int) ((value & META_SIZE_ONES) >> ROLE_META_SIZE);
 	}
 
+	public int getMeta() {
+		return (int) (value & META_SIZE_ONES);
+	}
+
 	public long getRepresentation() {
 		return value;
 	}
@@ -109,8 +113,16 @@ public class Block {
 		return value % 2 != 0;
 	}
 
-	public long getRoles() {
-		return (value & ROLE_SIZE_ONES) >> 1;
+	public int getRole() {
+		return (int) (value & ROLE_SIZE_ONES) >> 1;
+	}
+
+	private int getRoleUnshifted() {
+		return (int) (value & ROLE_SIZE_ONES);
+	}
+
+	public Block unRoled() {
+		return new Block((value & ~getRoleUnshifted()));
 	}
 
 	public int hashCode() {
@@ -162,7 +174,9 @@ public class Block {
 	}
 
 	public Block getParent(int n) {
-		return new Block(getSize() - n, getRawBitsShifted() >> n);
+		Block p = new Block(getSize() - n, getRawBitsShifted() >> n);
+		p = p.addRole(getRole());
+		return p;
 	}
 
 	public Block getParent() {
@@ -172,7 +186,9 @@ public class Block {
 	public Block getNeighbor() {
 
 		long neiVal = getRawBitsShifted() ^ 1;
-		return new Block(getSize(), neiVal);
+		Block n = new Block(getSize(), neiVal);
+		n = n.addRole(getRole());
+		return n;
 	}
 
 	public Pair<Block, Block> split() {
@@ -185,7 +201,7 @@ public class Block {
 	
 	public boolean isNeighbours(Block b) {
 
-		return getSize() == b.getSize() &&
+		return getMeta() == b.getMeta() &&
 		       getRawBitsShifted() == (b.getRawBitsShifted() ^ 1);
 	}
 	
@@ -212,7 +228,7 @@ public class Block {
 
 		if (isEmpty())
 			return true;
-		if (b.isEmpty() || getRoles() != b.getRoles())
+		if (b.isEmpty() || getRole() != b.getRole())
 			return false;
 
 		return (b.getRepresentation() & -2L) <= getRepresentation() &&

@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import no.uio.ifi.qure.relation.Relation;
 
 public class Bintree {
 
@@ -37,26 +38,6 @@ public class Bintree {
 	    nbt.add(block);
 
 	    return new Bintree(nbt);
-	}
-
-	/**
-	 * Returns a set of blocks equal to argument, but where at most one block is a unique part.
-	 */
-	static private Set<Block> removeRedundantUniqueParts(Set<Block> bt) {
-	    
-	    Set<Block> nbt = new HashSet<Block>();
-	    boolean picked = false;
-
-	    for (Block b : bt) {
-	 	   if (!picked && b.isUniquePart()) {
-	 	 	  nbt.add(b.setUniquePart(true));
-	 	 	  picked = true;
-	 	   } else {
-	 	 	  nbt.add(b.setUniquePart(false));
-	 	   }
-	    }
-
-	    return nbt;
 	}
 
 	public String toString() {
@@ -127,17 +108,20 @@ public class Bintree {
 	    
 		//Add only non-empty and non-contained blocks to bn
 		for (Block b1 : bt) {
-			if (!b1.isEmpty()) {
-				boolean partOf = false;
-				for (Block b2 : bt) {
-					if (!b1.equals(b2) && b1.blockPartOf(b2)) {
-						partOf = true;
-						break;
-					}
-				}
+			if (b1.isEmpty()) continue;
 
-				if (!partOf) bn.add(b1);
+			boolean partOf = false;
+			for (Block b2 : bt) {
+				if (!b1.equals(b2) && b1.blockPartOf(b2)) {
+					partOf = true;
+					break;
+				} else if (!b1.equals(b2) && b1.unRoled().equals(b2.unRoled()) && Relation.stricterRole(b2.getRole(), b1.getRole())) {
+					partOf = true;
+					break;
+				}
 			}
+
+			if (!partOf) bn.add(b1);
 		}
 	    
 		Set<Block> bnc = new HashSet<Block>(bn); //Make a copy of bn for iteration
@@ -155,7 +139,7 @@ public class Bintree {
 						bn.add(b1.getParent().setUniquePart(b1.isUniquePart() || b2.isUniquePart()));
 						merged = true;
 						break;
-					}
+					} 
 				}
 			}
 			bnc = new HashSet<Block>(bn);
