@@ -306,32 +306,41 @@ public class RelationshipGraph {
 		return true;
 	}
 	
-	private void updateClasses(SID toAdd, List<Set<SID>> equivs) {
+	private void updateClasses(SID toAdd, List<Set<SID>> equivs, Set<SID> added) {
+
+		Set<SID> toAddCov = Utils.difference(partOf.get(toAdd), added);
+		Set<SID> eqClassToAddTo = null;
 
 		for (int i = 0; i < equivs.size(); i++) {
 			Set<SID> eqClass = equivs.get(i);
 			if (sameBefore(toAdd, eqClass)) {
-				eqClass.add(toAdd);
-				return;
+				eqClassToAddTo = eqClass;
+				break;
 			} else if (beforeAll(toAdd, eqClass)) {
-				Set<SID> newClass = new HashSet<SID>();
-				newClass.add(toAdd);
-				equivs.add(i, newClass); // Add to end of equivs
-				return;
+				eqClassToAddTo = new HashSet<SID>();
+				equivs.add(i, eqClassToAddTo); // Add to end of equivs
+				break;
 			}
 		}
 		// Not added, so we add it as a new class
-		Set<SID> newClass = new HashSet<SID>();
-		newClass.add(toAdd);
-		equivs.add(newClass); // Add to end of equivs
+		if (eqClassToAddTo == null) {
+			eqClassToAddTo = new HashSet<SID>();
+			equivs.add(eqClassToAddTo);
+		}
+
+		eqClassToAddTo.add(toAdd);
+		eqClassToAddTo.addAll(toAddCov);
+		added.add(toAdd);
+		added.addAll(toAddCov);
 	}
 	
 	private List<Set<SID>> computeBFClasses() {
 
 		List<Set<SID>> equivs = new ArrayList<Set<SID>>();
+		Set<SID> added = new HashSet<SID>();
 
 		for (SID toAdd : partOf.keySet()) {
-			updateClasses(toAdd, equivs);
+			updateClasses(toAdd, equivs, added);
 		}
 		return equivs;
 	}
@@ -362,18 +371,62 @@ public class RelationshipGraph {
 		return cycles;
 	}
 
-	// TODO: Make more optimal ordering based on partOf-relationships
-	private List<Set<SID>> getNodesOrder() {
-		List<Set<SID>> order = new ArrayList<Set<SID>>();
+	private Set<SID> getImediateParts(SID node, Set<SID> nodes) {
+		Set<SID> parts  = Utils.intersection(hasPart.get(node), nodes);
+		Set<SID> partsParts = new HashSet<SID>();
+		for (SID part : parts) {
+			if (!node.equals(part)) partsParts.addAll(hasPart.get(part));
+		}
+		return Utils.difference(parts, partsParts);
+	}
 
+	private void topSortRec(SID node, List<SID> sorted, Set<SID> added, Set<SID> nodes) {
+		sorted.add(node);
+		added.add(node);
+		for (SID child : getImediateParts(node, nodes)) {
+			if (!added.contains(child)) topSortRec(child, sorted, added, nodes);
+		}
+	}
+
+	private List<SID> topSort(Set<SID> sids) {
+
+		List<SID> sorted = new ArrayList<SID>();
+		Set<SID> added = new HashSet<SID>();
+
+		Set<SID> roots = new HashSet<SID>();
+		for (SID s : sids) {
+			Set<SID> partOfs = Utils.intersection(partOf.get(s), sids);
+			if (partOfs.isEmpty())
+				roots.add(s);
+			else if (partOf.get(s).contains(s))// && getCycle(s).containsAll(Utils.intersection(hasPart.get(s), sids)))
+				roots.add(s);
+		}
+
+		for (SID root : roots) {
+			topSortRec(root, sorted, added, sids);
+		}
+		return sorted;
+	}
+
+	private Map<SID, Set<SID>> toRepresentativeNodes(Set<Set<SID>> cycles) {
+		Map<SID, Set<SID>> reps = new HashMap<SID, Set<SID>>();
+		for (Set<SID> cycle : cycles) {
+			reps.put(Utils.unpackSingleton(cycle), cycle);
+		}
+		return reps;
+	}
+
+	// TODO: Make more optimal ordering based on partOf-relationships
+	private void getNodesOrder(List<SID> order, Map<SID, Set<SID>> cycles) {
 		int i = 0;
 		for (Set<SID> bfc : computeBFClasses()) {
-			for (Set<SID> sids : getCycles(bfc)) {
-				order.add(i, sids);
+			Map<SID, Set<SID>> reps = toRepresentativeNodes(getCycles(bfc));
+			cycles.putAll(reps);
+			for (SID sid : topSort(reps.keySet())) {
+				order.add(i, sid);
 				i++;
 			}
 		}
-		return order;
 	}
 
 	private boolean hasSameOverlapsAndParts(SID s1, SID s2) {
@@ -460,22 +513,22 @@ public class RelationshipGraph {
 		}
 	}
 
-	private void distributeUniqueParts(List<Set<SID>> order, Block[] witnessesArr, Map<SID, Bintree> localRep, Map<SID, Block> wit) {
+	private void distributeUniqueParts(List<SID> order, Block[] witnessesArr, Map<SID, Bintree> localRep,
+	                                   Map<SID, Block> wit, Map<SID, Set<SID>> cycles) {
 		// Distribute unique parts
 		int k = 0;
 		for (int i = 0; i < order.size(); i++) {
+			SID s = order.get(i);
 
-			if (order.get(i).size() == 1) {
-				SID s = Utils.unpackSingleton(order.get(i));
-				if (!isOverlapsNode(s) && relations.getRoles().size() > 1 && s.getRole() == 0) continue;
-			}
+			if (!isOverlapsNode(s) && cycles.get(s).size() == 1 && relations.getRoles().size() > 1 && s.getRole() == 0) continue;
+
 			Block bt = block.append(witnessesArr[k++]);
 			Bintree bintree = Bintree.fromBlock(bt);
-			for (SID s : order.get(i)) {
-				localRep.put(s, bintree);
-	
-				if (!isOverlapsNode(s)) {
-					wit.put(s, bt);
+			localRep.put(s, bintree);
+
+			for (SID ss : cycles.get(s)) {
+				if (!isOverlapsNode(ss)) {
+					wit.put(ss, bt);
 				}
 			}
 		}
@@ -484,7 +537,7 @@ public class RelationshipGraph {
 	private void propagateParts(Map<SID, Bintree> localRep) {
 		// Propagate node's representations according to containments
 		for (SID uri : hasPart.keySet()) {
-			Bintree nodeBT = localRep.get(uri);
+			Bintree nodeBT = localRep.getOrDefault(uri, new Bintree());
 
 			Set<SID> cotro = new HashSet<SID>(hasPart.get(uri)); // Children of this role-part only, not stricter roles
 			for (Integer role : relations.getRoles()) {
@@ -497,7 +550,7 @@ public class RelationshipGraph {
 			}
 
 			for (SID pred : cotro) {
-				nodeBT = nodeBT.union(localRep.get(pred));
+				if (localRep.containsKey(pred)) nodeBT = nodeBT.union(localRep.get(pred));
 			}
 			localRep.put(uri, nodeBT);
 		}
@@ -523,23 +576,25 @@ public class RelationshipGraph {
 				} else {
 					finalRep.put(uri.getID(), finalRep.get(uri.getID()).union(new Bintree(cbs)));
 				}
+				finalRep.put(uri.getID(), finalRep.get(uri.getID()).normalize());
 			}
 		}
 	}
 
 	public Representation constructRepresentation() {
 
-		equateRoleNodes();
+		//equateRoleNodes();
 
 		// Construct sufficient unique parts and order nodes according to infix traversal
 		Block[] witnessesArr = Block.makeNDistinct(partOf.keySet().size()+1);
-		List<Set<SID>> order = getNodesOrder();
+		List<SID> order = new ArrayList<SID>();
+		Map<SID, Set<SID>> cycles = new HashMap<SID, Set<SID>>();
+		getNodesOrder(order, cycles);
 
 		Map<SID, Bintree> localRep = new HashMap<SID, Bintree>();
-		for (SID s : hasPart.keySet()) localRep.put(s, new Bintree());
 		Map<SID, Block> wit = new HashMap<SID, Block>();
 
-		distributeUniqueParts(order, witnessesArr, localRep, wit);
+		distributeUniqueParts(order, witnessesArr, localRep, wit, cycles);
 		propagateParts(localRep);
 
 		Map<Integer, Bintree> finalRep = new HashMap<Integer, Bintree>();
