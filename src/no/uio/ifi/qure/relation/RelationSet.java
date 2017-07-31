@@ -146,6 +146,14 @@ public class RelationSet {
 		}
 	}
 
+	public void printImplicationGraph() {
+		for (AtomicRelation rel1 : getAtomicRelations()) {
+			for (AtomicRelation rel2 : getAtomicRelations()) {
+				System.out.println(rel1.toString() + " => " + rel2.toString() + ": " + getUnifiers(rel1, rel2).toString());
+			}
+		}
+	}
+
 	public Set<AtomicRelation> getImplies(AtomicRelation rel) {
 		return implies.get(rel);
 	}
