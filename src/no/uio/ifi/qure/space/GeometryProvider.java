@@ -256,6 +256,33 @@ public class GeometryProvider implements SpaceProvider {
 		}
 		return result;
 	}
+	
+	public String toSQLByName(Relation rel, String[] vals, Config config) {
+		String[] sfw = rel.makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
+		String query = "SELECT " + sfw[0] + "\n";
+		query += "FROM " + sfw[1] + "\n";
+		query += "WHERE ";
+		if (!sfw[2].equals("")) query += sfw[2] + " AND\n";
+
+		switch (rel.getName()) {
+			case "EC":
+				query += "st_touches(T0.geom, T1.geom)";
+				break;
+			case "PO":
+				query += "st_overlaps(T0.geom, T1.geom)";
+				break;
+			case "EQ":
+				query += "st_equals(T0.geom, T1.geom)";
+				break;
+			case "TPP":
+				query += "st_contains(T0.geom, T1.geom) AND NOT st_containsProperly(T0.geom, T1.geom)";
+				break;
+			case "NTPP":
+				query += "st_containsProperly(T0.geom, T1.geom)";
+				break;
+		}
+		return query;
+	}
 
 	public String toSQL(AtomicRelation rel, String[] vals, Config config) {
 		if (rel instanceof Overlaps) {

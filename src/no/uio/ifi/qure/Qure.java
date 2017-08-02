@@ -48,7 +48,7 @@ public class Qure {
 		ArrayList<Config> rfs = new ArrayList<Config>();
 		rfs.add(config);
 
-		runMany(rfs);
+		//runMany(rfs);
 		//writeDBSizes(rfs);
 		//times = new HashMap<String, Long>();
 		//runManyQueryBM(rfs);
@@ -683,7 +683,7 @@ public class Qure {
 					String[] args = new String[rel.getArity()];
 					args[i] = ""+id;
 					String btQ = rel.toBTSQL(args, config);
-					String geoQ = rel.toGeoSQL(args, config, geometries);
+					String geoQ = geometries.toSQLByName(rel, args, config);
 					if (btQ == null || geoQ == null) continue;
 					Set<List<Integer>> btRes = runQuery(btQ, config);
 					Set<List<Integer>> geoRes = runQuery(geoQ, config);

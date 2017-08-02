@@ -56,8 +56,8 @@ public class Before extends AtomicRelation {
 		query += "  FROM " + selFroWhe[1] + "\n";
 		query += "  WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
-		if (r0 != 0) query += "  T" + a0 + ".role & " + (1 | (r0 << 1)) + " = " + (1 | (r0 << 1)) + " AND\n";
-		if (r1 != 0) query += "  T" + a1 + ".role & " + (1 | (r1 << 1)) + " = " + (1 | (r1 << 1)) + " AND\n";
+		if (r0 != 0) query += "  (T" + a0 + ".role = " + (1 | (r0 << 1)) + " OR T" + a0 + ".role = " + ((1 | (r0 << 1))+1) + ") AND\n";
+		if (r1 != 0) query += "  (T" + a1 + ".role = " + (1 | (r1 << 1)) + " OR T" + a1 + ".role = " + ((1 | (r1 << 1))+1) + ") AND\n";
 		query += "  T" + a0 + ".block < T" + a1 + ".block";
 		return query;
 	}

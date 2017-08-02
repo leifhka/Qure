@@ -33,11 +33,29 @@ public abstract class Relation {
 
 	public void setName(String name) { this.name = name; }
 
+	public abstract boolean relatesArg(int arg);
+
 	@Override
 	public abstract boolean equals(Object o);
 
 	@Override
 	public abstract int hashCode();
+
+	public String[] makeSelectFromWhereParts(String tableName, String uriColumn, String[] vals) {
+		String select = "", from = "", where = "", sepSelFro = "", sepWhere = "";
+		for (int i = 0; i < vals.length; i++) {
+			if (relatesArg(i)) {
+				select += sepSelFro + "T" + i + "." + uriColumn + " AS " + "v" + i;
+				from += sepSelFro + tableName + " AS T" + i;
+				sepSelFro = ", ";
+				if (vals[i] != null) {
+					where += sepWhere + "T" + i + "." + uriColumn + " = " + vals[i];
+					sepWhere = " AND ";
+				}
+			}
+		}
+		return new String[]{select, from, where};
+	}
 
 	private String makeIdentityRelation(String table, String column) {
 		String sel = "SELECT ";
@@ -175,6 +193,10 @@ class And extends Relation {
 		return conj1.eval(args) && conj2.eval(args);
 	}
 
+	public boolean relatesArg(int arg) {
+		return conj1.relatesArg(arg) || conj2.relatesArg(arg);
+	}
+
 	public Set<AtomicRelation> getNormalizedAtomicRelations() {
 		return Utils.union(conj1.getNormalizedAtomicRelations(), conj2.getNormalizedAtomicRelations());
 	}
@@ -225,6 +247,10 @@ class Not extends Relation {
 		return !rel.eval(args);
 	}
 
+
+	public boolean relatesArg(int arg) {
+		return rel.relatesArg(arg);
+	}
 
 	public Set<AtomicRelation> getNormalizedAtomicRelations() {
 		return rel.getNormalizedAtomicRelations();

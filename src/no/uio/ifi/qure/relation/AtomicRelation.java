@@ -29,8 +29,6 @@ public abstract class AtomicRelation extends Relation {
 
 	public abstract boolean isIntrinsic(Integer[] tuple);
 
-	public abstract boolean relatesArg(int arg);
-
 	public abstract int getArg(int i);
 
 	public Set<AtomicRelation> getPositiveAtomicRelations() {
@@ -58,22 +56,6 @@ public abstract class AtomicRelation extends Relation {
 			sids[i] = new SID(tuple[i], getArgRole(i));
 		}
 		return sids;
-	}
-
-	public String[] makeSelectFromWhereParts(String tableName, String uriColumn, String[] vals) {
-		String select = "", from = "", where = "", sepSelFro = "", sepWhere = "";
-		for (int i = 0; i < vals.length; i++) {
-			if (relatesArg(i)) {
-				select += sepSelFro + "T" + i + "." + uriColumn + " AS " + "v" + i;
-				from += sepSelFro + tableName + " AS T" + i;
-				sepSelFro = ", ";
-				if (vals[i] != null) {
-					where += sepWhere + "T" + i + "." + uriColumn + " = " + vals[i];
-					sepWhere = " AND ";
-				}
-			}
-		}
-		return new String[]{select, from, where};
 	}
 
 	public String makeValuesFrom(Config config) {

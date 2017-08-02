@@ -61,6 +61,8 @@ public interface SpaceProvider {
 
 	public String toSQL(AtomicRelation rel, String[] vals, Config config);
 
+	public String toSQLByName(Relation rel, String[] vals, Config config);
+
 	public default List<Space> toSpaces(List<SID> tuple) {
 		List<Space> sps = new ArrayList<Space>(tuple.size());
 		for (SID s : tuple) {

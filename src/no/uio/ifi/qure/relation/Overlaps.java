@@ -91,7 +91,8 @@ public class Overlaps extends AtomicRelation {
 		if (!sfw[2].equals("")) query += sfw[2] + " AND \n";
 		for (int i = 0; i < args.length; i++) {
 			if (argRole.get(args[i]) != 0) {
-				query += "T" + args[i] + ".role & " + (argRole.get(args[i]) << 1) + " = " + (argRole.get(args[i]) << 1) + " AND\n";
+				query += "(T" + args[i] + ".role = " + (argRole.get(args[i]) << 1) + " OR " +
+				          "T" + args[i] + ".role = " + ((argRole.get(args[i]) << 1) + 1) + ") AND\n";
 			}
 		}
 		if (vals[0] != null) {

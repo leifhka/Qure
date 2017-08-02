@@ -223,6 +223,10 @@ public class TimeProvider implements SpaceProvider {
 
 		return result;
 	}
+	
+	public String toSQLByName(Relation rel, String[] vals, Config config) {
+		return null;
+	}
 
 	private String getOverlapsWhere(Overlaps rel, int i, int j) {
 		String where = "";
