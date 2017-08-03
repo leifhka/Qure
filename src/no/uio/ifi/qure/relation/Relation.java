@@ -156,7 +156,7 @@ public abstract class Relation {
 
     	Set<Integer> stricter = new HashSet<Integer>();
     	for (int pos : possible) {
-        	if (stricterRole(pos, role)) stricter.add(pos);
+        	if (pos != role && stricterRole(pos, role)) stricter.add(pos);
     	}
     	return stricter;
 	}
