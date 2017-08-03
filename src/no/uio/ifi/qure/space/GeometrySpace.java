@@ -154,12 +154,12 @@ public class GeometrySpace implements Space {
 		} else if (role == BOUNDARY) {
 			return new GeometrySpace((new GeometryPrecisionReducer(precModel)).reduce(geo.getBoundary()), precModel);
 		} else if (role == INTERIOR) {
-			// For closed line-strings and points, the boundary is empty, this the interior is this
+			// For closed line-strings and points, the boundary is empty, thus the interior is this
 			if (geo.getBoundary().isEmpty()) return this;
 
 			// epsilon represents the smallest representable distance with our resolution
 			// Thus, to get the interior of a geometry, we only have to remove eveything in distance epsilon from the boundary
-			double epsilon = Math.pow(10,-(precModel.getMaximumSignificantDigits()-1)); 
+			double epsilon = Math.pow(10,-(precModel.getMaximumSignificantDigits()-2)); 
 			Geometry iGeo;
 
 			if (geo.getGeometryType().equals("MultiPolygon") || geo.getGeometryType().equals("Polygon")) {

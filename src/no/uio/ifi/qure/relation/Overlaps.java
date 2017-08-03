@@ -327,11 +327,17 @@ public class Overlaps extends AtomicRelation {
 		Table table = new Table(this);
 
 		for (Integer[] tuple : possible.getTuples()) {
+			boolean found = false;
+			if (tuple.length == 2 && (tuple[0] == 92382 || tuple[1] == 92382) && (tuple[0] == 92346 || tuple[1] == 92346)) {
+				System.out.println("FOUND in " + this.toString());
+				found = true;
+			}
 			if (getArity() == 1) {
 				if (spaces.keySet().contains(new SID(tuple[0], Utils.unpackSingleton(argRole.values())))) {
 					table.addTuple(tuple);
 				}
 			} else if (eval(toSpaces(toSIDs(tuple), spaces))) {
+				if (found) System.out.println("Added!: " + "\n " + toSpaces(toSIDs(tuple), spaces));
 				table.addTuple(tuple);
 			}
 		}
