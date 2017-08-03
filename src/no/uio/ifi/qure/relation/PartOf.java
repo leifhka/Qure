@@ -61,7 +61,7 @@ public class PartOf extends AtomicRelation {
 		}
 	}
 
-	public String toBTSQL1Approx(String[] vals, Config config) {
+	private String toBTSQL1Approx(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "    SELECT DISTINCT T" + a0 + ".gid AS v" + a0 + ", T" + a0 + ".block\n";
 		query += "    FROM " + selFroWhe[1] + "\n";
