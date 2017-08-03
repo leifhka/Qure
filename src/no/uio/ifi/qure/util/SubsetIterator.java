@@ -18,7 +18,7 @@ public class SubsetIterator<T> implements Iterator<Set<T>> {
 	}
 	
 	public boolean hasNext() {
-		return toGet.compareTo(maxToGet) < 0;
+		return toGet.compareTo(maxToGet) <= 0;
 	}
 	
 	private void setNextToGet() {
@@ -28,16 +28,10 @@ public class SubsetIterator<T> implements Iterator<Set<T>> {
 			maxToGet = toGet.shiftLeft(elems.size()-curLen);
 		} else {
 			// From Bit Twidling Hacks. Sets toGet to be the (lexicographically) next integer with same number of 1-bits.
-			BigInteger t = toGet.or(toGet.subtract(BigInteger.ONE)); // t gets toGet's least significant 0 bits set to 1
+			BigInteger t = toGet.or(toGet.subtract(BigInteger.ONE)).add(BigInteger.ONE);
 			// Next set to 1 the most significant bit to change, 
-			// // set to 0 the least significant ones, and add the necessary 1 bits.
-			toGet = t.add(BigInteger.ONE)
-			         .or(t.not()
-			              .and(t.not()
-			                    .negate())
-			              .subtract(BigInteger.ONE)
-			              .shiftLeft(toGet.getLowestSetBit())
-			              .add(BigInteger.ONE));  
+			// set to 0 the least significant ones, and add the necessary 1 bits.
+			toGet = t.or(t.and(t.negate()).divide(toGet.and(toGet.negate())).shiftRight(1).subtract(BigInteger.ONE));
 		}
 	}
 	
@@ -51,10 +45,10 @@ public class SubsetIterator<T> implements Iterator<Set<T>> {
 		Set<T> result = new HashSet<T>();
 		BigInteger toGetC = toGet;
 		for (int i = 0; i < elems.size(); i++) {
-			if (toGetC.mod(BigInteger.valueOf(2)).compareTo(BigInteger.ZERO) == 0) {
+			if (toGetC.mod(BigInteger.valueOf(2)).compareTo(BigInteger.ZERO) != 0) {
 				result.add(elems.get(i));
 			}
-			toGetC = toGetC.shiftLeft(1);
+			toGetC = toGetC.shiftRight(1);
 		}
 		return result;
 	}
