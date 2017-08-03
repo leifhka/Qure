@@ -170,11 +170,8 @@ public class RelationshipGraph {
 		Iterator<Set<SID>> subsetIter = Utils.getSubsets(Utils.union(toAdd, toCheck), 2, relations.getHighestArity());
 		while (subsetIter.hasNext()) {
 			Set<SID> subset = subsetIter.next();
-			if (subset.containsAll(toAdd) || toCheck.containsAll(subset)) continue; // toAdd not yet overlapping, but is going to be added
-			for (AtomicRelation rel : relations.getAtomicRelations()) {
-				if (rel instanceof Overlaps && ((Overlaps) rel).compatible(subset) && !overlaps(subset)) {
-					return false;
-				}
+			if (!subset.containsAll(toAdd) && !toCheck.containsAll(subset) && !overlaps(subset)) {
+				return false;
 			}
 		}
 		return true;
