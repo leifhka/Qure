@@ -159,7 +159,7 @@ public class GeometrySpace implements Space {
 
 			// epsilon represents the smallest representable distance with our resolution
 			// Thus, to get the interior of a geometry, we only have to remove eveything in distance epsilon from the boundary
-			double epsilon = Math.pow(10,-(precModel.getMaximumSignificantDigits()-2)); 
+			double epsilon = Math.pow(10,-(precModel.getMaximumSignificantDigits()-2)); // TODO (fix): *10 gives depth mismatch
 			Geometry iGeo;
 
 			if (geo.getGeometryType().equals("MultiPolygon") || geo.getGeometryType().equals("Polygon")) {
