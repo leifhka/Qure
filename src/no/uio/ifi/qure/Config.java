@@ -81,9 +81,9 @@ public class Config {
 
 	public boolean verbose = true;
 	public int percentStep = 1;
-	public boolean writeBintreesToDB = false;
+	public boolean writeBintreesToDB = true;
 
 	public PrecisionModel geometryFactoryPrecision = new PrecisionModel();
-	public PrecisionModel geometryPrecision = new PrecisionModel(Math.pow(10, 10));
+	public PrecisionModel geometryPrecision = new PrecisionModel(Math.pow(10, 7));
 
 }
