@@ -517,7 +517,10 @@ public class RelationshipGraph {
 		for (int i = 0; i < order.size(); i++) {
 			SID s = order.get(i);
 
-			if (!isOverlapsNode(s) && cycles.get(s).size() == 1 && relations.getRoles().size() > 1 && s.getRole() == 0) continue;
+			if (!isOverlapsNode(s) && cycles.get(s).size() == 1 && // TODO: Check correctness of this!
+			    relations.getStricterRoles(s.getRole()).size() > 1) {
+				continue;
+			}
 
 			Block bt = block.append(witnessesArr[k++]);
 			Bintree bintree = Bintree.fromBlock(bt);
@@ -536,7 +539,11 @@ public class RelationshipGraph {
 		for (SID uri : hasPart.keySet()) {
 			Bintree nodeBT = localRep.getOrDefault(uri, new Bintree());
 
-			Set<SID> cotro = new HashSet<SID>(hasPart.get(uri)); // Children of this role-part only, not stricter roles
+			// TODO: Rather propagate all parts, but only change role to 0 for elements in cotro 
+			// This will fix problem with containment without introducing redundancy, and block will have proper roles
+			// Still have the problem of propagating parts for equal elements!
+			// Simple solution: introduce partOf-relation for roles or give unique part also to role=0
+			Set<SID> cotro = new HashSet<SID>(hasPart.get(uri)); // Children Of This Role-part Only, not stricter roles
 			for (Integer role : relations.getRoles()) {
 				if (role != uri.getRole() && Relation.stricterRole(role, uri.getRole())) {
 					SID c = new SID(uri.getID(), role);
