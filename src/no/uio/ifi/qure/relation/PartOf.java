@@ -61,14 +61,20 @@ public class PartOf extends AtomicRelation {
 		}
 	}
 
-	private String toBTSQL1Approx(String[] vals, Config config) {
+		public String toBTSQL1Approx(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "    SELECT DISTINCT T" + a0 + ".gid AS v" + a0 + ", T" + a0 + ".block\n";
 		query += "    FROM " + selFroWhe[1] + "\n";
 		query += "    WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
-		query += "      T" + a0 + ".role & " + (1 | (r0 << 1)) + " = " + (1 | (r0 << 1)) + " AND\n";
-		if (r1 != 0) query += "      T" + a1 + ".role & " + (r1 << 1) + " = " + (r1 << 1) + " AND\n";
+		//query += "      T" + a0 + ".role & " + (1 | (r0 << 1)) + " = " + (1 | (r0 << 1)) + " AND\n";
+		//if (r1 != 0) query += "      T" + a1 + ".role & " + (r1 << 1) + " = " + (r1 << 1) + " AND\n";
+		query += "      (T" + a0 + ".role = " + (1 | (r0 << 1));
+		if (r0 == 0) {
+			query += " OR T" + a0 + ".role = " + (1 | (1 << 1));
+			query += " OR T" + a0 + ".role = " + (1 | (2 << 1));
+		}
+		query += ") AND\n";
 		query += "      T" + a0 + ".block > (T" + a1 + ".block & (T" + a1 + ".block-1)) AND\n";
 		query += "      T" + a0 + ".block <= (T" + a1 + ".block | (T" + a1 + ".block-1))";
 		return query;
@@ -79,7 +85,15 @@ public class PartOf extends AtomicRelation {
 		String query = "WITH \n";
 		query += "possible AS (\n" + toBTSQL1Approx(vals, config) + "),\n";
 		query += "posGids AS (SELECT DISTINCT v" + a0 + " FROM possible),\n";
-		query += "rem AS (SELECT DISTINCT T." + config.uriColumn + " AS v" + a0 + " FROM " + config.btTableName + " AS T, posGids AS Pos WHERE T.role & " + (1 | (r0 << 1)) + " = " +  (1 | (r0 << 1)) + " AND Pos.v" + a0 + " = T.gid AND (T.gid, T.block) NOT IN (SELECT * FROM possible))\n";
+		query += "rem AS (SELECT DISTINCT T." + config.uriColumn + " AS v" + a0 + "\n"
+		               + "FROM " + config.btTableName + " AS T, posGids AS Pos \n"
+		               + "WHERE (T.role = " + (1 | (r0 << 1)); 
+		if (r0 == 0) {
+			query += " OR T.role = " + (1 | (1 << 1));
+			query += " OR T.role = " + (1 | (2 << 1));
+		}
+		query += ") \n";
+		query += " AND Pos.v" + a0 + " = T.gid AND (T.gid, T.block) NOT IN (SELECT * FROM possible))\n";
 
 		String a0Sel = "P.v" + a0;
 		String a1Sel = vals[a1] + " AS v" + a1;
@@ -97,8 +111,16 @@ public class PartOf extends AtomicRelation {
 		query += "         (" + makeValuesFrom(config) + ") AS V(n)\n";
 		query += "    WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
-		query += "      T" + a0 + ".role & " + (1 | (r0 << 1)) + " = " + (1 | (r0 << 1)) + " AND\n";
-		if (r1 != 0) query += "      T" + a1 + ".role & " + (r1 << 1) + " = " + (r1 << 1) + " AND\n";
+		
+		query += "      (T" + a0 + ".role = " + (1 | (r0 << 1));
+		if (r0 == 0) {
+			query += " OR T" + a0 + ".role = " + (1 | (1 << 1));
+			query += " OR T" + a0 + ".role = " + (1 | (2 << 1));
+		}
+		query += ") AND\n";
+		
+		//query += "      T" + a0 + ".role & " + (1 | (r0 << 1)) + " = " + (1 | (r0 << 1)) + " AND\n";
+		//if (r1 != 0) query += "      T" + a1 + ".role & " + (r1 << 1) + " = " + (r1 << 1) + " AND\n";
 		query += "      (T" + a0 + ".block = T" + a1 + ".block OR\n";
 		query += "       (T" + a0 + ".block != T" + a0 + ".block & ~(V.n-1) AND\n";
 		query += "        T" + a1 + ".block = ((T" + a0 + ".block & ~(V.n-1)) | V.n)))";
@@ -111,7 +133,15 @@ public class PartOf extends AtomicRelation {
 		String query = "WITH \n";
 		query += "  possible AS (\n" + toBTSQL2Approx(vals, config) + "),\n";
 		query += "  posGids AS (SELECT DISTINCT v" + a1 + " FROM possible),\n";
-		query += "  allBlocks AS (SELECT DISTINCT block FROM " + config.btTableName + " WHERE gid = " + vals[a0] + " AND role & " + (1 | (r0 << 1)) + " = " + (1 | (r0 << 1)) + "),\n";
+		query += "  allBlocks AS (SELECT DISTINCT block\n " 
+		                       + "FROM " + config.btTableName + "\n"
+		                      + " WHERE gid = " + vals[a0] + " AND ";
+		query += "(role = " + (1 | (r0 << 1));
+		if (r0 == 0) {
+			query += " OR role = " + (1 | (1 << 1));
+			query += " OR role = " + (1 | (2 << 1));
+		}
+		query += ")),\n";
 		query += "  rem AS (\n";
 		query += "        SELECT DISTINCT v" + a1 + "\n";
 		query += "        FROM posGids AS Pos,\n";

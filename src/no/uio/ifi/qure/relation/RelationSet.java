@@ -202,6 +202,11 @@ public class RelationSet {
     	}
     	return atomicRoles;
     }
+
+	public Set<Integer> getStricterRoles(int role) {
+		return Relation.getStricter(getRoles(), role);
+	}
+    
 	private void computeCanBeEquated() {
 		canBeEquated = new HashSet<Pair<Integer, Integer>>();
 		for (Integer r1 : roles) {
