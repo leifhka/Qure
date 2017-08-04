@@ -275,7 +275,7 @@ public class GeometryProvider implements SpaceProvider {
 				query += "st_equals(T0.geom, T1.geom)";
 				break;
 			case "TPP":
-				query += "st_contains(T1.geom, T0.geom) AND NOT st_containsProperly(T1.geom, T0.geom)";
+				query += "st_contains(T1.geom, T0.geom) AND NOT st_containsProperly(T1.geom, T0.geom)"; // TODO: Fix, is now reflexive!
 				break;
 			case "NTPP":
 				query += "st_containsProperly(T1.geom, T0.geom)";
