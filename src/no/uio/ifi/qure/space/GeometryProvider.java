@@ -269,13 +269,13 @@ public class GeometryProvider implements SpaceProvider {
 				query += "st_touches(T0.geom, T1.geom)";
 				break;
 			case "PO":
-				query += "st_overlaps(T0.geom, T1.geom)";
+				query += "st_overlaps(T0.geom, T1.geom) OR st_crosses(T0.geom, T1.geom)";
 				break;
 			case "EQ":
 				query += "st_equals(T0.geom, T1.geom)";
 				break;
 			case "TPP":
-				query += "st_contains(T1.geom, T0.geom) AND NOT st_containsProperly(T1.geom, T0.geom)"; // TODO: Fix, is now reflexive!
+				query += "st_contains(T1.geom, T0.geom) AND NOT st_equals(T0.geom, T1.geom) AND NOT st_containsProperly(T1.geom, T0.geom)"; // TODO: Fix, is now reflexive!
 				break;
 			case "NTPP":
 				query += "st_containsProperly(T1.geom, T0.geom)";

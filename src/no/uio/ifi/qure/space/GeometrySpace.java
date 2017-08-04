@@ -159,7 +159,8 @@ public class GeometrySpace implements Space {
 
 			// epsilon represents the smallest representable distance with our resolution
 			// Thus, to get the interior of a geometry, we only have to remove eveything in distance epsilon from the boundary
-			double epsilon = Math.pow(10,-(precModel.getMaximumSignificantDigits()-2));
+			//double epsilon = Math.pow(10,-(precModel.getMaximumSignificantDigits()-1))/2.0;
+			double epsilon = (1.0/(precModel.getScale()))/2.0;
 			Geometry iGeo;
 
 			if (geo.getGeometryType().equals("MultiPolygon") || geo.getGeometryType().equals("Polygon")) {
@@ -167,11 +168,11 @@ public class GeometrySpace implements Space {
 				iGeo = geo.buffer(-epsilon);
 			} else {
 				// For line segments we remove the end-points by removing two epsilon balls around them
-				Geometry bGeo = geo.getBoundary().buffer(epsilon, 64); // Representing two epsilon-balls around the end-points of geo
-				//Geometry dGeo = (new GeometryPrecisionReducer(precModel)).reduce(bGeo);
+				Geometry bGeo = geo.getBoundary().buffer(epsilon, 32); // Representing two epsilon-balls around the end-points of geo
 				iGeo = geo.difference(bGeo);
 			}
-			return new GeometrySpace((new GeometryPrecisionReducer(precModel)).reduce(iGeo), precModel);
+			// Interior should have one decimal more precision to represent it correctly
+			return new GeometrySpace((new GeometryPrecisionReducer(new PrecisionModel(precModel.getScale()*10))).reduce(iGeo), precModel);
 		} else {
 			// Boundary and interior is disjoint, so we return empty space
 			assert(role == (BOUNDARY | INTERIOR));
