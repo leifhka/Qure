@@ -20,6 +20,7 @@ public class RelationSet {
 	private Set<Relation> relations;
 	private Set<Integer> roles;
 	private Set<AtomicRelation> atomicRels;
+	private Set<Integer> needsUniqueParts;
 	private String name;
 	private int highestArity;
 	private Set<Pair<Integer, Integer>> canBeEquated;
@@ -60,12 +61,16 @@ public class RelationSet {
 
 	private void initRolesAndAtomic() {
 		roles = new HashSet<Integer>();
+		needsUniqueParts = new HashSet<Integer>();
 		atomicRels = new HashSet<AtomicRelation>();
 		highestArity = 0;
 
 		for (Relation r : relations) {
 			for (AtomicRelation a : r.getNormalizedAtomicRelations()) {
 				atomicRels.add(a);
+				if (a instanceof PartOf) {
+					needsUniqueParts.add(a.getArgRole(a.getArg(0)));
+				}
 				for (Integer role : a.getRoles()) {
 					roles.add(role);
 				}
@@ -179,6 +184,8 @@ public class RelationSet {
 	public Set<Relation> getRelations() { return relations; }
 
 	public Set<Integer> getRoles() { return roles; }
+
+	public Set<Integer> getNeedsUniqueParts() { return needsUniqueParts; }
 
 	public int getHighestArity() { return highestArity; }
 

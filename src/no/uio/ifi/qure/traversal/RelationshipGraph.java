@@ -413,7 +413,6 @@ public class RelationshipGraph {
 		return reps;
 	}
 
-	// TODO: Make more optimal ordering based on partOf-relationships
 	private void getNodesOrder(List<SID> order, Map<SID, Set<SID>> cycles) {
 		int i = 0;
 		for (Set<SID> bfc : computeBFClasses()) {
@@ -517,8 +516,8 @@ public class RelationshipGraph {
 		for (int i = 0; i < order.size(); i++) {
 			SID s = order.get(i);
 
-			if (!isOverlapsNode(s) && cycles.get(s).size() == 1 && // TODO: Check correctness of this!
-			    relations.getStricterRoles(s.getRole()).size() > 1) {
+			if (cycles.get(s).size() == 1 && hasPart.get(s).size() > 0 &&
+			    !relations.getNeedsUniqueParts().contains(s.getRole())) {
 				continue;
 			}
 
@@ -539,10 +538,6 @@ public class RelationshipGraph {
 		for (SID uri : hasPart.keySet()) {
 			Bintree nodeBT = localRep.getOrDefault(uri, new Bintree());
 
-			// TODO: Rather propagate all parts, but only change role to 0 for elements in cotro 
-			// This will fix problem with containment without introducing redundancy, and block will have proper roles
-			// Still have the problem of propagating parts for equal elements!
-			// Simple solution: introduce partOf-relation for roles or give unique part also to role=0
 			Set<SID> cotro = new HashSet<SID>(hasPart.get(uri)); // Children Of This Role-part Only, not stricter roles
 			for (Integer role : relations.getRoles()) {
 				if (role != uri.getRole() && Relation.stricterRole(role, uri.getRole())) {
