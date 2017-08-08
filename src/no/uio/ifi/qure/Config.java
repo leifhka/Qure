@@ -62,6 +62,7 @@ public class Config {
 	};
 
 	public int blockSize = 63;
+	public int finalBlockSize = 31;
 	public boolean compactBlocks = false;
 	public String dbName = "test";
 	public String dbPWD = "test";

@@ -40,7 +40,7 @@ public class Qure {
 		//RelationSet relationSet = RelationSet.getAllensIntervalAlgebra(TimeSpace.FIRST, TimeSpace.INTERIOR, TimeSpace.LAST);
 		RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
 
-		Config config = new Config("osm_ice", "nind", 13, 30, 10, relationSet);
+		Config config = new Config("osm_ice", "int", 13, 30, 10, relationSet);
 		//Config config = new Config("tiny", "nbl", 4, 1, 10);
 		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		//geometries = new TimeProvider(config, new DBDataProvider(config));
@@ -48,7 +48,16 @@ public class Qure {
 		ArrayList<Config> rfs = new ArrayList<Config>();
 		rfs.add(config);
 
-		//runMany(rfs);
+		//PartOf r = new PartOf(0,0,0,1);
+		//String a = "1";
+		////String q1 = r.toBTSQL(new String[]{a, null}, config);
+		//String q1 = r.toBTSQL(new String[]{a, null}, config);
+		//String q2 = r.toBTSQL1Approx(new String[]{null, a}, config);
+		//String q = q2;
+		//System.out.println(q);
+		//System.out.println(runQuery(q, config).toString());
+
+		runMany(rfs);
 		//writeDBSizes(rfs);
 		//times = new HashMap<String, Long>();
 		//runManyQueryBM(rfs);
@@ -58,7 +67,7 @@ public class Qure {
 
 		//Relation r = partOf(0,0,1,0);//.and(not(partOf(0,0,1,0)));
 		//RelationSet relationSet = new RelationSet(); relationSet = relationSet.add(r);
-		checkCorrectness(config, config.relationSet, 1);
+		checkCorrectness(config, config.relationSet, 5);
 	}
 
 	private static void runMany(Collection<Config> configs) {
@@ -325,7 +334,7 @@ public class Qure {
 					long b = blocks[i].getRepresentation();
 					query += "('" + uri + "', " + b + ")" + ((i == blocks.length-1) ? ";" : ", ");
 				} else {
-					Pair<Long, Integer> simple = blocks[i].toSimpleBlock();
+					Pair<Long, Integer> simple = blocks[i].toSimpleBlock(config.finalBlockSize);
 					query += "('" + uri + "', " + simple.snd + ", " + simple.fst + ")" + ((i == blocks.length-1) ? ";" : ", ");
 				}
 			}
@@ -585,7 +594,7 @@ public class Qure {
 		while (!tableMade) {
 			try {
 
-				String blockType = (config.blockSize > 31) ? "bigint" : "int";
+				String blockType = (config.finalBlockSize > 31) ? "bigint" : "int";
 				// We order the columns as (gid, role, block) to save space,
 				// both gid and role are ints so less paddin, both gid and role are ints so less padding
 				String blockForm = ((config.compactBlocks) ?  "" : "role int, ") + "block " + blockType;
@@ -678,6 +687,7 @@ public class Qure {
 		Collections.shuffle(allIds);
 		List<Integer> ids = allIds.subList(0, n);
 		for (Relation rel : relations.getRelations()) {
+			System.out.println("Checking " + rel.toString() + "...");
 			for (Integer id : ids) {
 				for (int i = 0; i < rel.getArity(); i++) {
 					String[] args = new String[rel.getArity()];
@@ -685,8 +695,12 @@ public class Qure {
 					String btQ = rel.toBTSQL(args, config);
 					String geoQ = geometries.toSQLByName(rel, args, config);
 					if (btQ == null || geoQ == null) continue;
+					System.out.print(" - Querying bintrees on arguments " + Arrays.toString(args) + "...");
 					Set<List<Integer>> btRes = runQuery(btQ, config);
+					System.out.println(" Done.");
+					System.out.print(" - Querying spaces on arguments " + Arrays.toString(args) + "...");
 					Set<List<Integer>> geoRes = runQuery(geoQ, config);
+					System.out.println(" Done.");
 					for (List<Integer> t : btRes) {
 						if (!geoRes.contains(t)) {
 							err = true;

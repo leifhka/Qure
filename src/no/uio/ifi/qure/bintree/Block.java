@@ -249,10 +249,16 @@ public class Block {
 		return new Block(getSize() + b.getSize(), newBits);
 	}
 
-	public Pair<Long, Integer> toSimpleBlock() {
+	public Pair<Long, Integer> toSimpleBlock(int repSize) {
+		if (getSize() > repSize)
+			throw new ArithmeticException("Final block size, " + repSize + ", not large enough, needs at least " + getSize());
+			
 		long lastBitPos = (BLOCK_SIZE + 1) - getSize(); // Position of last bit in bit-string in value
+		
 		long block = value & ~((1L << (lastBitPos-1)) - 1); // Remove meta-information
 		block = block | (1L << (lastBitPos-2)); // Set bit denoting start of bit-string
+		block >>= BLOCK_SIZE - repSize; // Resize
+		
 		int roles = (int) (value & ROLE_SIZE_ONES);
 		return new Pair<Long, Integer>(block, roles);
 	}
