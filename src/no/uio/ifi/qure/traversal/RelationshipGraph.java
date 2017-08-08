@@ -517,7 +517,7 @@ public class RelationshipGraph {
 			SID s = order.get(i);
 
 			if (cycles.get(s).size() == 1 && hasPart.get(s).size() > 0 &&
-			    !relations.getNeedsUniqueParts().contains(s.getRole())) {
+			    !relations.needsUniquePart(s.getRole())) {
 				continue;
 			}
 

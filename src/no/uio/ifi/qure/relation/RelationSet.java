@@ -185,7 +185,7 @@ public class RelationSet {
 
 	public Set<Integer> getRoles() { return roles; }
 
-	public Set<Integer> getNeedsUniqueParts() { return needsUniqueParts; }
+	public boolean needsUniquePart(Integer role) { return needsUniqueParts.contains(role); }
 
 	public int getHighestArity() { return highestArity; }
 
