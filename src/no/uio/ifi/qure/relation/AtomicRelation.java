@@ -59,10 +59,10 @@ public abstract class AtomicRelation extends Relation {
 	}
 
 	public String makeValuesFrom(Config config) {
-		String res = "SELECT (1" + ((config.blockSize > 31) ? "::bigint" : "") + " << N.n) ";
+		String res = "SELECT (1" + ((config.finalBlockSize > 31) ? "::bigint" : "") + " << N.n) ";
 		res += "FROM (VALUES ";
 		String sep = "";
-		for (int i = 1; i < config.blockSize; i++) {
+		for (int i = 1; i < config.finalBlockSize; i++) {
 			res += sep + "(" + i + ")";
 			sep = ", ";
 		}

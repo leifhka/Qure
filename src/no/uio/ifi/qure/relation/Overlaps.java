@@ -73,9 +73,10 @@ public class Overlaps extends AtomicRelation {
 
 	private String makeBlockOverlapsWhere(String table0, String table1) {
 		String query = "";
-		query += " ((" + table1 + ".block >= (" + table0 + ".block & (" + table0 + ".block-1)) AND \n";
+		query += " ((" + table1 + ".block > (" + table0 + ".block & (" + table0 + ".block-1)) AND \n";
         query += "   " + table1 + ".block <= (" + table0 + ".block | (" + table0 + ".block-1))) OR \n";
-		query += "  " + table1 + ".block = ((" + table0 + ".block & ~(V.n-1)) | V.n))";
+		query += "  (" + table0 + ".block != " + table0 + ".block & ~(V.v-1) AND\n";
+		query += "   " + table1 + ".block = ((" + table0 + ".block & ~(V.v-1)) | V.v)))";
 		return query;
 	}
 
@@ -83,11 +84,11 @@ public class Overlaps extends AtomicRelation {
 		String[] sfw = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		
 		String from = sfw[1] + ",\n";
-	    from += "(" + makeValuesFrom(config) + ") AS V(n)";
+	    from += "  qure.bitPosition" + ((config.finalBlockSize > 31) ? "BigInt" : "Int") + " AS V";
 	    
 		String query = "SELECT DISTINCT " + sfw[0] + "\n";
-		query += " FROM " + from + "\n";
-		query += " WHERE ";
+		query += "FROM " + from + "\n";
+		query += "WHERE ";
 		if (!sfw[2].equals("")) query += sfw[2] + " AND \n";
 		for (int i = 0; i < args.length; i++) {
 			if (argRole.get(args[i]) != 0) {

@@ -97,14 +97,14 @@ public class PartOf extends AtomicRelation {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "    SELECT DISTINCT T" + a1 + "." + config.uriColumn + " AS v" + a1 + ", T" + a0 + ".block\n";
 		query += "    FROM " + selFroWhe[1] + ",\n";
-		query += "         (" + makeValuesFrom(config) + ") AS V(n)\n";
+		query += "         qure.bitPosition" + ((config.finalBlockSize > 31) ? "BigInt" : "Int") + " AS V\n";
 		query += "    WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
 		
 		query += "      T" + a0 + ".role = " + (1 | (r0 << 1)) + " AND\n";
 		query += "      (T" + a0 + ".block = T" + a1 + ".block OR\n";
-		query += "       (T" + a0 + ".block != T" + a0 + ".block & ~(V.n-1) AND\n";
-		query += "        T" + a1 + ".block = ((T" + a0 + ".block & ~(V.n-1)) | V.n)))";
+		query += "       (T" + a0 + ".block != T" + a0 + ".block & ~(V.v-1) AND\n";
+		query += "        T" + a1 + ".block = ((T" + a0 + ".block & ~(V.v-1)) | V.v)))";
 		return query;
 	}
 
