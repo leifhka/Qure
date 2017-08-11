@@ -152,10 +152,19 @@ public class GeometrySpace implements Space {
 		if (role == 0) {
 			return this;
 		} else if (role == BOUNDARY) {
-			return new GeometrySpace((new GeometryPrecisionReducer(precModel)).reduce(geo.getBoundary()), precModel);
+			if (geo.getGeometryType().equals("MultiPoint") || geo.getGeometryType().equals("Point")) {
+				return this;
+			} else {
+				return new GeometrySpace((new GeometryPrecisionReducer(precModel)).reduce(geo.getBoundary()), precModel);
+			}
 		} else if (role == INTERIOR) {
+			// Points have empty interior
+			if (geo.getGeometryType().equals("MultiPoint") || geo.getGeometryType().equals("Point")) 
+				return new GeometrySpace(geo.getFactory().createPoint((CoordinateSequence) null),
+				                         precModel);
 			// For closed line-strings and points, the boundary is empty, thus the interior is this
-			if (geo.getBoundary().isEmpty()) return this;
+			if (geo.getBoundary().isEmpty())
+				return this;
 
 			// epsilon represents the smallest representable distance with our resolution
 			// Thus, to get the interior of a geometry, we only have to remove eveything in distance epsilon from the boundary
@@ -165,7 +174,7 @@ public class GeometrySpace implements Space {
 
 			if (geo.getGeometryType().equals("MultiPolygon") || geo.getGeometryType().equals("Polygon")) {
 				// For polygons we can just take the negative epsilon-buffer
-				iGeo = geo.buffer(-epsilon);
+				iGeo = geo.buffer(-epsilon, 32);
 			} else {
 				// For line segments we remove the end-points by removing two epsilon balls around them
 				Geometry bGeo = geo.getBoundary().buffer(epsilon, 32); // Representing two epsilon-balls around the end-points of geo
