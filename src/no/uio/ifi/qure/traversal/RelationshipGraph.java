@@ -526,14 +526,12 @@ public class RelationshipGraph {
 			localRep.put(s, bintree);
 
 			for (SID ss : cycles.get(s)) {
-				if (!isOverlapsNode(ss)) {
-					wit.put(ss, bt);
-				}
+				wit.put(ss, bt);
 			}
 		}
 	}
 
-	private void propagateParts(Map<SID, Bintree> localRep) {
+	private void propagatePartsOld(Map<SID, Bintree> localRep) {
 		// Propagate node's representations according to containments
 		for (SID uri : hasPart.keySet()) {
 			Bintree nodeBT = localRep.getOrDefault(uri, new Bintree());
@@ -550,6 +548,19 @@ public class RelationshipGraph {
 
 			for (SID pred : cotro) {
 				if (localRep.containsKey(pred)) nodeBT = nodeBT.union(localRep.get(pred));
+			}
+			localRep.put(uri, nodeBT);
+		}
+	}
+
+	private void propagateParts(Map<SID, Bintree> localRep, Map<SID, Block> wit) {
+		// Propagate node's representations according to containments
+		for (SID uri : hasPart.keySet()) {
+			Bintree nodeBT = (wit.containsKey(uri)) ? Bintree.fromBlock(wit.get(uri)) : new Bintree();
+
+			for (SID pred : hasPart.get(uri)) {
+				if (wit.containsKey(pred))
+					nodeBT = nodeBT.union(Bintree.fromBlock(wit.get(pred)));
 			}
 			localRep.put(uri, nodeBT);
 		}
@@ -578,6 +589,9 @@ public class RelationshipGraph {
 				finalRep.put(uri.getID(), finalRep.get(uri.getID()).normalize());
 			}
 		}
+		for (Integer uri: finalRep.keySet()) {
+			finalRep.put(uri, finalRep.get(uri).normalizeRoledParts());
+		}
 	}
 
 	public Representation constructRepresentation() {
@@ -594,7 +608,7 @@ public class RelationshipGraph {
 		Map<SID, Block> wit = new HashMap<SID, Block>();
 
 		distributeUniqueParts(order, witnessesArr, localRep, wit, cycles);
-		propagateParts(localRep);
+		propagateParts(localRep, wit);
 
 		Map<Integer, Bintree> finalRep = new HashMap<Integer, Bintree>();
 		finalizeRepresenataion(localRep, wit, finalRep);

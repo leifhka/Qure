@@ -71,7 +71,7 @@ public class Representation {
 	}
 
 	public void addCovering(Set<SID> covering, Block block, Set<Integer> roles) {
-		if (roles.size() > 1) covering = getStrictest(covering, roles);
+		//if (roles.size() > 1) covering = getStrictest(covering, roles);
 		
 		for (SID uri : covering) {
 			Bintree old = representation.get(uri.getID());
