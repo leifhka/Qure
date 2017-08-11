@@ -96,6 +96,28 @@ public class Bintree {
 	}
 
 	/**
+	 * Removes all blocks that are part of a block with a stricter role.
+	 */
+	 public Bintree normalizeRoledParts() {
+
+		Set<Block> bn = new HashSet<Block>();
+		for (Block b1 : bt) {
+			boolean keep = true;
+			for (Block b2 : bt) {
+				if (!b1.equals(b2) &&
+				    Relation.stricterRole(b2.getRole(), b1.getRole()) &&
+				    b1.unRoled().blockPartOf(b2.unRoled())) {
+
+					keep = false;
+					break;
+				}
+			}
+			if (keep) bn.add(b1);
+		}
+		return new Bintree(bn);
+	 }
+
+	/**
 	 * Constructs the bintree representing the same space as this, but on normal form,
 	 * that is, the bintree with the fewest number of blocks.
 	 */
