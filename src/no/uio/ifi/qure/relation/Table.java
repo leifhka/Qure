@@ -124,15 +124,16 @@ public class Table {
 	 */
 	public Table join(AtomicRelation newRel, Table other, Map<Integer, Integer> uni) {
 		Table res = new Table(newRel);
-		for (Integer[] tuple : other.getTuples()) {
+		for (Integer[] tuple : other.getTuples()) { // TODO: Equals not correct
 			for (Integer[] joinable : getJoinableWUni(tuple, uni)) {
 				Integer[] joined = joinWUni(joinable, tuple, uni);
 				Set<Integer> sidSet = Utils.asSet(joined);
-				if (!rel.isIntrinsic(joined) && !checked.contains(sidSet)) {
+				if (!rel.isIntrinsic(joined)) { // && !checked.contains(sidSet)) {
+					//if (newRel instanceof PartOf) System.out.println(newRel.toString() + ": " + Arrays.toString(joined));
 					res.addTuple(joined);
-					if (rel instanceof Overlaps) {
-						checked.add(sidSet);
-					}
+					//if (rel instanceof Overlaps) {
+					//	checked.add(sidSet);
+					//}
 				}
 			}
 		}

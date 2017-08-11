@@ -186,9 +186,10 @@ public class Overlaps extends AtomicRelation {
 	private void unifyOverlaps(Set<Map<Integer, Integer>> unifiers, Map<Integer, Integer> unifier,
 	                           Set<Integer> tArgs, Set<Integer> rArgs, Overlaps r) {
     	if (rArgs.isEmpty()) { // Unifier found for all variables
-    		if (!redundantUnifier(unifier, unifiers, r)) {
-		    	unifiers.add(unifier);
-    		}
+	    	unifiers.add(unifier);
+    		// if (!redundantUnifier(unifier, unifiers, r)) {
+		    // 	unifiers.add(unifier);
+    		// }
     		return;
     	}
 

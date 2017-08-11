@@ -61,7 +61,7 @@ public class PartOf extends AtomicRelation {
 		}
 	}
 
-		public String toBTSQL1Approx(String[] vals, Config config) {
+	public String toBTSQL1Approx(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "    SELECT DISTINCT T" + a0 + ".gid AS v" + a0 + ", T" + a0 + ".block\n";
 		query += "    FROM " + selFroWhe[1] + "\n";
@@ -93,7 +93,7 @@ public class PartOf extends AtomicRelation {
 		return query;
 	}
 
-	private String toBTSQL2Approx(String[] vals, Config config) {
+	public String toBTSQL2Approx(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "    SELECT DISTINCT T" + a1 + "." + config.uriColumn + " AS v" + a1 + ", T" + a0 + ".block\n";
 		query += "    FROM " + selFroWhe[1] + ",\n";
@@ -176,7 +176,8 @@ public class PartOf extends AtomicRelation {
 					unifier.put(new Integer(a0), new Integer(a0));
 					unifier.put(new Integer(a1), new Integer(a1));
 					unifiers.add(unifier);
-				} else if (strictnessRelated(r0, ovr.getArgRole(a1)) &&
+				} //else
+				if (strictnessRelated(r0, ovr.getArgRole(a1)) &&
 				    stricterRole(r1, ovr.getArgRole(a0))) {
 
 					Map<Integer, Integer> unifier = new HashMap<Integer, Integer>();
@@ -246,10 +247,10 @@ public class PartOf extends AtomicRelation {
 			if (eval(toSpaces(toSIDs(tuple), spaces))) {
 				table.addTuple(tuple);
 	    	}
-	    	Integer[] rev = reverse(tuple);
-			if (eval(toSpaces(toSIDs(rev), spaces))) {
-				table.addTuple(rev);
-	    	}
+	    	//Integer[] rev = reverse(tuple);
+			//if (eval(toSpaces(toSIDs(rev), spaces))) {
+			//	table.addTuple(rev);
+	    	//}
     	}
     	return table;
 	}
