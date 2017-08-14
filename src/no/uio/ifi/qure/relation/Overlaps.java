@@ -80,7 +80,7 @@ public class Overlaps extends AtomicRelation {
 		return query;
 	}
 
-	private String toBTSQL2(String[] vals, Config config) {
+	private String toBTSQL2Old(String[] vals, Config config) {
 		String[] sfw = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		
 		String from = sfw[1] + ",\n";
@@ -101,6 +101,41 @@ public class Overlaps extends AtomicRelation {
 		} else {
 			query += makeBlockOverlapsWhere("T" + args[1], "T" + args[0]);
 		}
+		return query;
+	}
+
+	private String toBTSQL2(String[] vals, Config config) {
+		String[] sfw = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
+		
+		String innerFrom = sfw[1] + ",\n";
+	    innerFrom += "  qure.bitPosition" + ((config.finalBlockSize > 31) ? "BigInt" : "Int") + " AS V";
+	    
+		String innerQuery = "SELECT DISTINCT " + sfw[0];
+		if (argRole.get(args[0]) != 0) innerQuery += ", T" + args[0] + ".role AS role" + args[0];
+		if (argRole.get(args[1]) != 0) innerQuery += ", T" + args[1] + ".role AS role" + args[1];
+		innerQuery += "\n";
+		innerQuery += "FROM " + innerFrom + "\n";
+		innerQuery += "WHERE ";
+		if (!sfw[2].equals("")) innerQuery += sfw[2] + " AND \n";
+		if (vals[0] != null) {
+			innerQuery += makeBlockOverlapsWhere("T" + args[0], "T" + args[1]);
+		} else {
+			innerQuery += makeBlockOverlapsWhere("T" + args[1], "T" + args[0]);
+		}
+		
+		String select = "", where  = "", selectSep = "", whereSep = "";
+		for (int i = 0; i < args.length; i++) {
+			select += selectSep + "v" + args[i];
+			if (argRole.get(args[i]) != 0) {
+				where += whereSep + "(T.role" + args[i] + " = " + (argRole.get(args[i]) << 1) + " OR " +
+				          "T.role" + args[i] + " = " + ((argRole.get(args[i]) << 1) + 1) + ")";
+			}
+			selectSep = ", ";
+			whereSep = " AND ";
+		}
+		String query = "SELECT " + select + "\n";
+		query += "FROM (\n" + innerQuery + ") T";
+		if (!where.equals("")) query += "\n WHERE " + where;
 		return query;
 	}
 
