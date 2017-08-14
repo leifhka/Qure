@@ -378,7 +378,7 @@ public class RelationSet {
 		//dj.setName("DJ");
 		//rcc8.add(dj);
 
-		Relation ec = overlaps(0, 0, 0, 1).and(not(overlaps(i, i, 0, 1)));
+		Relation ec = overlaps(b, b, 0, 1).and(not(overlaps(i, i, 0, 1)));
 		ec.setName("EC");
 		rcc8.add(ec);
 
