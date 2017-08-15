@@ -40,13 +40,18 @@ public class Qure {
 		//RelationSet relationSet = RelationSet.getAllensIntervalAlgebra(TimeSpace.FIRST, TimeSpace.INTERIOR, TimeSpace.LAST);
 		RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
 
-		Config config = new Config("osm_ice", "int", 13, 30, 10, relationSet);
+		Config config = new Config("osm_ice", "fn", 13, 30, 10, relationSet);
 		//Config config = new Config("tiny", "nbl", 4, 1, 10);
 		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		//geometries = new TimeProvider(config, new DBDataProvider(config));
 
 		ArrayList<Config> rfs = new ArrayList<Config>();
 		rfs.add(config);
+
+		String q = makeGeoBMQuery(new Overlaps(0,0,0,1), geometries, config, 1, "ins.osm_ice_500");
+		//String q = makeBTBMQuery(new PartOf(0,0,0,1), config, 1, "ins.osm_ice_500");
+		System.out.println(q);
+		timeQuery(q, config);
 
 		//PartOf r = new PartOf(0,0,0,1);
 		//String a = "1";
@@ -57,7 +62,7 @@ public class Qure {
 		//System.out.println(q);
 		//System.out.println(runQuery(q, config).toString());
 
-		runMany(rfs);
+		//runMany(rfs);
 		//writeDBSizes(rfs);
 		//times = new HashMap<String, Long>();
 		//runManyQueryBM(rfs);
@@ -67,7 +72,7 @@ public class Qure {
 
 		//Relation r = partOf(0,0,1,0);//.and(not(partOf(0,0,1,0)));
 		//RelationSet relationSet = new RelationSet(); relationSet = relationSet.add(r);
-		checkCorrectness(config, config.relationSet, 5);
+		//checkCorrectness(config, config.relationSet, 5);
 	}
 
 	private static void runMany(Collection<Config> configs) {
@@ -759,6 +764,29 @@ public class Qure {
 		return null;
 	}
 
+	public static void timeQuery(String query, Config config) {
+		try {
+			Class.forName(config.jdbcDriver);
+
+			connect = DriverManager.getConnection(config.connectionStr);
+			statement = connect.createStatement();
+
+			long before, after;
+			before = System.currentTimeMillis();
+			
+			statement.execute(query);
+			resultSet = statement.getResultSet();
+			after = System.currentTimeMillis();
+			takeTime(before, after, config.rawBTTableName, "query time", true, false, "query.txt", true);
+		} catch (Exception ex) {
+			System.out.println("Error on query:\n " + query);
+			ex.printStackTrace();
+			System.exit(1);
+		} finally {
+			close();
+		}
+	}
+
 	public static void runQueryBM(Config config) {
 		try {
 			Class.forName(config.jdbcDriver);
@@ -795,6 +823,24 @@ public class Qure {
 		} finally {
 			close();
 		}
+	}
+
+	public static String makeBTBMQuery(Relation rel, Config config, int constantIndex, String bm) {
+		String[] args = new String[rel.getArity()];
+		args[constantIndex] = " ' || id || ' ";
+		String innerQuery = rel.toBTSQL(args, config);
+		String query = "DO $$ DECLARE id integer;\nBEGIN\nFOR id IN (SELECT * FROM " + bm + ") LOOP EXECUTE '\n";
+		query += innerQuery + "';\nEND LOOP;\nEND $$;";
+		return query;
+	}
+
+	public static String makeGeoBMQuery(Relation rel, SpaceProvider spaces, Config config, int constantIndex, String bm) {
+		String[] args = new String[rel.getArity()];
+		args[constantIndex] = " ' || id || ' ";
+		String innerQuery = spaces.toSQLByName(rel, args, config);
+		String query = "DO $$ DECLARE id integer;\nBEGIN\nFOR id IN (SELECT * FROM " + bm + ") LOOP EXECUTE '\n";
+		query += innerQuery + "';\nEND LOOP;\nEND $$;";
+		return query;
 	}
 
 	public static void writeDBSizes(Collection<Config> configs) {
