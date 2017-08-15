@@ -280,6 +280,12 @@ public class GeometryProvider implements SpaceProvider {
 			case "NTPP":
 				query += "st_containsProperly(T1.geom, T0.geom)";
 				break;
+			case "overlaps":
+				query += "st_intersects(T0.geom, T1.geom)";
+				break;
+			case "partof":
+				query += "st_contains(T0.geom, T1.geom)";
+				break;
 		}
 		return query;
 	}
