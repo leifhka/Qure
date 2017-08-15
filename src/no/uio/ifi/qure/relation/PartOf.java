@@ -22,6 +22,7 @@ public class PartOf extends AtomicRelation {
 		this.a1 = a1;
 		this.r0 = r0;
 		this.r1 = r1;
+		name = "partof";
 	}
 
 	public int getArity() { return 2; }

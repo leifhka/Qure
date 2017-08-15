@@ -15,7 +15,7 @@ import no.uio.ifi.qure.space.*;
 
 public abstract class Relation {
 
-	private String name;
+	public String name;
 
 	public abstract boolean eval(Space[] args);
 

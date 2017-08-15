@@ -22,6 +22,7 @@ public class Overlaps extends AtomicRelation {
 		argRole= new HashMap<Integer, Integer>();
 		argRole.put(a, r);
 		args = new int[]{a};
+		name = "overlaps";
 	}
 
 	public Overlaps(int r0, int r1, int a0, int a1) {
@@ -34,6 +35,7 @@ public class Overlaps extends AtomicRelation {
     		argRole.put(a1, r1);
     	}		
 		args = new int[]{a0, a1};
+		name = "overlaps";
 	}
 
 	public Overlaps(int[] rs, int[] as) {
@@ -46,6 +48,7 @@ public class Overlaps extends AtomicRelation {
 			argRole.put(as[i], argRole.get(as[i]) | rs[i]);
 		}
 		args = as;
+		name = "overlaps";
 	}
 
 	public Overlaps(Map<Integer, Integer> argRole) {
@@ -53,6 +56,7 @@ public class Overlaps extends AtomicRelation {
 		args = new int[argRole.keySet().size()];
 		int i = 0;
 		for (Integer k : argRole.keySet()) args[i++] = k;
+		name = "overlaps";
 	}
 
 	public int getArg(int i) {
@@ -134,7 +138,7 @@ public class Overlaps extends AtomicRelation {
 			whereSep = " AND ";
 		}
 		String query = "SELECT " + select + "\n";
-		query += "FROM (\n" + innerQuery + ") T";
+		query += "FROM (\n" + innerQuery + " OFFSET 0) T";
 		if (!where.equals("")) query += "\n WHERE " + where;
 		return query;
 	}
