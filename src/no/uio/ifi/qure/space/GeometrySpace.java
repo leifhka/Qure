@@ -152,16 +152,11 @@ public class GeometrySpace implements Space {
 		if (role == 0) {
 			return this;
 		} else if (role == BOUNDARY) {
-			if (geo.getGeometryType().equals("MultiPoint") || geo.getGeometryType().equals("Point")) {
-				return this;
-			} else {
-				return new GeometrySpace((new GeometryPrecisionReducer(precModel)).reduce(geo.getBoundary()), precModel);
-			}
+			return new GeometrySpace((new GeometryPrecisionReducer(precModel)).reduce(geo.getBoundary()), precModel);
 		} else if (role == INTERIOR) {
 			// Points have empty interior
 			if (geo.getGeometryType().equals("MultiPoint") || geo.getGeometryType().equals("Point")) 
-				return new GeometrySpace(geo.getFactory().createPoint((CoordinateSequence) null),
-				                         precModel);
+				return this; //return new GeometrySpace(geo.getFactory().createPoint((CoordinateSequence) null), precModel);
 			// For closed line-strings and points, the boundary is empty, thus the interior is this
 			if (geo.getBoundary().isEmpty())
 				return this;
@@ -175,6 +170,7 @@ public class GeometrySpace implements Space {
 			if (geo.getGeometryType().equals("MultiPolygon") || geo.getGeometryType().equals("Polygon")) {
 				// For polygons we can just take the negative epsilon-buffer
 				iGeo = geo.buffer(-epsilon, 32);
+				Geometry g2 = (new GeometryPrecisionReducer(new PrecisionModel(precModel.getScale()*10))).reduce(iGeo);
 			} else {
 				// For line segments we remove the end-points by removing two epsilon balls around them
 				Geometry bGeo = geo.getBoundary().buffer(epsilon, 32); // Representing two epsilon-balls around the end-points of geo
