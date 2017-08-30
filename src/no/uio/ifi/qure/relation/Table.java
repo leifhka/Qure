@@ -19,13 +19,10 @@ public class Table {
 	private final List<Map<Integer, Set<Integer[]>>> indecies;
 	private final AtomicRelation rel;
 
-	private Set<Set<Integer>> checked; // Used if rel is Overlaps to remove dedundant tuples
-
 	public Table(AtomicRelation rel) {
 		this.rel = rel;
 		tuples = new HashSet<Integer[]>();
 		indecies = new ArrayList<Map<Integer, Set<Integer[]>>>();
-		checked = new HashSet<Set<Integer>>();
 
 		for (int i = 0; i < rel.getArity(); i++) {
 			indecies.add(new HashMap<Integer, Set<Integer[]>>());
@@ -128,12 +125,8 @@ public class Table {
 			for (Integer[] joinable : getJoinableWUni(tuple, uni)) {
 				Integer[] joined = joinWUni(joinable, tuple, uni);
 				Set<Integer> sidSet = Utils.asSet(joined);
-				if (!rel.isIntrinsic(joined)) { // && !checked.contains(sidSet)) {
-					//if (newRel instanceof PartOf) System.out.println(newRel.toString() + ": " + Arrays.toString(joined));
+				if (!rel.isIntrinsic(joined)) {
 					res.addTuple(joined);
-					//if (rel instanceof Overlaps) {
-					//	checked.add(sidSet);
-					//}
 				}
 			}
 		}

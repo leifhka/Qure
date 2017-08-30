@@ -366,14 +366,20 @@ public class Overlaps extends AtomicRelation {
 
 	public Table evalAll(SpaceProvider spaces, Table possible) {
 		Table table = new Table(this);
+		Set<Set<SID>> checked = new HashSet<Set<SID>>();
 
 		for (Integer[] tuple : possible.getTuples()) {
 			if (getArity() == 1) {
 				if (spaces.keySet().contains(new SID(tuple[0], Utils.unpackSingleton(argRole.values())))) {
 					table.addTuple(tuple);
 				}
-			} else if (eval(toSpaces(toSIDs(tuple), spaces))) {
-				table.addTuple(tuple);
+			} else {
+				SID[] sids = toSIDs(tuple);
+				Set<SID> tupSet = Utils.asSet(sids);
+				if (checked.contains(tupSet) || eval(toSpaces(sids, spaces))) {
+					table.addTuple(tuple);
+					checked.add(tupSet);
+				}
 			}
 		}
     	return table;
