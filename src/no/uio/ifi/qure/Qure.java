@@ -40,7 +40,7 @@ public class Qure {
 		//RelationSet relationSet = RelationSet.getAllensIntervalAlgebra(TimeSpace.FIRST, TimeSpace.INTERIOR, TimeSpace.LAST);
 		RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
 
-		Config config = new Config("osm_ice", "fn", 13, 30, 10, relationSet);
+		Config config = new Config("osm_ice", "fxpnt3", 13, 30, 10, relationSet);
 		//Config config = new Config("tiny", "nbl", 4, 1, 10);
 		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		//geometries = new TimeProvider(config, new DBDataProvider(config));
@@ -48,21 +48,21 @@ public class Qure {
 		ArrayList<Config> rfs = new ArrayList<Config>();
 		rfs.add(config);
 
-		String q = makeGeoBMQuery(new Overlaps(0,0,0,1), geometries, config, 1, "ins.osm_ice_500");
+		//String q = makeGeoBMQuery(new Overlaps(0,0,0,1), geometries, config, 1, "ins.osm_ice_500");
 		//String q = makeBTBMQuery(new PartOf(0,0,0,1), config, 1, "ins.osm_ice_500");
-		System.out.println(q);
-		timeQuery(q, config);
+		//System.out.println(q);
+		//timeQuery(q, config);
 
-		//PartOf r = new PartOf(0,0,0,1);
-		//String a = "1";
+		//Overlaps r = new Overlaps(1,1,0,1);
+		//String a = "305804";
 		////String q1 = r.toBTSQL(new String[]{a, null}, config);
 		//String q1 = r.toBTSQL(new String[]{a, null}, config);
-		//String q2 = r.toBTSQL1Approx(new String[]{null, a}, config);
-		//String q = q2;
+		////String q2 = r.toBTSQL1Approx(new String[]{null, a}, config);
+		//String q = q1;
 		//System.out.println(q);
 		//System.out.println(runQuery(q, config).toString());
 
-		//runMany(rfs);
+		runMany(rfs);
 		//writeDBSizes(rfs);
 		//times = new HashMap<String, Long>();
 		//runManyQueryBM(rfs);
@@ -72,7 +72,7 @@ public class Qure {
 
 		//Relation r = partOf(0,0,1,0);//.and(not(partOf(0,0,1,0)));
 		//RelationSet relationSet = new RelationSet(); relationSet = relationSet.add(r);
-		//checkCorrectness(config, config.relationSet, 5);
+		//checkCorrectness(config, config.relationSet, 50);
 	}
 
 	private static void runMany(Collection<Config> configs) {
@@ -179,6 +179,7 @@ public class Qure {
 		System.out.println(" # Geo. table: " + config.geoTableName);
 		System.out.println(" # Max depth: " + config.maxIterDepth);
 		System.out.println(" # Block member count: " + config.blockMemberCount);
+		System.out.println(" # Thread count: " + config.numThreads);
 		System.out.println(" # Reltion set: " + config.relationSet.getName());
 		System.out.println(" # Write to: " + config.btTableName);
 		System.out.println("--------------------------------------");
