@@ -124,10 +124,10 @@ public class Table {
 		for (Integer[] tuple : other.getTuples()) { // TODO: Equals not correct
 			for (Integer[] joinable : getJoinableWUni(tuple, uni)) {
 				Integer[] joined = joinWUni(joinable, tuple, uni);
-				Set<Integer> sidSet = Utils.asSet(joined);
-				if (!rel.isIntrinsic(joined)) {
-					res.addTuple(joined);
-				}
+				//Set<Integer> sidSet = Utils.asSet(joined);
+				//if (!rel.isIntrinsic(joined)) {
+				res.addTuple(joined);
+				//}
 			}
 		}
 		return res;

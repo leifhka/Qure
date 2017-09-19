@@ -73,6 +73,7 @@ public class RelationshipGraph {
 	 * Adds a containment-relationship between child and parent if necessary (not already in graph).
 	 */ 
 	public void addCoveredBy(SID child, SID parent) {
+		if (child.equals(parent)) return;
 
 		if (!isOverlapsNode(child) && !isOverlapsNode(parent)) {
 			Set<SID> both = new HashSet<SID>(2);

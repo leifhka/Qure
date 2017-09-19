@@ -371,12 +371,8 @@ public class RelationSet {
 		return new Relationships(getAllPartOfs(tables), getAllBefores(tables), getAllOverlaps(tables));
 	}
 
-	public static RelationSet getRCC8(int i, int b) {
+	public static RelationSet getRCC8(int i) {
 		Set<Relation> rcc8 = new HashSet<Relation>();
-
-		//Relation dj = not(overlaps(0, 0, 0, 1));
-		//dj.setName("DJ");
-		//rcc8.add(dj);
 
 		Relation ec = overlaps(0, 0, 0, 1).and(not(overlaps(i, i, 0, 1)));
 		ec.setName("EC");
@@ -390,11 +386,11 @@ public class RelationSet {
 		eq.setName("EQ");
 		rcc8.add(eq);
 
-		Relation tpp = partOf(0, 0, 0, 1).and(overlaps(b, b, 0, 1)).and(not(partOf(0, 0, 1, 0)));
+		Relation tpp = partOf(0, 0, 0, 1).and(not(partOf(0, i, 0, 1))).and(not(partOf(0, 0, 1, 0)));
 		tpp.setName("TPP");
 		rcc8.add(tpp);
 
-		Relation ntpp = partOf(0, 0, 0, 1).and(not(overlaps(b, b, 0, 1)));
+		Relation ntpp = partOf(0, i, 0, 1);
 		ntpp.setName("NTPP");
 		rcc8.add(ntpp);
 

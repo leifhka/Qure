@@ -28,7 +28,6 @@ public class GeometrySpace implements Space {
 
 	/* Roles */
 	public static int INTERIOR = 1;
-	public static int BOUNDARY = 2;
 
 	public GeometrySpace(Geometry geo, PrecisionModel precModel) {
 		this.geo = flatten(geo);
@@ -147,41 +146,30 @@ public class GeometrySpace implements Space {
 
 	public boolean before(Space o) { return false; }
 
+	private GeometrySpace makeEmpty() {
+		return new GeometrySpace(geo.getFactory().createPoint((CoordinateSequence) null), precModel);
+	}
+
 	public GeometrySpace getPart(int role) {
 		
 		if (role == 0) {
 			return this;
-		} else if (role == BOUNDARY) {
-			return new GeometrySpace((new GeometryPrecisionReducer(precModel)).reduce(geo.getBoundary()), precModel);
-		} else if (role == INTERIOR) {
-			// Points have empty interior
-			if (geo.getGeometryType().equals("MultiPoint") || geo.getGeometryType().equals("Point")) 
-				return this; //return new GeometrySpace(geo.getFactory().createPoint((CoordinateSequence) null), precModel);
-			// For closed line-strings and points, the boundary is empty, thus the interior is this
-			if (geo.getBoundary().isEmpty())
-				return this;
-
+		} else {
+			if (!geo.getGeometryType().equals("MultiPolygon") && !geo.getGeometryType().equals("Polygon")) {
+				return makeEmpty();
+			}
+			
 			// epsilon represents the smallest representable distance with our resolution
 			// Thus, to get the interior of a geometry, we only have to remove eveything in distance epsilon from the boundary
 			//double epsilon = Math.pow(10,-(precModel.getMaximumSignificantDigits()-1))/2.0;
 			double epsilon = (1.0/(precModel.getScale()))/2.0;
 			Geometry iGeo;
 
-			if (geo.getGeometryType().equals("MultiPolygon") || geo.getGeometryType().equals("Polygon")) {
-				// For polygons we can just take the negative epsilon-buffer
-				iGeo = geo.buffer(-epsilon, 32);
-				Geometry g2 = (new GeometryPrecisionReducer(new PrecisionModel(precModel.getScale()*10))).reduce(iGeo);
-			} else {
-				// For line segments we remove the end-points by removing two epsilon balls around them
-				Geometry bGeo = geo.getBoundary().buffer(epsilon, 32); // Representing two epsilon-balls around the end-points of geo
-				iGeo = geo.difference(bGeo);
-			}
+			// For polygons we can just take the negative epsilon-buffer
+			iGeo = geo.buffer(-epsilon, 32);
+			Geometry g2 = (new GeometryPrecisionReducer(new PrecisionModel(precModel.getScale()*10))).reduce(iGeo);
 			// Interior should have one decimal more precision to represent it correctly
 			return new GeometrySpace((new GeometryPrecisionReducer(new PrecisionModel(precModel.getScale()*10))).reduce(iGeo), precModel);
-		} else {
-			// Boundary and interior is disjoint, so we return empty space
-			assert(role == (BOUNDARY | INTERIOR));
-			return new GeometrySpace(geo.getFactory().createPoint((CoordinateSequence) null), precModel);
-		}
+		} 
 	}
 }

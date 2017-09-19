@@ -324,8 +324,6 @@ public class GeometryProvider implements SpaceProvider {
 			query += "ST_intersects(T" + rel.getArg(0) + ".geom, T" + rel.getArg(1) + ".geom)";
 		} else if (role == GeometrySpace.INTERIOR) {
 			query += "ST_intersects(T" + rel.getArg(0) + ".geom, T" + rel.getArg(1) + ".geom) AND NOT ST_touches(T" + rel.getArg(0) + ".geom, T" + rel.getArg(1) + ".geom)"; // TODO: Not efficient (in general)
-		} else if (role == GeometrySpace.BOUNDARY) {
-			query += "ST_intersects(ST_boundary(T" + rel.getArg(0) + ".geom), ST_boundary(T" + rel.getArg(1) + ".geom))"; // TODO: Not efficient (in general)
 		} else {
 			return null; // Undefined role, maybe throw exception here (TODO)
 		}

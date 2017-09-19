@@ -38,9 +38,9 @@ public class Qure {
 
 		//RelationSet relationSet = RelationSet.getSimple(2);
 		//RelationSet relationSet = RelationSet.getAllensIntervalAlgebra(TimeSpace.FIRST, TimeSpace.INTERIOR, TimeSpace.LAST);
-		RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR, GeometrySpace.BOUNDARY);
+		RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR);
 
-		Config config = new Config("osm_ice", "fxpnt3", 13, 30, 10, relationSet);
+		Config config = new Config("osm_ice", "oi", 13, 30, 10, relationSet);
 		//Config config = new Config("tiny", "nbl", 4, 1, 10);
 		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		//geometries = new TimeProvider(config, new DBDataProvider(config));
@@ -48,10 +48,10 @@ public class Qure {
 		ArrayList<Config> rfs = new ArrayList<Config>();
 		rfs.add(config);
 
-		//String q = makeGeoBMQuery(new Overlaps(0,0,0,1), geometries, config, 1, "ins.osm_ice_500");
+		String q = makeGeoBMQuery(new Overlaps(0,0,0,1), geometries, config, 1, "ins.osm_ice_500");
 		//String q = makeBTBMQuery(new PartOf(0,0,0,1), config, 1, "ins.osm_ice_500");
 		//System.out.println(q);
-		//timeQuery(q, config);
+		timeQuery(q, config);
 
 		//Overlaps r = new Overlaps(1,1,0,1);
 		//String a = "305804";
@@ -62,7 +62,7 @@ public class Qure {
 		//System.out.println(q);
 		//System.out.println(runQuery(q, config).toString());
 
-		runMany(rfs);
+		//runMany(rfs);
 		//writeDBSizes(rfs);
 		//times = new HashMap<String, Long>();
 		//runManyQueryBM(rfs);
