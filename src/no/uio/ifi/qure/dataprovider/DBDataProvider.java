@@ -276,9 +276,9 @@ public class DBDataProvider implements RawDataProvider<String> {
 			batch = new ArrayList<UnparsedSpace<String>>().iterator();
 		}
 	
-		public boolean hasNext() { return batch.hasNext() || offset < total; }
+		public synchronized boolean hasNext() { return batch.hasNext() || offset < total; }
 
-		public UnparsedSpace<String> next() {
+		public synchronized UnparsedSpace<String> next() {
 
 			if (!batch.hasNext() && offset < total) {
 
@@ -303,6 +303,8 @@ public class DBDataProvider implements RawDataProvider<String> {
 			   		close();
 				}
 			}
+
+            if (!batch.hasNext()) return null;
 
 			UnparsedSpace<String> next = batch.next();
 			batch.remove();

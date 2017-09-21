@@ -8,11 +8,13 @@ import no.uio.ifi.qure.util.*;
 import no.uio.ifi.qure.bintree.Block;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Collections;
 
 import com.vividsolutions.jts.io.WKBReader;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -32,7 +34,6 @@ public class GeometryProvider implements SpaceProvider {
 	private Set<SID> coversUniverse;
 	private GeometrySpace universe;
 	private GeometryFactory geometryFactory;
-	private WKBReader reader;
 	private GeometryPrecisionReducer geoRed;
 	private RawDataProvider<String> dataProvider;
 	private Config config;
@@ -42,7 +43,6 @@ public class GeometryProvider implements SpaceProvider {
 		this.dataProvider = dataProvider;
 		geometryFactory = new GeometryFactory(config.geometryFactoryPrecision);
 		coversUniverse = new HashSet<SID>();
-		reader = new WKBReader(geometryFactory);
 		geoRed = new GeometryPrecisionReducer(config.geometryPrecision);
 
 	}
@@ -109,7 +109,8 @@ public class GeometryProvider implements SpaceProvider {
 	private void obtainUniverse() {
 
 		UnparsedSpace<String> universeWKB = dataProvider.getUniverse();
-		universe = new GeometrySpace(parseGeometry(universeWKB.unparsedSpace), config.geometryPrecision);
+		universe = new GeometrySpace(parseGeometry(universeWKB.unparsedSpace,new WKBReader(geometryFactory)),
+                                                   config.geometryPrecision);
 	}
 
 	private GeometrySpace constructUniverse(boolean verbose) {
@@ -192,7 +193,7 @@ public class GeometryProvider implements SpaceProvider {
 		return res;
 	}
 
-	private Geometry parseGeometry(List<String> wkb) {
+	private Geometry parseGeometry(List<String> wkb, WKBReader reader) {
 
 		Geometry geo;
 
@@ -224,8 +225,8 @@ public class GeometryProvider implements SpaceProvider {
 		return parseGeometries(wkbs, null, verbose);
 	}
 
-	private Map<SID, GeometrySpace> parseGeometries(UnparsedIterator<String> wkbs,
-	                                                Set<Integer> roles, boolean verbose) {
+	private Map<SID, GeometrySpace> parseGeometriesSingle(UnparsedIterator<String> wkbs,
+	                                                      Set<Integer> roles, boolean verbose) {
 
 		int total = wkbs.size();
 		Progress prog = new Progress("Parsing geometries...", total, 1, "##0");  
@@ -233,13 +234,14 @@ public class GeometryProvider implements SpaceProvider {
 
 		Map<SID, GeometrySpace> result = new HashMap<SID,GeometrySpace>(total);
 		int totalParsed = 0;
+        WKBReader reader = new WKBReader(geometryFactory);
 
 		if (verbose) prog.init();
 
 		while (wkbs.hasNext()) {
 
 			UnparsedSpace<String> ups = wkbs.next();
-			Geometry geo = parseGeometry(ups.unparsedSpace);
+			Geometry geo = parseGeometry(ups.unparsedSpace, reader);
 			
 			if (geo != null && geo.isValid() && !geo.isEmpty()) {
 				extractAndPutRoledGeos(ups.uri, new GeometrySpace(geo, config.geometryPrecision), roles, result);
@@ -256,6 +258,62 @@ public class GeometryProvider implements SpaceProvider {
 		}
 		return result;
 	}
+
+    // Multithreaded version of parseGeometriesSingle
+    private Map<SID, GeometrySpace> parseGeometries(UnparsedIterator<String> wkbs,
+                                                    Set<Integer> roles, boolean verbose) {
+
+		int total = wkbs.size();
+		Progress prog = new Progress("Parsing geometries...", total, 1, "##0");  
+		prog.setConvertToLong(true);
+
+		Map<SID, GeometrySpace> result = Collections.synchronizedMap(new HashMap<SID,GeometrySpace>(total));
+
+		if (verbose) prog.init();
+
+		List<Thread> threads = new ArrayList<Thread>();
+
+		for (int i = 0; i < config.numThreads; i++) {
+
+            Reporter reporter = prog.makeReporter();
+            WKBReader reader = new WKBReader(geometryFactory);
+			Thread ps = new Thread() {
+				public void run() {
+                    UnparsedSpace<String> ups = wkbs.next();
+					while (ups != null) {
+
+                        Geometry geo = parseGeometry(ups.unparsedSpace, reader);
+			
+                        if (geo != null && geo.isValid() && !geo.isEmpty()) {
+                            extractAndPutRoledGeos(ups.uri,
+                                                   new GeometrySpace(geo, config.geometryPrecision),
+                                                   roles, result);
+                        }
+                        if (verbose) reporter.update();
+                        ups = wkbs.next();
+                    }
+                }
+            };
+            threads.add(ps);
+            ps.start();
+		}
+        for (Thread ps : threads) {
+            try {
+                ps.join();
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+                System.exit(1);
+            }
+        }
+
+		if (verbose) {
+			prog.done();
+			//int errors = total - result.size();
+			//if (errors > 0) System.out.println("Unable to parse " + errors + " geometries.");
+			//System.out.println("Parsed " + result.size() + " geometries, split into " + result.keySet().size() + " roled geometries.");
+		}
+        return result;
+    }
 	
 	public String toSQLByName(Relation rel, String[] vals, Config config) {
 		String[] sfw = rel.makeSelectFromWhereParts(config.geoTableName, config.uriColumn, vals);
