@@ -166,7 +166,7 @@ public class GeometrySpace implements Space {
 			Geometry iGeo;
 
 			// For polygons we can just take the negative epsilon-buffer
-			iGeo = geo.buffer(-epsilon, 32);
+			iGeo = geo.buffer(-epsilon);
 			Geometry g2 = (new GeometryPrecisionReducer(new PrecisionModel(precModel.getScale()*10))).reduce(iGeo);
 			// Interior should have one decimal more precision to represent it correctly
 			return new GeometrySpace((new GeometryPrecisionReducer(new PrecisionModel(precModel.getScale()*10))).reduce(iGeo), precModel);

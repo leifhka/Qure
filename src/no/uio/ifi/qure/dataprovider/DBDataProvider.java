@@ -105,7 +105,7 @@ public class DBDataProvider implements RawDataProvider<String> {
 		query += " WHERE " + whereClause;	
 		int total = queryForTotal(config.geoTableName);
 		return new DBUnparsedIterator(total, config.limit, config.jdbcDriver, 
-		                              config.connectionStr, query, config.uriColumn);
+		                              config.connectionStr, query, config.uriColumn, false);
 	}
 
 	public int queryForTotal(String tableName) {
@@ -118,8 +118,8 @@ public class DBDataProvider implements RawDataProvider<String> {
 			connect = DriverManager.getConnection(config.connectionStr);
 
 			statement = connect.createStatement();
-			statement.execute("select count(*) from " + tableName + ";");
-			resultSet = statement.getResultSet();
+			resultSet = statement.executeQuery("select count(*) from " + tableName + ";");
+			//resultSet = statement.getResultSet();
 			resultSet.next();
 			total = resultSet.getInt(1);
 		} catch (Exception e) {
@@ -135,7 +135,7 @@ public class DBDataProvider implements RawDataProvider<String> {
 
 	public UnparsedSpace<String> getUniverse() {
 
-		List<String> universeStrs = null;
+		List<String> universeStrs = new ArrayList<String>();
 
 		try {
 			Class.forName(config.jdbcDriver);
@@ -168,15 +168,15 @@ public class DBDataProvider implements RawDataProvider<String> {
 
 		int total = queryForTotal(config.geoTableName);
 		return new DBUnparsedIterator(total, config.limit, config.jdbcDriver, config.connectionStr,
-		                              config.geoQuerySelectFromStr, config.uriColumn);
+		                              config.geoQuerySelectFromStr, config.uriColumn, true);
 	}
 
 	public DBUnparsedIterator getSpaces(Set<Integer> uris) {
 
-		if (uris.isEmpty()) return new DBUnparsedIterator(0, 0, "", "", "", "");
+		if (uris.isEmpty()) return new DBUnparsedIterator(0, 0, "", "", "", "", false);
 
 		return new DBUnparsedIterator(uris.size(), uris.size(), config.jdbcDriver, config.connectionStr,
-		                              makeValuesQuery(uris), config.uriColumn);
+		                              makeValuesQuery(uris), config.uriColumn, false);
 	}
 
 	private String makeValuesQuery(Set<Integer> uris) {
@@ -260,11 +260,12 @@ public class DBDataProvider implements RawDataProvider<String> {
 		private String baseQuery;
 		private String jdbcDriver; 
 		private String uriCol;
+		private boolean addLimits;
 		
 		private Iterator<UnparsedSpace<String>> batch;
 		
 		public DBUnparsedIterator(int total, int limit, String jdbcDriver, 
-		                          String connectionStr, String baseQuery, String uriCol) {
+		                          String connectionStr, String baseQuery, String uriCol, boolean addLimits) {
 			this.total = total;
 			this.limit = limit;
 			this.offset = 0;
@@ -272,6 +273,7 @@ public class DBDataProvider implements RawDataProvider<String> {
 			this.connectionStr = connectionStr;
 			this.baseQuery = baseQuery;
 			this.uriCol = uriCol;
+			this.addLimits = addLimits;
 
 			batch = new ArrayList<UnparsedSpace<String>>().iterator();
 		}
@@ -287,8 +289,10 @@ public class DBDataProvider implements RawDataProvider<String> {
 					Class.forName(jdbcDriver);
 					connect = DriverManager.getConnection(connectionStr);
 					statement = connect.createStatement();
-					String query = baseQuery + " WHERE " + uriCol + " >= " + offset + " AND " + 
-								   uriCol + " < " + (offset + limit) + ";";
+					String query = baseQuery;
+					if (addLimits) query += " WHERE " + uriCol + " >= " + offset + " AND " + 
+								uriCol + " < " + (offset + limit) + ";";
+					System.out.println(query);
 					statement.execute(query);
 					ResultSet resultSet = statement.getResultSet();
 

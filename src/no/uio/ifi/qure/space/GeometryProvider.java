@@ -35,7 +35,7 @@ public class GeometryProvider implements SpaceProvider {
 	private GeometrySpace universe;
 	private GeometryFactory geometryFactory;
 	private GeometryPrecisionReducer geoRed;
-	private RawDataProvider<String> dataProvider;
+	private RawDataProvider<String> dataProvider; // TODO: Need to make a duplicate for each thread or multi-thread internally
 	private Config config;
 
 	public GeometryProvider(Config config, RawDataProvider<String> dataProvider) {
