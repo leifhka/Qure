@@ -10,6 +10,8 @@ import no.uio.ifi.qure.bintree.Block;
 
 public interface RawDataProvider<E> {
 
+	public RawDataProvider<E> clone();
+
 	public Set<Integer> getInsertURIs();
 
 	public UnparsedIterator<E> getExternalOverlapping(String whereClause);

@@ -40,7 +40,7 @@ public class Qure {
 		//RelationSet relationSet = RelationSet.getAllensIntervalAlgebra(TimeSpace.FIRST, TimeSpace.INTERIOR, TimeSpace.LAST);
 		RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR);
 
-		Config config = new Config("osm_ice", "oi", 13, 30, 10, relationSet);
+		Config config = new Config("dallas", "fn", 12, 30, 10, relationSet);
 		//Config config = new Config("tiny", "nbl", 4, 1, 10);
 		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		//geometries = new TimeProvider(config, new DBDataProvider(config));
@@ -48,10 +48,10 @@ public class Qure {
 		ArrayList<Config> rfs = new ArrayList<Config>();
 		rfs.add(config);
 
-		String q = makeGeoBMQuery(new Overlaps(0,0,0,1), geometries, config, 1, "ins.osm_ice_500");
-		//String q = makeBTBMQuery(new PartOf(0,0,0,1), config, 1, "ins.osm_ice_500");
+		//String q = makeGeoBMQuery(new Overlaps(0,0,0,1), geometries, config, 1, "ins.osm_no_poly_500");
+		//String q = makeBTBMQuery(new Overlaps(0,0,0,1), config, 1, "ins.osm_no_poly_500");
 		//System.out.println(q);
-		timeQuery(q, config);
+		//timeQuery(q, config);
 
 		//Overlaps r = new Overlaps(1,1,0,1);
 		//String a = "305804";
@@ -68,11 +68,11 @@ public class Qure {
 		//runManyQueryBM(rfs);
 		//times = new HashMap<String, Long>();
 		//runAllInsertBM(configs, 100, 20, false);
-		//runAllInsertBM(rfs, 100, 20, true);
+		//runAllInsertBM(rfs, 20, 10, true);
 
 		//Relation r = partOf(0,0,1,0);//.and(not(partOf(0,0,1,0)));
 		//RelationSet relationSet = new RelationSet(); relationSet = relationSet.add(r);
-		//checkCorrectness(config, config.relationSet, 50);
+		checkCorrectness(config, config.relationSet, 50);
 	}
 
 	private static void runMany(Collection<Config> configs) {
@@ -200,7 +200,7 @@ public class Qure {
 
 		if (rep != null && config.writeBintreesToDB) {
 			try {
-				writeBintreesToDB(rep, new HashSet<Block>(), config);
+				writeBintreesToDB(rep, new HashSet<Block>(), config, false);
 			} catch (SQLException e) {
 				System.err.println("SQLError: " + e.getMessage());
 				System.err.println(e.getNextException());
@@ -257,7 +257,7 @@ public class Qure {
 
 		if (rep != null && config.writeBintreesToDB) {
 			try {
-				writeBintreesToDB(rep, oldSplits.keySet(), config);
+				writeBintreesToDB(rep, oldSplits.keySet(), config, true);
 			} catch (SQLException e) {
 				System.err.println("SQLError: " + e.getMessage());
 				System.err.println(e.getNextException());
@@ -276,7 +276,8 @@ public class Qure {
 		takeTime(beforeAll, afterAll, config.rawBTTableName, "Total insert time"+add, true, false, null, false);
 	}
 
-	public static void writeBintreesToDB(Representation rep, Set<Block> oldSplits, Config config) throws Exception {
+	public static void writeBintreesToDB(Representation rep, Set<Block> oldSplits, Config config, boolean insert)
+		throws Exception {
 
 		Map<Integer, Bintree> bintrees = rep.getRepresentation();
 		Space universe = rep.getUniverse();
@@ -293,10 +294,6 @@ public class Qure {
 			if (config.verbose) System.out.println(" Done");
 
 			statement = connect.createStatement();
-
-			DatabaseMetaData meta = connect.getMetaData();
-			ResultSet res = meta.getTables(config.dbName, config.schemaName, config.rawBTTableName, null);
-			boolean insert = res.next();
 
 			if (insert) {
 				deleteBintrees(rep, oldSplits, config);

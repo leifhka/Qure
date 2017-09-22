@@ -35,7 +35,7 @@ public class GeometryProvider implements SpaceProvider {
 	private GeometrySpace universe;
 	private GeometryFactory geometryFactory;
 	private GeometryPrecisionReducer geoRed;
-	private RawDataProvider<String> dataProvider; // TODO: Need to make a duplicate for each thread or multi-thread internally
+	private RawDataProvider<String> dataProvider;
 	private Config config;
 
 	public GeometryProvider(Config config, RawDataProvider<String> dataProvider) {
@@ -49,7 +49,7 @@ public class GeometryProvider implements SpaceProvider {
 
 	private GeometryProvider(Config config, RawDataProvider<String> dataProvider,
 	                         GeometrySpace universe, Map<SID, GeometrySpace> geometries,
-                             Set<SID> coversUniverse, GeometryFactory geometryFactory,
+                                 Set<SID> coversUniverse, GeometryFactory geometryFactory,
 	                         boolean updating) {
 		this.config = config;
 		this.dataProvider = dataProvider;
@@ -58,6 +58,7 @@ public class GeometryProvider implements SpaceProvider {
 		this.geometries = geometries;
 		this.universe = universe;
 		this.updating = updating;
+		geoRed = new GeometryPrecisionReducer(config.geometryPrecision);
 	}
 
 	public void clear() {
@@ -147,7 +148,7 @@ public class GeometryProvider implements SpaceProvider {
 		Map<SID, GeometrySpace> overlappingChildUniverse = new HashMap<SID, GeometrySpace>();
 		getIntersections(uni, ints, overlappingChildUniverse, coversChildUniverse);
 
-		return new GeometryProvider(config, dataProvider, uni, overlappingChildUniverse, coversChildUniverse,
+		return new GeometryProvider(config, dataProvider.clone(), uni, overlappingChildUniverse, coversChildUniverse,
 		                            geometryFactory, updating);
 	}
 

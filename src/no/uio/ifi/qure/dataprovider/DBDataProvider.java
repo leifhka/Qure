@@ -32,6 +32,10 @@ public class DBDataProvider implements RawDataProvider<String> {
 		this.config = config;
 	}
 
+	public DBDataProvider clone() {
+		return new DBDataProvider(config);
+	}
+
 	public Set<Integer> getInsertURIs() {
 
 		Set<Integer> insertUris = new HashSet<Integer>();
@@ -292,7 +296,6 @@ public class DBDataProvider implements RawDataProvider<String> {
 					String query = baseQuery;
 					if (addLimits) query += " WHERE " + uriCol + " >= " + offset + " AND " + 
 								uriCol + " < " + (offset + limit) + ";";
-					System.out.println(query);
 					statement.execute(query);
 					ResultSet resultSet = statement.getResultSet();
 
