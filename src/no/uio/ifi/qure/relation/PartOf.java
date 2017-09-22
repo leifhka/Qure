@@ -81,10 +81,11 @@ public class PartOf extends AtomicRelation {
 		String query = "WITH \n";
 		query += "possible AS (\n" + toBTSQL1Approx(vals, config) + "),\n";
 		query += "posGids AS (SELECT DISTINCT v" + a0 + " FROM possible),\n";
+		query += "allBlocks AS (SELECT T.gid, T.block FROM " + config.btTableName + " AS T, posGids AS P\n";
+		query += "              WHERE T.gid = P.v" + a0 + " AND T.role = " + (1 | (r0 << 1)) + "),\n";
 		query += "rem AS (SELECT DISTINCT T." + config.uriColumn + " AS v" + a0 + "\n"
-		               + "FROM " + config.btTableName + " AS T, posGids AS Pos \n"
-		               + "WHERE T.role = " + (1 | (r0 << 1)); 
-		query += " AND Pos.v" + a0 + " = T.gid AND (T.gid, T.block) NOT IN (SELECT * FROM possible))\n";
+		               + "FROM allBlocks AS T \n"
+		               + "WHERE (T.gid, T.block) NOT IN (SELECT * FROM possible))\n";
 
 		String a0Sel = "P.v" + a0;
 		String a1Sel = vals[a1] + " AS v" + a1;

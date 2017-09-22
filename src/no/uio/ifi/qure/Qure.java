@@ -40,7 +40,7 @@ public class Qure {
 		//RelationSet relationSet = RelationSet.getAllensIntervalAlgebra(TimeSpace.FIRST, TimeSpace.INTERIOR, TimeSpace.LAST);
 		RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR);
 
-		Config config = new Config("dallas", "fn", 12, 30, 10, relationSet);
+		Config config = new Config("dallas", "fn2c", 12, 30, 10, relationSet);
 		//Config config = new Config("tiny", "nbl", 4, 1, 10);
 		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		//geometries = new TimeProvider(config, new DBDataProvider(config));
@@ -48,8 +48,8 @@ public class Qure {
 		ArrayList<Config> rfs = new ArrayList<Config>();
 		rfs.add(config);
 
-		//String q = makeGeoBMQuery(new Overlaps(0,0,0,1), geometries, config, 1, "ins.osm_no_poly_500");
-		//String q = makeBTBMQuery(new Overlaps(0,0,0,1), config, 1, "ins.osm_no_poly_500");
+		//String q = makeGeoBMQuery(new Overlaps(0,0,0,1), geometries, config, 1, "ins.dallas_500");
+		//String q = (new PartOf(0,0,0,1)).toBTSQL(new String[]{null, "1"}, config);//, 1, "ins.dallas_500");
 		//System.out.println(q);
 		//timeQuery(q, config);
 
@@ -63,12 +63,14 @@ public class Qure {
 		//System.out.println(runQuery(q, config).toString());
 
 		//runMany(rfs);
+		//deleteRandomBintreesLoc(10, config);
+		//runInsert(config, true);
 		//writeDBSizes(rfs);
 		//times = new HashMap<String, Long>();
 		//runManyQueryBM(rfs);
 		//times = new HashMap<String, Long>();
 		//runAllInsertBM(configs, 100, 20, false);
-		//runAllInsertBM(rfs, 20, 10, true);
+		//runAllInsertBM(rfs, 1, 10, true);
 
 		//Relation r = partOf(0,0,1,0);//.and(not(partOf(0,0,1,0)));
 		//RelationSet relationSet = new RelationSet(); relationSet = relationSet.add(r);
@@ -477,7 +479,7 @@ public class Qure {
 			for (Block block : res.get(uri).getBlocks()) {
 				Block parent = getParentInSet(block, oldSplitBlocks);
 				if (parent != null) {
-					String blockStr = "" + parent.getRepresentation(); 
+					String blockStr = "" + parent.toSimpleBlock(config.finalBlockSize).fst; 
 					delQuery.append(" OR " + makePrefixQuery(blockStr, config.blockSize));
 				}
 			}
@@ -576,17 +578,9 @@ public class Qure {
 	}
 
 	public static String makePrefixQuery(String block, int blockSize) {
-
-		String expr;
-
-		if (blockSize > 31) {
-			expr = "((((1::bigint << (63 - ((" + block + " & 127) >> 1))::int)) - 1) | " + block + ")";
-		} else {
-			expr = "(((1 << (31 - ((" + block + " & 63) >> 1))) - 1) | " + block + ")";
-		}
-
-		String c1 = block + " & -2 < block"; // Should be strictly contained for deletion
-		String c2 = expr + " >= block";
+		// Should be strictly contained for deletion
+		String c1 = "(" + block + " & (" + block + " - 1))" + " < block"; 
+		String c2 = "(" + block + " | (" + block + " - 1))" + " >= block";
 		return "(" + c1 + " AND " + c2 + ")";
 	}
 
