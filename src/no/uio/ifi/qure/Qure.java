@@ -40,7 +40,7 @@ public class Qure {
 		//RelationSet relationSet = RelationSet.getAllensIntervalAlgebra(TimeSpace.FIRST, TimeSpace.INTERIOR, TimeSpace.LAST);
 		RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR);
 
-		Config config = new Config("dallas", "fn2c", 12, 30, 10, relationSet);
+		Config config = new Config("dallas", "fn2", 12, 30, 10, relationSet);
 		//Config config = new Config("tiny", "nbl", 4, 1, 10);
 		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		//geometries = new TimeProvider(config, new DBDataProvider(config));
@@ -52,6 +52,8 @@ public class Qure {
 		//String q = (new PartOf(0,0,0,1)).toBTSQL(new String[]{null, "1"}, config);//, 1, "ins.dallas_500");
 		//System.out.println(q);
 		//timeQuery(q, config);
+
+        runQueryBM(config);
 
 		//Overlaps r = new Overlaps(1,1,0,1);
 		//String a = "305804";
@@ -74,7 +76,7 @@ public class Qure {
 
 		//Relation r = partOf(0,0,1,0);//.and(not(partOf(0,0,1,0)));
 		//RelationSet relationSet = new RelationSet(); relationSet = relationSet.add(r);
-		checkCorrectness(config, config.relationSet, 50);
+		//checkCorrectness(config, config.relationSet, 50);
 	}
 
 	private static void runMany(Collection<Config> configs) {
@@ -756,7 +758,7 @@ public class Qure {
 		return null;
 	}
 
-	public static void timeQuery(String query, Config config) {
+	public static void timeQuery(String prefix, String query, Config config) {
 		try {
 			Class.forName(config.jdbcDriver);
 
@@ -769,7 +771,7 @@ public class Qure {
 			statement.execute(query);
 			resultSet = statement.getResultSet();
 			after = System.currentTimeMillis();
-			takeTime(before, after, config.rawBTTableName, "query time", true, false, "query.txt", true);
+			takeTime(before, after, config.rawBTTableName, prefix, true, false, "query.txt", true);
 		} catch (Exception ex) {
 			System.out.println("Error on query:\n " + query);
 			ex.printStackTrace();
@@ -786,29 +788,16 @@ public class Qure {
 			connect = DriverManager.getConnection(config.connectionStr);
 			statement = connect.createStatement();
 
-			long before, after;
-
-			// before = System.currentTimeMillis();
-			// statement.execute("SELECT bmbt_ov_int('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
-			// after = System.currentTimeMillis();
-			// takeTime(before, after, config.rawBTTableName, "ov time", true, true, "query.txt", true);
-
-			// if (!config.rawGeoTableName.equals("npd") && config.overlapsArity >= 3) {
-			//	 before = System.currentTimeMillis();
-			//	 statement.execute("SELECT bmbt_ov2_int('ins." + config.rawGeoTableName + "_500', '" + config.btTableName + "');");
-			//	 after = System.currentTimeMillis();
-			//	 takeTime(before, after, config.rawBTTableName, "ov2 time", true, true, "query.txt", true);
-			// }
-
-			before = System.currentTimeMillis();
-			statement.execute("SELECT bmbt_po1_iu('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
-			after = System.currentTimeMillis();
-			takeTime(before, after, config.rawBTTableName, "po1 time", true, true, "query.txt", true);
-
-			before = System.currentTimeMillis();
-			statement.execute("SELECT bmbt_po2_iu('ins." + config.rawGeoTableName + "_2000', '" + config.btTableName + "');");
-			after = System.currentTimeMillis();
-			takeTime(before, after, config.rawBTTableName, "po2 time", true, true, "query.txt", true);
+            for (Relation rel : config.relationSet.getRelations()) {
+                for (int i = 0; i < rel.getArity(); i++) {
+                    String btQuery = makeBTBMQuery(rel, config, i,
+                                                   "ins." + config.rawGeoTableName + "_500");
+                    String geoQuery = makeGeoBMQuery(rel, geometries, config, i,
+                                                     "ins." + config.rawGeoTableName + "_500");
+                    timeQuery(rel.getName() + ", bt: ", btQuery, config);
+                    timeQuery(rel.getName() + ", geo: ", geoQuery, config);
+                }
+            }
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
