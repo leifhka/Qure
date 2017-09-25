@@ -73,13 +73,13 @@ public abstract class Relation {
 		Set<AtomicRelation> ps = getPositiveAtomicRelations();
 		Set<AtomicRelation> ns = getNegativeAtomicRelations();
 
+		int i = 0;
 		String query;
 		if (ps.isEmpty()) {
 			query = makeIdentityRelation(config.btTableName, config.uriColumn);
 		} else {
 			query = "SELECT * FROM ";
 			String del = "";
-			int i = 0;
 			for (AtomicRelation ar : ps) {
 				query += del + "(" + ar.toBTSQL(vals, config) + ") AS T" + i;
 				i++;
