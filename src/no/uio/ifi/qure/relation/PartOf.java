@@ -62,6 +62,16 @@ public class PartOf extends AtomicRelation {
 		}
 	}
 
+	public String toBTSQLNeg(String[] vals, Config config) {
+		if (vals[a0] != null && vals[a1] == null) {
+			return toBTSQL2Neg(vals, config);
+		} else if (vals[a1] != null) {
+			return toBTSQL1Neg(vals, config);
+		} else {
+			return null; //TODO
+		}
+	}
+
 	public String toBTSQL1Approx(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "    SELECT DISTINCT T" + a0 + ".gid AS v" + a0 + ", T" + a0 + ".block\n";
@@ -93,6 +103,26 @@ public class PartOf extends AtomicRelation {
 		query += "SELECT DISTINCT " + selStr + "\n";
 		query += "FROM posGids AS P LEFT OUTER JOIN rem AS R ON (P.v" + a0 + " = R.v" + a0 + ")\n";
 		query += "WHERE R.v" + a0 + " IS NULL";
+		return query;
+	}
+
+	// Returns query returning all elements not containing vals[a1]. Not in use
+	private String toBTSQL1Neg(String[] vals, Config config) {
+		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
+		String query = "WITH \n";
+		query += "possible AS (\n" + toBTSQL1Approx(vals, config) + "),\n";
+		query += "posGids AS (SELECT DISTINCT v" + a0 + " FROM possible),\n";
+		query += "allBlocks AS (SELECT T.gid, T.block FROM " + config.btTableName + " AS T, posGids AS P\n";
+		query += "              WHERE T.gid = P.v" + a0 + " AND T.role = " + (1 | (r0 << 1)) + "),\n";
+		query += "rem AS (SELECT DISTINCT T." + config.uriColumn + " AS v" + a0 + "\n"
+		               + "FROM allBlocks AS T \n"
+		               + "WHERE (T.gid, T.block) NOT IN (SELECT * FROM possible))\n";
+
+		String a0Sel = "R.v" + a0;
+		String a1Sel = vals[a1] + " AS v" + a1;
+		String selStr = (a0 < a1) ?  a0Sel + ", " + a1Sel : a1Sel + ", " + a0Sel;
+		query += "SELECT " + selStr + "\n";
+		query += "FROM rem AS R";
 		return query;
 	}
 
@@ -136,6 +166,32 @@ public class PartOf extends AtomicRelation {
 		}
 		query += "FROM posGids AS P LEFT OUTER JOIN rem AS R ON (P.v" + a1 + " = R.v" + a1 + ")\n";
 		query += "WHERE R.v" + a1 + " IS NULL";
+		return query;
+	}
+
+	// Returns query returning all elements not contained in vals[a1]. Not in use
+	private String toBTSQL2Neg(String[] vals, Config config) {
+		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
+
+		String query = "WITH \n";
+		query += "  possible AS (\n" + toBTSQL2Approx(vals, config) + "),\n";
+		query += "  posGids AS (SELECT DISTINCT v" + a1 + " FROM possible),\n";
+		query += "  allBlocks AS (SELECT DISTINCT block\n " 
+		                       + "FROM " + config.btTableName + "\n"
+		                      + " WHERE gid = " + vals[a0] + " AND ";
+		query += "role = " + (1 | (r0 << 1));
+		query += "),\n";
+		query += "  rem AS (\n";
+		query += "        SELECT DISTINCT v" + a1 + "\n";
+		query += "        FROM posGids AS Pos,\n";
+		query += "             allBlocks AS AB\n";
+		query += "        WHERE (Pos.v" + a1 + ", AB.block) NOT IN (SELECT * FROM possible))\n";
+		if (a0 < a1) {
+			query += "SELECT " + vals[a0] + " AS v" + a0 + ", R.v" + a1 + "\n";
+		} else {
+			query += "SELECT R.v" + a1 + ", " + vals[a0] + " AS v" + a0 + "\n";
+		}
+		query += "FROM rem AS R";
 		return query;
 	}
 

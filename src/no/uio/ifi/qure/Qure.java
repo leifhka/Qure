@@ -2,13 +2,8 @@ package no.uio.ifi.qure;
 
 import java.util.*;
 
-import java.sql.DatabaseMetaData;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet; 
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+import org.postgresql.util.PSQLException;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -40,7 +35,7 @@ public class Qure {
 		//RelationSet relationSet = RelationSet.getAllensIntervalAlgebra(TimeSpace.FIRST, TimeSpace.INTERIOR, TimeSpace.LAST);
 		RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR);
 
-		Config config = new Config("dallas", "fn2", 12, 30, 10, relationSet);
+		Config config = new Config("tiger", "fn", 24, 10, 10, relationSet);
 		//Config config = new Config("tiny", "nbl", 4, 1, 10);
 		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		//geometries = new TimeProvider(config, new DBDataProvider(config));
@@ -53,8 +48,6 @@ public class Qure {
 		//System.out.println(q);
 		//timeQuery(q, config);
 
-        runQueryBM(config);
-
 		//Overlaps r = new Overlaps(1,1,0,1);
 		//String a = "305804";
 		////String q1 = r.toBTSQL(new String[]{a, null}, config);
@@ -64,7 +57,7 @@ public class Qure {
 		//System.out.println(q);
 		//System.out.println(runQuery(q, config).toString());
 
-		//runMany(rfs);
+		runMany(rfs);
 		//deleteRandomBintreesLoc(10, config);
 		//runInsert(config, true);
 		//writeDBSizes(rfs);
@@ -74,9 +67,11 @@ public class Qure {
 		//runAllInsertBM(configs, 100, 20, false);
 		//runAllInsertBM(rfs, 1, 10, true);
 
+		//runQueryBM(config);
+
 		//Relation r = partOf(0,0,1,0);//.and(not(partOf(0,0,1,0)));
 		//RelationSet relationSet = new RelationSet(); relationSet = relationSet.add(r);
-		//checkCorrectness(config, config.relationSet, 50);
+		//checkCorrectness(config, config.relationSet, 30);
 	}
 
 	private static void runMany(Collection<Config> configs) {
@@ -764,6 +759,7 @@ public class Qure {
 
 			connect = DriverManager.getConnection(config.connectionStr);
 			statement = connect.createStatement();
+			statement.setQueryTimeout(60);
 
 			long before, after;
 			before = System.currentTimeMillis();
@@ -772,6 +768,11 @@ public class Qure {
 			resultSet = statement.getResultSet();
 			after = System.currentTimeMillis();
 			takeTime(before, after, config.rawBTTableName, prefix, true, false, "query.txt", true);
+		} catch (SQLTimeoutException ex) {
+			System.out.println(prefix + ": timed out");
+			ex.printStackTrace();
+		} catch (PSQLException ex) {
+			System.out.println(prefix + ": timed out");
 		} catch (Exception ex) {
 			System.out.println("Error on query:\n " + query);
 			ex.printStackTrace();
@@ -783,21 +784,16 @@ public class Qure {
 
 	public static void runQueryBM(Config config) {
 		try {
-			Class.forName(config.jdbcDriver);
-
-			connect = DriverManager.getConnection(config.connectionStr);
-			statement = connect.createStatement();
-
-            for (Relation rel : config.relationSet.getRelations()) {
-                for (int i = 0; i < rel.getArity(); i++) {
-                    String btQuery = makeBTBMQuery(rel, config, i,
-                                                   "ins." + config.rawGeoTableName + "_500");
-                    String geoQuery = makeGeoBMQuery(rel, geometries, config, i,
-                                                     "ins." + config.rawGeoTableName + "_500");
-                    timeQuery(rel.getName() + ", bt: ", btQuery, config);
-                    timeQuery(rel.getName() + ", geo: ", geoQuery, config);
-                }
-            }
+			for (Relation rel : config.relationSet.getRelations()) {
+				for (int i = 0; i < rel.getArity(); i++) {
+					String btQuery = makeBTBMQuery(rel, config, i,
+                                                                       "ins." + config.rawGeoTableName + "_500");
+					String geoQuery = makeGeoBMQuery(rel, geometries, config, i,
+                                                                         "ins." + config.rawGeoTableName + "_500");
+					timeQuery(rel.getName() + ":" + i + ", bt", btQuery, config);
+					timeQuery(rel.getName() + ":" + i + ", geo", geoQuery, config);
+				}
+			}
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
