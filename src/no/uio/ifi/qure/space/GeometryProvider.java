@@ -289,7 +289,9 @@ public class GeometryProvider implements SpaceProvider {
                             extractAndPutRoledGeos(ups.uri,
                                                    new GeometrySpace(geo, config.geometryPrecision),
                                                    roles, result);
-                        }
+                        } else {
+							System.err.println("\nInvalid geometry for " + ups.uri.toString() + "\n");
+						}
                         if (verbose) reporter.update();
                         ups = wkbs.next();
                     }
@@ -311,7 +313,7 @@ public class GeometryProvider implements SpaceProvider {
 			prog.done();
 			//int errors = total - result.size();
 			//if (errors > 0) System.out.println("Unable to parse " + errors + " geometries.");
-			//System.out.println("Parsed " + result.size() + " geometries, split into " + result.keySet().size() + " roled geometries.");
+			System.out.println("Parsed " + total + " geometries, split into " + result.keySet().size() + " roled geometries.");
 		}
         return result;
     }
