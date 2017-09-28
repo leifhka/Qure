@@ -259,9 +259,11 @@ public class DBDataProvider implements RawDataProvider<String> {
 		
 		private int total; // Total number of results in DB
 		private int limit; // Maximum number of rows to keep in main-memory
-		private int offset; // Tracks how far into the results we have come
+		private int parsed; // Tracks how far into the results we have come
+		private int currentMaxURI;
 		private String connectionStr;
 		private String baseQuery;
+		private String nextQuery;
 		private String jdbcDriver; 
 		private String uriCol;
 		private boolean addLimits;
@@ -272,36 +274,35 @@ public class DBDataProvider implements RawDataProvider<String> {
 		                          String connectionStr, String baseQuery, String uriCol, boolean addLimits) {
 			this.total = total;
 			this.limit = limit;
-			this.offset = 0;
+			this.parsed = 0;
 			this.jdbcDriver = jdbcDriver;
 			this.connectionStr = connectionStr;
 			this.baseQuery = baseQuery;
 			this.uriCol = uriCol;
 			this.addLimits = addLimits;
+			this.currentMaxURI = 0;
+	
+			this.nextQuery = baseQuery;
+			if (addLimits) nextQuery += " ORDER BY " + uriCol + " ASC LIMIT " + limit;
 
 			batch = new ArrayList<UnparsedSpace<String>>().iterator();
 		}
 	
-		public synchronized boolean hasNext() { return batch.hasNext() || offset < total; }
+		public synchronized boolean hasNext() { return batch.hasNext() || parsed < total; }
 
 		public synchronized UnparsedSpace<String> next() {
 
-			if (!batch.hasNext() && offset < total) {
+			if (!batch.hasNext() && parsed < total) {
 
 				try {
 
 					Class.forName(jdbcDriver);
 					connect = DriverManager.getConnection(connectionStr);
 					statement = connect.createStatement();
-					String query = baseQuery;
-					if (addLimits) query += " WHERE " + uriCol + " >= " + offset + " AND " + 
-								uriCol + " < " + (offset + limit) + ";";
-					statement.execute(query);
+					statement.execute(nextQuery);
 					ResultSet resultSet = statement.getResultSet();
 
 					batchResults(resultSet);	
-					offset += limit;
-
 				} catch (Exception e) {
 					System.err.println("Error in query process: " + e.toString());
 					e.printStackTrace();
@@ -309,6 +310,11 @@ public class DBDataProvider implements RawDataProvider<String> {
 				} finally {
 			   		close();
 				}
+
+				String nextQuery = baseQuery;
+				if (addLimits) nextQuery += " WHERE " + uriCol + " > " + currentMaxURI + " ORDER BY " + uriCol
+			                                + " ASC LIMIT " + limit;
+			    parsed += limit;
 			}
 
             if (!batch.hasNext()) return null;
@@ -327,6 +333,7 @@ public class DBDataProvider implements RawDataProvider<String> {
 
 			while (resultSet.next()) {
 				Integer uri = resultSet.getInt(1);
+				if (uri > currentMaxURI) currentMaxURI = uri;
 				List<String> spaceStrs = new ArrayList<String>();
 				for (int i = 2; i <= numCol; i++) {
 					spaceStrs.add(resultSet.getString(i));
