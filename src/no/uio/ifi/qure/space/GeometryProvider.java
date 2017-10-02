@@ -273,11 +273,14 @@ public class GeometryProvider implements SpaceProvider {
 		if (verbose) prog.init();
 
 		List<Thread> threads = new ArrayList<Thread>();
+		List<Map<SID, GeometrySpace>> results = new ArrayList<Map<SID, GeometrySpace>>();
 
 		for (int i = 0; i < config.numThreads; i++) {
 
             Reporter reporter = prog.makeReporter();
             WKBReader reader = new WKBReader(geometryFactory);
+			Map<SID, GeometrySpace> tResult = new HashMap<SID, GeometrySpace>();
+			results.add(tResult);
 			Thread ps = new Thread() {
 				public void run() {
                     UnparsedSpace<String> ups = wkbs.next();
@@ -288,7 +291,7 @@ public class GeometryProvider implements SpaceProvider {
                         if (geo != null && geo.isValid() && !geo.isEmpty()) {
                             extractAndPutRoledGeos(ups.uri,
                                                    new GeometrySpace(geo, config.geometryPrecision),
-                                                   roles, result);
+                                                   roles, tResult);
                         } else {
 							System.err.println("\nInvalid geometry for " + ups.uri.toString() + "\n");
 						}
@@ -308,6 +311,8 @@ public class GeometryProvider implements SpaceProvider {
                 System.exit(1);
             }
         }
+
+		for (Map<SID, GeometrySpace> tResult : results) result.putAll(tResult);
 
 		if (verbose) {
 			prog.done();

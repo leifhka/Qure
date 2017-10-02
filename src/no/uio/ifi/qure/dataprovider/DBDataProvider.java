@@ -311,7 +311,7 @@ public class DBDataProvider implements RawDataProvider<String> {
 			   		close();
 				}
 
-				String nextQuery = baseQuery;
+				nextQuery = baseQuery;
 				if (addLimits) nextQuery += " WHERE " + uriCol + " > " + currentMaxURI + " ORDER BY " + uriCol
 			                                + " ASC LIMIT " + limit;
 			    parsed += limit;
@@ -340,7 +340,6 @@ public class DBDataProvider implements RawDataProvider<String> {
 				}
 				lst.add(new UnparsedSpace<String>(uri, spaceStrs));
 			}
-
 			batch = lst.iterator();
 		}
 	}
