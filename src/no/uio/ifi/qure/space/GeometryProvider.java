@@ -350,7 +350,7 @@ public class GeometryProvider implements SpaceProvider {
 				query += "st_intersects(T0.geom, T1.geom)";
 				break;
 			case "partof":
-				query += "st_contains(T0.geom, T1.geom)";
+				query += "st_contains(T1.geom, T0.geom)";
 				break;
 		}
 		return query;
