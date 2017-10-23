@@ -134,14 +134,47 @@ public class GeometrySpace implements Space {
 		if (!(o instanceof GeometrySpace)) return false;
 
 		GeometrySpace ogs = (GeometrySpace) o;
-		return geo.intersects(ogs.getGeometry());
+		if (geo.getNumGeometries() > 1 || ogs.geo.getNumGeometries() > 1) {
+			return gcIntersects(geo, ogs.geo);
+		} else {
+			return geo.intersects(ogs.getGeometry());
+		}
+	}
+
+	private boolean gcIntersects(Geometry gc1, Geometry gc2) {
+		for (int i = 0; i < gc1.getNumGeometries(); i++) {
+			for (int j = 0; j < gc2.getNumGeometries(); j++) {
+				if (gc1.getGeometryN(i).intersects(gc2.getGeometryN(j))) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private boolean gcCoveredBy(Geometry gc1, Geometry gc2) {
+		for (int i = 0; i < gc1.getNumGeometries(); i++) {
+			Geometry g1 = (Geometry) gc1.getGeometryN(i).clone();
+			for (int j = 0; j < gc2.getNumGeometries(); j++) {
+				g1 = g1.difference(gc2.getGeometryN(j));
+				if (g1.isEmpty()) {
+					break;
+				}
+			}
+			if (!g1.isEmpty()) return false;
+		}
+		return true;
 	}
 
 	public boolean partOf(Space o) {
 		if (!(o instanceof GeometrySpace)) return false;
 
 		GeometrySpace ogs = (GeometrySpace) o;
-		return geo.coveredBy(ogs.getGeometry());
+		if (geo.getNumGeometries() > 1 || ogs.geo.getNumGeometries() > 1) {
+			return gcCoveredBy(geo, ogs.geo);
+		} else {
+			return geo.coveredBy(ogs.getGeometry());
+		}
 	}
 
 	public boolean before(Space o) { return false; }
