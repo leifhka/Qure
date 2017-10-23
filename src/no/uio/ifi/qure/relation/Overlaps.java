@@ -108,7 +108,7 @@ public class Overlaps extends AtomicRelation {
 		return query;
 	}
 
-	private String toBTSQL2(String[] vals, Config config) {
+	private String toBTSQL2Old2(String[] vals, Config config) {
 		String[] sfw = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		
 		String innerFrom = sfw[1] + ",\n";
@@ -133,13 +133,44 @@ public class Overlaps extends AtomicRelation {
 			if (argRole.get(args[i]) != 0) {
 				where += whereSep + "(T.role" + args[i] + " = " + (argRole.get(args[i]) << 1) + " OR " +
 				          "T.role" + args[i] + " = " + ((argRole.get(args[i]) << 1) + 1) + ")";
+				whereSep = " AND ";
 			}
 			selectSep = ", ";
-			whereSep = " AND ";
 		}
 		String query = "SELECT " + select + "\n";
 		query += "FROM (\n" + innerQuery + " OFFSET 0) T";
 		if (!where.equals("")) query += "\n WHERE " + where;
+		return query;
+	}
+
+	private String toBTSQL2(String[] vals, Config config) {
+		String[] sfw = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
+		
+		String innerFrom = sfw[1] + ",\n";
+	    innerFrom += "  qure.bitPosition" + ((config.finalBlockSize > 31) ? "BigInt" : "Int") + " AS V";
+	    
+		String innerQuery = "SELECT DISTINCT " + sfw[0] + "\n";
+		innerQuery += "FROM " + innerFrom + "\n";
+		innerQuery += "WHERE ";
+		if (!sfw[2].equals("")) innerQuery += sfw[2] + " AND \n";
+		if (vals[0] != null) {
+			innerQuery += makeBlockOverlapsWhere("T" + args[0], "T" + args[1]);
+		} else {
+			innerQuery += makeBlockOverlapsWhere("T" + args[1], "T" + args[0]);
+		}
+		
+		String select = "", where  = "", selectSep = "", whereSep = "";
+		for (int i = 0; i < args.length; i++) {
+			select += selectSep + "v" + args[i];
+			if (argRole.get(args[i]) != 0) {
+				where += whereSep + "(T" + args[i] + ".role = " + (argRole.get(args[i]) << 1) + " OR " +
+				          "T" + args[i] + ".role = " + ((argRole.get(args[i]) << 1) + 1) + ")";
+				whereSep = " AND ";
+			}
+			selectSep = ", ";
+		}
+		String query = innerQuery;
+		if (!where.equals("")) query += "\n AND " + where;
 		return query;
 	}
 
@@ -349,6 +380,15 @@ public class Overlaps extends AtomicRelation {
 		return res;
 	}
 
+	private boolean holdsTrivially(Integer[] tuple) {
+		if (getArity() == 2) {
+			return tuple[args[0]].equals(tuple[args[1]]) &&
+			       strictnessRelated(argRole.get(args[0]), argRole.get(args[1]));
+		} else {
+			return false; //TODO
+		}
+	}
+
 	public Table evalAll(SpaceProvider spaces) {
 		// Must be a unary role-relation
 		Table table = new Table(this);
@@ -376,7 +416,7 @@ public class Overlaps extends AtomicRelation {
 			} else {
 				SID[] sids = toSIDs(tuple);
 				Set<SID> tupSet = Utils.asSet(sids);
-				if (checked.contains(tupSet) || eval(toSpaces(sids, spaces))) {
+				if (holdsTrivially(tuple) || checked.contains(tupSet) || eval(toSpaces(sids, spaces))) {
 					table.addTuple(tuple);
 					checked.add(tupSet);
 				}

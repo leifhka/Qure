@@ -35,18 +35,39 @@ public class Qure {
 		//RelationSet relationSet = RelationSet.getAllensIntervalAlgebra(TimeSpace.FIRST, TimeSpace.INTERIOR, TimeSpace.LAST);
 		//RelationSet relationSet = RelationSet.getRCC8(GeometrySpace.INTERIOR);
 
-		Config config = new Config("osm_no_new", "fn", 17, 30, 10, relationSet);
-		//Config config = new Config("tiny", "nbl", 4, 1, 10);
-		geometries = new GeometryProvider(config, new DBDataProvider(config));
-		//geometries = new TimeProvider(config, new DBDataProvider(config));
-
 		ArrayList<Config> rfs = new ArrayList<Config>();
-		rfs.add(config);
+		Config config = new Config("osm_no_new", "q", 12, 30, 10, relationSet);
+		geometries = new GeometryProvider(config, new DBDataProvider(config));
+
+		//rfs.add(config);
+		//runMany(rfs);
+
+		//rfs.add(new Config("osm_ice", "fn", 8, 30, 10, relationSet));
+		//rfs.add(new Config("osm_ice", "t64", 9, 30, 10, relationSet));
+		//rfs.add(new Config("osm_ice", "t64", 10, 30, 10, relationSet));
+		//rfs.add(new Config("osm_ice", "t64", 11, 30, 10, relationSet));
+		//rfs.add(new Config("osm_ice", "t64", 12, 30, 10, relationSet));
+		//rfs.add(new Config("osm_ice", "t64", 13, 30, 10, relationSet));
+		//rfs.add(new Config("tiger15", "t64", 8, 30, 10, relationSet));
+		//rfs.add(new Config("tiger15", "t64", 9, 30, 10, relationSet));
+		//rfs.add(new Config("tiger15", "t64", 10, 30, 10, relationSet));
+		//rfs.add(new Config("tiger15", "t64", 11, 30, 10, relationSet));
+		//rfs.add(new Config("tiger15", "t64", 12, 30, 10, relationSet));
+		//rfs.add(new Config("tiger15", "t64", 13, 30, 10, relationSet));
+		rfs.add(new Config("osm_no_new", "q", 12, 30, 10, relationSet));
+		rfs.add(new Config("osm_no_new", "q", 13, 30, 10, relationSet));
+		rfs.add(new Config("osm_no_new", "q", 14, 30, 10, relationSet));
+		rfs.add(new Config("osm_no_new", "q", 15, 30, 10, relationSet));
+		rfs.add(new Config("osm_no_new", "q", 16, 30, 10, relationSet));
+		rfs.add(new Config("osm_no_new", "q", 17, 30, 10, relationSet));
 
 		//String q = makeGeoBMQuery(new Overlaps(0,0,0,1), geometries, config, 1, "ins.dallas_500");
-		//String q = (new PartOf(0,0,0,1)).toBTSQL(new String[]{null, "1"}, config);//, 1, "ins.dallas_500");
+		//makeQueryBMTable(config);
+		//String q = makeBTBMQuery(new Overlaps(1,1,0,1), config, 1, config.bmTable);
+		//String q = "" +(new Overlaps(0,0,0,1)).toBTSQL(new String[]{null, "2"}, config);//, 1, "ins.dallas_500");
 		//System.out.println(q);
-		//timeQuery(q, config);
+		//timeQuery("test", q, config);
+		//deleteQueryBMTable(config);
 
 		//Overlaps r = new Overlaps(1,1,0,1);
 		//String a = "305804";
@@ -64,14 +85,22 @@ public class Qure {
 		//times = new HashMap<String, Long>();
 		//runManyQueryBM(rfs);
 		//times = new HashMap<String, Long>();
-		//runAllInsertBM(configs, 100, 20, false);
-		//runAllInsertBM(rfs, 1, 10, true);
+		
+		//runAllInsertBM(rfs, 1, 100, false);
+		//runAllInsertBM(rfs, 100, 20, true);
 
-		runQueryBM(config);
+		for (Config conf : rfs) {
+			runQueryBM(conf);
+			times = new HashMap<String, Long>();
+		}
 
 		//Relation r = partOf(0,0,1,0);//.and(not(partOf(0,0,1,0)));
 		//RelationSet relationSet = new RelationSet(); relationSet = relationSet.add(r);
 		//checkCorrectness(config, config.relationSet, 30);
+		//checkCorrectness(config, RelationSet.getSimple(2), 30);
+		//for (Config conf : rfs) {
+		//	checkCorrectness(conf, config.relationSet, 30);
+		//}
 	}
 
 	private static void runMany(Collection<Config> configs) {
@@ -96,7 +125,8 @@ public class Qure {
 		for (Config config : configs) {
 			try {
 				runManyInsertBM(config, n, iterations, loc);
-				Thread.sleep(1000*30*3);
+				Thread.sleep(1000*30*0);
+				times = new HashMap<String, Long>();
 			} catch (InterruptedException ex) {
 				try {
 					FileWriter fw = new FileWriter("errs.txt", true);
@@ -188,6 +218,7 @@ public class Qure {
 
 		if (config.verbose) printConfig(config);
 
+		geometries = new GeometryProvider(config, new DBDataProvider(config));
 		geometries.populateBulk();
 		SpaceToBintree gtb = new SpaceToBintree(config);
 
@@ -226,7 +257,7 @@ public class Qure {
 			runInsertBM(config, n, loc);
 			config.verbose = true;
 		}
-		finishTime("output_ins.txt", false);
+		finishTime("output_ins.txt", true);
 	}
 
 	public static void runInsertBM(Config config, int n, boolean loc) {
@@ -271,8 +302,8 @@ public class Qure {
 		}
 		long afterAll = System.currentTimeMillis();
 		String add = (loc) ? " (loc)" : "";
-		takeTime(before, after, config.rawBTTableName, "Insert time"+add, true, false, null, false);
-		takeTime(beforeAll, afterAll, config.rawBTTableName, "Total insert time"+add, true, false, null, false);
+		takeTime(before, after, config.rawBTTableName, "Insert time"+add, true, false, null, true);
+		takeTime(beforeAll, afterAll, config.rawBTTableName, "Total insert time"+add, true, false, null, true);
 	}
 
 	public static void writeBintreesToDB(Representation rep, Set<Block> oldSplits, Config config, boolean insert)
@@ -714,6 +745,10 @@ public class Qure {
 			}
 		}
 		if (!err) System.out.println("All correct!");
+		else {
+			System.out.println("ERRORS!!!");
+			System.exit(1);
+		}
 	}
 
 	public static void printQueryResult(Set<List<Integer>> res) {
@@ -759,7 +794,7 @@ public class Qure {
 
 			connect = DriverManager.getConnection(config.connectionStr);
 			statement = connect.createStatement();
-			statement.setQueryTimeout(60);
+			statement.setQueryTimeout(300);
 
 			long before, after;
 			before = System.currentTimeMillis();
@@ -773,7 +808,7 @@ public class Qure {
 			ex.printStackTrace();
 		} catch (PSQLException ex) {
 			System.out.println(prefix + ": timed out");
-			ex.printStackTrace();
+			//ex.printStackTrace();
 		} catch (Exception ex) {
 			System.out.println("Error on query:\n " + query);
 			ex.printStackTrace();
@@ -783,21 +818,35 @@ public class Qure {
 		}
 	}
 
-	private static String makeQueryBMTable(Config config) {
+	private static String makeQueryBMTable(Config config, Relation rel, int i) {
 
-		String bmTable = "bmQueryTable";
+		//String bmTable = "bm_" + config.rawGeoTableName + "_" + rel.getName() + "_" + i;
+		String bmTable = config.bmTable;
+		System.out.print("Creating table " + bmTable + "... ");
+
 		try {
 			Class.forName(config.jdbcDriver);
 
+
 			connect = DriverManager.getConnection(config.connectionStr);
+			DatabaseMetaData meta = connect.getMetaData();
+			ResultSet res = meta.getTables(null, null, bmTable, null);
+			boolean exists = res.next();
+			if (exists) {
+				close(); 
+				System.out.println("Done (Reused table)");
+				return bmTable;
+			}
+
 			statement = connect.createStatement();
 
 			String createQuery = "CREATE TABLE " + bmTable + " (" + config.uriColumn + " int)";
 			statement.executeUpdate(createQuery);
 
 			String insertQuery = "INSERT INTO " + bmTable +
-			  "(SELECT " + config.uriColumn + " FROM " + config.geoTableName + " ORDER BY RANDOM() LIMIT 500)";
+			  "(SELECT " + config.uriColumn + " FROM " + config.geoTableName + " ORDER BY RANDOM() LIMIT 2000)";
 			statement.executeUpdate(insertQuery);
+			System.out.println("Done");
 		} catch (Exception ex) {
 			System.out.println("Error on create or insert query in makeQueryBMTable()");
 			ex.printStackTrace();
@@ -805,10 +854,11 @@ public class Qure {
 		} finally {
 			close();
 		}
+
 		return bmTable;
 	}
 
-	private static void deleteQueryBMTable(String tableName, Config config) {
+	private static void deleteQueryBMTable(Config config) {
 
 		try {
 			Class.forName(config.jdbcDriver);
@@ -816,7 +866,7 @@ public class Qure {
 			connect = DriverManager.getConnection(config.connectionStr);
 			statement = connect.createStatement();
 
-			String dropQuery = "DROP TABLE " + tableName + " CASCADE";
+			String dropQuery = "DROP TABLE " + config.bmTable + " CASCADE";
 			statement.executeUpdate(dropQuery);
 
 		} catch (Exception ex) {
@@ -833,13 +883,13 @@ public class Qure {
 		try {
 			for (Relation rel : config.relationSet.getRelations()) {
 				for (int i = 0; i < rel.getArity(); i++) {
-					String bmTable = makeQueryBMTable(config);
+					String bmTable = makeQueryBMTable(config, rel, i);
 
 					String btQuery = makeBTBMQuery(rel, config, i, bmTable);
 					String geoQuery = makeGeoBMQuery(rel, geometries, config, i, bmTable);
 					timeQuery(config.btTableName + " - " + rel.getName() + ":" + i + ", bt", btQuery, config);
 					timeQuery(config.btTableName + " - " + rel.getName() + ":" + i + ", geo", geoQuery, config);
-					deleteQueryBMTable(bmTable, config);
+					deleteQueryBMTable(config);
 				}
 			}
 

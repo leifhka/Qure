@@ -119,9 +119,9 @@ public class SpaceToBintree {
 
 				Representation newLeftRep = null, newRightRep = null;
 
-				TraverserThread leftThread = new TraverserThread(nodes.fst, numThreads/2);
+				TraverserThread leftThread = new TraverserThread(nodes.fst, numThreads);
 				leftThread.fork();
-				TraverserThread rightThread = new TraverserThread(nodes.snd, numThreads/2);
+				TraverserThread rightThread = new TraverserThread(nodes.snd, numThreads);
 
 				representation = rightThread.compute().merge(leftThread.join());
 

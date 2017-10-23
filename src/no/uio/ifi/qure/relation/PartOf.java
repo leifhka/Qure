@@ -74,13 +74,12 @@ public class PartOf extends AtomicRelation {
 
 	public String toBTSQL1Approx(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
-		String query = "    SELECT DISTINCT T" + a0 + ".gid AS v" + a0 + ", T" + a0 + ".block\n";
+		String query = "    SELECT DISTINCT T" + a0 + ".gid AS v" + a0 + ", T" + a0 + ".block, T" + a0 + ".role\n";
 		query += "    FROM " + selFroWhe[1] + "\n";
 		query += "    WHERE ";
 		if (!selFroWhe[2].equals("")) query += selFroWhe[2] + " AND\n";
-		query += "      T" + a0 + ".role = " + (1 | (r0 << 1));
-		if (r1 != 0) query += " AND (T" + a1 + ".role = " + (r1 << 1) + " OR T" + a1 + ".role = " + (1 | (r1 << 1)) + ")";
-		query += " AND\n";
+		//query += "      T" + a0 + ".role = " + (1 | (r0 << 1)) + " AND\n";
+		if (r1 != 0) query += " (T" + a1 + ".role = " + (r1 << 1) + " OR T" + a1 + ".role = " + (1 | (r1 << 1)) + ") AND\n";
 		query += "      T" + a0 + ".block > (T" + a1 + ".block & (T" + a1 + ".block-1)) AND\n";
 		query += "      T" + a0 + ".block <= (T" + a1 + ".block | (T" + a1 + ".block-1))";
 		return query;
@@ -89,7 +88,8 @@ public class PartOf extends AtomicRelation {
 	private String toBTSQL1(String[] vals, Config config) {
 		String[] selFroWhe = makeSelectFromWhereParts(config.btTableName, config.uriColumn, vals);
 		String query = "WITH \n";
-		query += "possible AS (\n" + toBTSQL1Approx(vals, config) + "),\n";
+		query += "possibleRL AS (\n" + toBTSQL1Approx(vals, config) + "),\n";
+		query += "possible AS (SELECT v" + a0 + ", block FROM possibleRL WHERE role = " + (1 | (r0 << 1)) + "),\n";
 		query += "posGids AS (SELECT DISTINCT v" + a0 + " FROM possible),\n";
 		query += "allBlocks AS (SELECT T.gid, T.block FROM " + config.btTableName + " AS T, posGids AS P\n";
 		query += "              WHERE T.gid = P.v" + a0 + " AND T.role = " + (1 | (r0 << 1)) + "),\n";
@@ -299,13 +299,18 @@ public class PartOf extends AtomicRelation {
 
     	return null; // Should never occur
 	}
-	
+
+	private boolean holdsTrivially(Integer[] tuple) {
+		return tuple[a0].equals(tuple[a1]) &&
+		       stricterRole(r0, r1);
+	}
+
 	public Table evalAll(SpaceProvider spaces, Table possible) {
 
 		Table table = new Table(this);
 
     	for (Integer[] tuple : possible.getTuples()) {
-			if (eval(toSpaces(toSIDs(tuple), spaces))) {
+			if (holdsTrivially(tuple) || eval(toSpaces(toSIDs(tuple), spaces))) {
 				table.addTuple(tuple);
 	    	}
 	    	//Integer[] rev = reverse(tuple);

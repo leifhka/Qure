@@ -49,7 +49,7 @@ public class GeometryProvider implements SpaceProvider {
 
 	private GeometryProvider(Config config, RawDataProvider<String> dataProvider,
 	                         GeometrySpace universe, Map<SID, GeometrySpace> geometries,
-                                 Set<SID> coversUniverse, GeometryFactory geometryFactory,
+                             Set<SID> coversUniverse, GeometryFactory geometryFactory,
 	                         boolean updating) {
 		this.config = config;
 		this.dataProvider = dataProvider;
@@ -189,7 +189,7 @@ public class GeometryProvider implements SpaceProvider {
 		String whereClause = "ST_intersects(geom, ST_GeomFromText('" + gs + "')) AND ";
 		whereClause += "NOT ST_contains(geom, ST_GeomFromText('" + gs + "'))";
 		UnparsedIterator<String> wkbs = dataProvider.getExternalOverlapping(whereClause);
-		Map<SID, GeometrySpace> res = parseGeometries(wkbs, false);
+		Map<SID, GeometrySpace> res = parseGeometriesSingle(wkbs, config.relationSet.getRoles(), false);
 
 		return res;
 	}
@@ -335,13 +335,13 @@ public class GeometryProvider implements SpaceProvider {
 				query += "st_touches(T0.geom, T1.geom)";
 				break;
 			case "PO":
-				query += "(st_overlaps(T0.geom, T1.geom) OR st_crosses(T0.geom, T1.geom))";
+				query += "st_overlaps(T0.geom, T1.geom)"; // OR st_crosses(T0.geom, T1.geom))";
 				break;
 			case "EQ":
 				query += "st_equals(T0.geom, T1.geom)";
 				break;
 			case "TPP":
-				query += "st_contains(T1.geom, T0.geom) AND NOT st_equals(T0.geom, T1.geom) AND NOT st_containsProperly(T1.geom, T0.geom)"; // TODO: Fix, is now reflexive!
+				query += "st_covers(T1.geom, T0.geom) AND NOT st_equals(T0.geom, T1.geom) AND NOT st_containsProperly(T1.geom, T0.geom)";
 				break;
 			case "NTPP":
 				query += "st_containsProperly(T1.geom, T0.geom)";
@@ -350,7 +350,7 @@ public class GeometryProvider implements SpaceProvider {
 				query += "st_intersects(T0.geom, T1.geom)";
 				break;
 			case "partof":
-				query += "st_contains(T0.geom, T1.geom)";
+				query += "st_covers(T1.geom, T0.geom)";
 				break;
 		}
 		return query;
